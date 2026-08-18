@@ -33,3 +33,6 @@ app.include_router(phase7_router)
 
 from app.api.phase8 import router as phase8_router
 app.include_router(phase8_router)
+
+from app.api.phase9 import router as phase9_router
+app.include_router(phase9_router)
