@@ -27,3 +27,6 @@ app.include_router(phase5_router)
 
 from app.api.phase6 import router as phase6_router
 app.include_router(phase6_router)
+
+from app.api.phase7 import router as phase7_router
+app.include_router(phase7_router)
