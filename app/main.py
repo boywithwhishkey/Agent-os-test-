@@ -24,3 +24,6 @@ def health() -> dict[str, str]:
 
 from app.api.phase5 import router as phase5_router
 app.include_router(phase5_router)
+
+from app.api.phase6 import router as phase6_router
+app.include_router(phase6_router)
