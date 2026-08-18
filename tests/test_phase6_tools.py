@@ -1,65 +1,81 @@
 import pytest
 
+from app.tools.approvals import ApprovalStore
+from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
 from app.tools.executor import ToolExecutor
 from app.tools.models import ToolCall
+from app.tools.policy import ToolPolicy
+
+
+def make_executor():
+    approvals = ApprovalStore()
+    return ToolExecutor(
+        build_default_registry(),
+        ToolPolicy(approvals),
+        InMemoryToolAuditLog(),
+    ), approvals
 
 
 @pytest.mark.asyncio
 async def test_read_tool_runs_without_approval():
-    executor = ToolExecutor(build_default_registry())
+    executor, _ = make_executor()
     result = await executor.execute(ToolCall(tool="echo", arguments={"value": "ok"}))
     assert result.success is True
     assert result.output == "ok"
-    assert result.approval_required is False
 
 
 @pytest.mark.asyncio
-async def test_write_tool_requires_approval():
-    executor = ToolExecutor(build_default_registry())
+async def test_write_tool_cannot_self_approve():
+    executor, _ = make_executor()
     result = await executor.execute(
-        ToolCall(
-            tool="artifact.write",
-            arguments={"name": "phase6.txt", "content": "hello"},
-        )
+        ToolCall(tool="artifact.write", arguments={"name": "x.txt", "content": "hello"})
     )
     assert result.success is False
     assert result.approval_required is True
 
 
 @pytest.mark.asyncio
-async def test_approved_write_is_sandboxed(tmp_path, monkeypatch):
-    import app.tools.builtin as builtin
+async def test_trusted_approval_is_single_use(tmp_path, monkeypatch):
+    monkeypatch.setenv("AGENT_OS_WORKSPACE_ROOT", str(tmp_path))
+    monkeypatch.setenv("AGENT_OS_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
 
-    monkeypatch.setattr(builtin, "WORKSPACE_ROOT", tmp_path.resolve())
-    monkeypatch.setattr(builtin, "ARTIFACT_ROOT", (tmp_path / "artifacts").resolve())
+    executor, approvals = make_executor()
+    grant = approvals.issue("artifact.write", approved_by="test-user")
+    call = ToolCall(tool="artifact.write", arguments={"name": "ok.txt", "content": "safe"})
 
-    executor = ToolExecutor(builtin.build_default_registry())
-    result = await executor.execute(
-        ToolCall(
-            tool="artifact.write",
-            arguments={"name": "reports/test.txt", "content": "safe"},
-            approved=True,
-        )
-    )
-    assert result.success is True
-    assert (tmp_path / "artifacts/reports/test.txt").read_text() == "safe"
+    first = await executor.execute(call, approval_id=grant.approval_id)
+    second = await executor.execute(call, approval_id=grant.approval_id)
+
+    assert first.success is True
+    assert second.success is False
+    assert second.approval_required is True
+
+
+@pytest.mark.asyncio
+async def test_sensitive_file_read_is_blocked(tmp_path, monkeypatch):
+    monkeypatch.setenv("AGENT_OS_WORKSPACE_ROOT", str(tmp_path))
+    (tmp_path / ".env").write_text("SECRET=x")
+
+    executor, _ = make_executor()
+    result = await executor.execute(ToolCall(tool="file.read_text", arguments={"path": ".env"}))
+    assert result.success is False
+    assert "sensitive" in (result.error or "").lower()
 
 
 @pytest.mark.asyncio
 async def test_path_traversal_is_blocked(tmp_path, monkeypatch):
-    import app.tools.builtin as builtin
+    monkeypatch.setenv("AGENT_OS_WORKSPACE_ROOT", str(tmp_path))
+    monkeypatch.setenv("AGENT_OS_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
 
-    monkeypatch.setattr(builtin, "WORKSPACE_ROOT", tmp_path.resolve())
-    monkeypatch.setattr(builtin, "ARTIFACT_ROOT", (tmp_path / "artifacts").resolve())
-
-    executor = ToolExecutor(builtin.build_default_registry())
+    executor, approvals = make_executor()
+    grant = approvals.issue("artifact.write", approved_by="test-user")
     result = await executor.execute(
         ToolCall(
             tool="artifact.write",
             arguments={"name": "../escape.txt", "content": "bad"},
-            approved=True,
-        )
+        ),
+        approval_id=grant.approval_id,
     )
     assert result.success is False
     assert "escapes artifacts directory" in (result.error or "")

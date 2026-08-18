@@ -1,26 +1,52 @@
+from pydantic import BaseModel, Field
 from fastapi import APIRouter
 
+from app.tools.approvals import ApprovalStore
+from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
 from app.tools.executor import ToolExecutor
-from app.tools.models import ToolCall, ToolExecutionResult
+from app.tools.models import ApprovalGrant, ToolCall, ToolExecutionResult
+from app.tools.policy import ToolPolicy
 
 router = APIRouter(prefix="/api/v1/tools", tags=["tools"])
 registry = build_default_registry()
-executor = ToolExecutor(registry)
+approvals = ApprovalStore()
+audit_log = InMemoryToolAuditLog()
+executor = ToolExecutor(registry, ToolPolicy(approvals), audit_log)
+
+
+class ToolExecuteRequest(BaseModel):
+    call: ToolCall
+    approval_id: str | None = None
+
+
+class ApprovalRequest(BaseModel):
+    tool: str
+    approved_by: str = Field(min_length=1)
+    reason: str | None = None
 
 
 @router.get("")
 async def list_tools() -> list[dict[str, str]]:
     return [
-        {
-            "name": tool.name,
-            "description": tool.description,
-            "risk": tool.risk.value,
-        }
-        for tool in registry.list_tools()
+        {"name": t.name, "description": t.description, "risk": t.risk.value}
+        for t in registry.list_tools()
     ]
 
 
 @router.post("/execute", response_model=ToolExecutionResult)
-async def execute_tool(call: ToolCall) -> ToolExecutionResult:
-    return await executor.execute(call)
+async def execute_tool(payload: ToolExecuteRequest) -> ToolExecutionResult:
+    return await executor.execute(payload.call, approval_id=payload.approval_id)
+
+
+@router.post("/approvals", response_model=ApprovalGrant)
+async def create_approval(payload: ApprovalRequest) -> ApprovalGrant:
+    # Temporary local approval service.
+    # Authentication/authorization is added before production exposure.
+    registry.get(payload.tool)
+    return approvals.issue(payload.tool, payload.approved_by, payload.reason)
+
+
+@router.get("/audit")
+async def get_tool_audit() -> list[dict]:
+    return audit_log.list()

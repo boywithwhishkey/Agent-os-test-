@@ -1,0 +1,22 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_PORT=5678
+      - N8N_HOST=reimagined-journey-6vrig64q9wry35gyv-5678.app.github.dev
+      - N8N_PROTOCOL=https
+      - GENERIC_TIMEZONE=Asia/Kolkata
+      - TZ=Asia/Kolkata
+      - N8N_SECURE_COOKIE=false
+      - N8N_EDITOR_BASE_URL=https://reimagined-journey-6vrig64q9wry35gyv-5678.app.github.dev
+      - WEBHOOK_URL=https://reimagined-journey-6vrig64q9wry35gyv-5678.app.github.dev/
+      - N8N_PROXY_HOPS=1
+      - N8N_PUSH_BACKEND=websocket
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:

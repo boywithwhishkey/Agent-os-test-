@@ -14,7 +14,13 @@ class ToolRisk(StrEnum):
 class ToolCall(BaseModel):
     tool: str
     arguments: dict[str, Any] = Field(default_factory=dict)
-    approved: bool = False
+
+
+class ApprovalGrant(BaseModel):
+    approval_id: str
+    tool: str
+    approved_by: str
+    reason: str | None = None
 
 
 class ToolExecutionResult(BaseModel):
@@ -24,3 +30,4 @@ class ToolExecutionResult(BaseModel):
     output: Any = None
     error: str | None = None
     approval_required: bool = False
+    approval_id: str | None = None
