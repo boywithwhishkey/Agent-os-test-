@@ -1,3 +1,4 @@
+from app.api.orchestration import router as orchestration_router
 from fastapi import FastAPI
 
 from app.api.router import api_router
@@ -10,6 +11,7 @@ app = FastAPI(
 )
 
 app.include_router(api_router)
+app.include_router(orchestration_router)
 
 
 @app.get("/health", tags=["system"])
