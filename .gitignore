@@ -5,3 +5,38 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+
+# Python generated
+*.egg-info/
+dist/
+build/
+
+# Python environments/cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Generated Agent OS files
+agent-os-current.zip
+agent-os-*.zip
+artifacts/
+
+# n8n local/generated files
+infra/n8n/agent-os-n8n-workflow.json
+infra/n8n/.env
+infra/n8n/data/
+
+# OS/editor files
+.DS_Store
+.vscode/settings.json
