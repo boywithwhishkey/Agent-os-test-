@@ -21,3 +21,6 @@ def health() -> dict[str, str]:
         "service": settings.app_name,
         "environment": settings.app_env,
     }
+
+from app.api.phase5 import router as phase5_router
+app.include_router(phase5_router)
