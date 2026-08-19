@@ -118,6 +118,38 @@ class PostgresMemoryStore(MemoryStore):
             created_at=row["created_at"],
         )
 
+    async def set_embedding(self, memory_id: str, vector: list[float]) -> None:
+        literal = "[" + ",".join(str(float(v)) for v in vector) + "]"
+        await self.db.execute(
+            "UPDATE agent_memories SET embedding = $2::vector WHERE id = $1",
+            memory_id,
+            literal,
+        )
+
+    async def semantic_search(self, *, query: MemoryQuery, vector: list[float], limit: int):
+        where = ["embedding IS NOT NULL"]
+        args = []
+
+        def bind(value):
+            args.append(value)
+            return f"${len(args)}"
+
+        if query.project_id is not None:
+            where.append(f"project_id = {bind(query.project_id)}")
+        if query.task_id is not None:
+            where.append(f"task_id = {bind(query.task_id)}")
+        if query.session_id is not None:
+            where.append(f"session_id = {bind(query.session_id)}")
+        if query.agent is not None:
+            where.append(f"agent = {bind(query.agent)}")
+
+        vector_p = bind("[" + ",".join(str(float(v)) for v in vector) + "]")
+        limit_p = bind(limit)
+
+        sql = f"SELECT *, (1 - (embedding <=> {vector_p}::vector)) AS semantic_score FROM agent_memories WHERE {' AND '.join(where)} ORDER BY embedding <=> {vector_p}::vector LIMIT {limit_p}"
+        rows = await self.db.fetch(sql, *args)
+        return [(self._row_to_record(row), float(row.get("semantic_score") or 0.0)) for row in rows]
+
 
 class PostgresWorkflowRunStore(WorkflowRunStore):
     def __init__(self, db: Database) -> None:
