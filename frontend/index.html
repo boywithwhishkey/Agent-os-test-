@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#080b12" />
+  <meta name="theme-color" content="#07080d" />
 
-  <title>Agent OS — Autonomous Intelligence</title>
+  <title>THYNACT — Built to Think. Powered to Act.</title>
 
   <style>
     * {
@@ -15,18 +15,34 @@
     }
 
     :root {
-      --bg: #07090e;
-      --panel: rgba(16, 20, 30, 0.78);
-      --panel-2: #10151f;
+      --bg: #07080d;
+      --bg-soft: #0b0d14;
+      --panel: rgba(15, 17, 26, 0.82);
+      --panel-solid: #10131c;
+      --panel-light: rgba(255,255,255,.045);
+
       --border: rgba(255,255,255,.09);
-      --text: #f5f7fb;
-      --muted: #8f98a8;
-      --blue: #6e7cff;
-      --cyan: #52d6ff;
-      --green: #46d597;
-      --red: #ff6b7a;
-      --purple: #aa78ff;
-      --shadow: 0 25px 70px rgba(0,0,0,.35);
+      --border-strong: rgba(196,169,105,.25);
+
+      --text: #f7f6f2;
+      --text-soft: #d5d2c9;
+      --muted: #8d919d;
+
+      --gold: #c8ad6d;
+      --gold-light: #ead9a6;
+      --violet: #8574ff;
+      --violet-soft: #aa9fff;
+      --blue: #5bc7ff;
+      --green: #5dd7a2;
+      --red: #ff7382;
+
+      --shadow:
+        0 30px 90px rgba(0,0,0,.42),
+        0 0 0 1px rgba(255,255,255,.015);
+
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 11px;
     }
 
     html {
@@ -36,28 +52,79 @@
     body {
       min-height: 100vh;
       font-family:
-        Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", sans-serif;
+        Inter,
+        ui-sans-serif,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
       color: var(--text);
+
       background:
-        radial-gradient(circle at 10% 0%, rgba(79,91,213,.17), transparent 30%),
-        radial-gradient(circle at 90% 10%, rgba(0,180,255,.09), transparent 28%),
+        radial-gradient(
+          circle at 15% 0%,
+          rgba(108, 90, 255, .18),
+          transparent 31%
+        ),
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(76, 184, 255, .09),
+          transparent 29%
+        ),
+        radial-gradient(
+          circle at 50% 100%,
+          rgba(200, 173, 109, .07),
+          transparent 28%
+        ),
         var(--bg);
     }
 
-    button, textarea {
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .32;
+      background-image:
+        linear-gradient(
+          rgba(255,255,255,.018) 1px,
+          transparent 1px
+        ),
+        linear-gradient(
+          90deg,
+          rgba(255,255,255,.018) 1px,
+          transparent 1px
+        );
+      background-size: 46px 46px;
+      mask-image:
+        linear-gradient(to bottom, black, transparent 80%);
+    }
+
+    button,
+    textarea {
       font: inherit;
     }
 
-    .shell {
-      width: min(1440px, calc(100% - 36px));
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1520px, calc(100% - 40px));
       margin: auto;
     }
 
-    /* NAV */
+    /* -------------------------------------------------- */
+    /* NAVIGATION                                         */
+    /* -------------------------------------------------- */
 
     nav {
-      height: 78px;
+      height: 86px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -67,379 +134,708 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
-      font-size: 17px;
-      font-weight: 750;
-      letter-spacing: -.3px;
+      gap: 14px;
+      text-decoration: none;
     }
 
-    .logo {
-      width: 34px;
-      height: 34px;
+    .brand-mark {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
       display: grid;
       place-items: center;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #7884ff, #54d6ff);
-      color: #061018;
-      font-weight: 900;
-      box-shadow: 0 0 30px rgba(100,126,255,.3);
+      overflow: hidden;
+
+      background:
+        linear-gradient(
+          145deg,
+          #f1dfad,
+          #b7954f 48%,
+          #7664ee
+        );
+
+      box-shadow:
+        0 10px 30px rgba(137,113,255,.22),
+        0 0 30px rgba(200,173,109,.12);
+    }
+
+    .brand-mark::after {
+      content: "";
+      width: 16px;
+      height: 16px;
+      transform: rotate(45deg);
+      border: 2px solid rgba(5,6,11,.8);
+      border-top-color: transparent;
+      border-left-color: transparent;
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-name {
+      font-size: 16px;
+      font-weight: 850;
+      letter-spacing: 2px;
+    }
+
+    .brand-tag {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .7px;
     }
 
     .nav-right {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .status {
+      min-height: 38px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
+      padding: 0 13px;
+
+      border: 1px solid var(--border);
+      border-radius: 999px;
+
       color: var(--muted);
-      font-size: 13px;
+      background: rgba(255,255,255,.025);
+      font-size: 12px;
     }
 
     .dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #777;
+      background: #626772;
     }
 
     .dot.online {
       background: var(--green);
-      box-shadow: 0 0 14px var(--green);
+      box-shadow: 0 0 14px rgba(93,215,162,.8);
     }
 
     .api-link {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      padding: 0 13px;
+
       text-decoration: none;
-      color: #cbd1dd;
-      font-size: 13px;
-      padding: 9px 13px;
       border: 1px solid var(--border);
-      border-radius: 9px;
+      border-radius: 999px;
+
+      color: #cacdd4;
       background: rgba(255,255,255,.025);
+      font-size: 12px;
     }
 
-    /* HERO */
+    /* -------------------------------------------------- */
+    /* HERO                                               */
+    /* -------------------------------------------------- */
 
     .hero {
-      padding: 75px 0 50px;
-      max-width: 850px;
+      padding: 96px 0 68px;
+      max-width: 1050px;
     }
 
-    .eyebrow {
-      color: #94a0ff;
-      font-size: 12px;
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+
+      margin-bottom: 24px;
+      padding: 7px 11px;
+
+      border: 1px solid rgba(200,173,109,.18);
+      border-radius: 999px;
+
+      color: var(--gold-light);
+      background: rgba(200,173,109,.055);
+
+      font-size: 11px;
       font-weight: 750;
+      letter-spacing: 1.6px;
       text-transform: uppercase;
-      letter-spacing: 1.8px;
-      margin-bottom: 16px;
+    }
+
+    .hero-kicker::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 12px var(--gold);
     }
 
     h1 {
-      font-size: clamp(44px, 7vw, 76px);
+      max-width: 1000px;
+      font-size: clamp(52px, 7vw, 94px);
       line-height: .98;
-      letter-spacing: -4px;
-      max-width: 800px;
+      letter-spacing: -5px;
+      font-weight: 720;
     }
 
-    .hero p {
-      margin-top: 24px;
-      max-width: 670px;
+    .hero-gradient {
+      color: transparent;
+      background:
+        linear-gradient(
+          95deg,
+          #f4f1e9 0%,
+          #d4c28e 45%,
+          #a89cff 92%
+        );
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .hero-description {
+      max-width: 760px;
+      margin-top: 28px;
+
       color: var(--muted);
-      line-height: 1.75;
-      font-size: 16px;
+      font-size: 17px;
+      line-height: 1.8;
     }
 
-    /* MAIN GRID */
+    .tagline {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      margin-top: 27px;
+      color: #c8cad1;
+
+      font-size: 13px;
+      font-weight: 650;
+      letter-spacing: .25px;
+    }
+
+    .tagline-line {
+      width: 34px;
+      height: 1px;
+      background:
+        linear-gradient(
+          90deg,
+          var(--gold),
+          transparent
+        );
+    }
+
+    /* -------------------------------------------------- */
+    /* MAIN WORKSPACE                                     */
+    /* -------------------------------------------------- */
 
     .workspace {
       display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
-      gap: 20px;
-      padding-bottom: 70px;
+      grid-template-columns:
+        minmax(0, 1.45fr)
+        minmax(330px, .55fr);
+
+      gap: 22px;
+      padding-bottom: 82px;
     }
 
     .card {
       border: 1px solid var(--border);
-      background: var(--panel);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border-radius: 18px;
+      border-radius: var(--radius-lg);
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(19,21,31,.91),
+          rgba(12,14,21,.8)
+        );
+
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+
       box-shadow: var(--shadow);
     }
 
     .composer {
-      padding: 26px;
+      position: relative;
+      overflow: hidden;
+      padding: 31px;
     }
 
-    .card-title {
+    .composer::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -120px;
+      top: -150px;
+
+      border-radius: 50%;
+      background: rgba(133,116,255,.1);
+      filter: blur(6px);
+      pointer-events: none;
+    }
+
+    .card-head {
+      position: relative;
+      z-index: 1;
+
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      justify-content: space-between;
+      gap: 18px;
+
+      margin-bottom: 27px;
     }
 
-    .card-title h2 {
-      font-size: 17px;
-      letter-spacing: -.3px;
+    .card-head h2 {
+      font-size: 20px;
+      letter-spacing: -.45px;
     }
 
-    .badge {
-      color: #9ba6ff;
-      background: rgba(110,124,255,.1);
-      border: 1px solid rgba(110,124,255,.2);
-      padding: 6px 9px;
-      border-radius: 7px;
-      font-size: 11px;
-      font-weight: 700;
+    .card-subtitle {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+
+      padding: 7px 10px;
+
+      border: 1px solid rgba(93,215,162,.18);
+      border-radius: 999px;
+
+      color: #91e7c1;
+      background: rgba(93,215,162,.06);
+
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .live-badge::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .field {
+      position: relative;
+      z-index: 1;
+    }
+
+    .field + .field {
+      margin-top: 21px;
     }
 
     label {
       display: block;
-      color: #c9cfda;
-      font-size: 12px;
-      font-weight: 650;
       margin-bottom: 9px;
+
+      color: #b9bdc7;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.15px;
     }
 
     textarea {
       width: 100%;
-      min-height: 160px;
       resize: vertical;
       outline: none;
+
       border: 1px solid var(--border);
-      border-radius: 13px;
-      background: rgba(3,6,12,.65);
+      border-radius: var(--radius-md);
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(4,6,11,.72),
+          rgba(8,10,16,.82)
+        );
+
       color: white;
-      padding: 17px;
-      line-height: 1.55;
-      transition: .2s;
+      padding: 18px 19px;
+
+      font-size: 15px;
+      line-height: 1.65;
+
+      transition:
+        border-color .2s,
+        box-shadow .2s,
+        background .2s;
     }
 
-    textarea:focus {
-      border-color: rgba(110,124,255,.65);
-      box-shadow: 0 0 0 3px rgba(110,124,255,.08);
-    }
-
-    textarea::placeholder {
-      color: #5e6674;
-    }
-
-    .context-label {
-      margin-top: 18px;
+    #objective {
+      min-height: 175px;
     }
 
     #context {
-      min-height: 90px;
+      min-height: 105px;
     }
 
-    .actions {
+    textarea:focus {
+      border-color: rgba(200,173,109,.46);
+      box-shadow:
+        0 0 0 4px rgba(200,173,109,.055);
+      background: rgba(7,9,14,.96);
+    }
+
+    textarea::placeholder {
+      color: #575c68;
+    }
+
+    .composer-footer {
+      position: relative;
+      z-index: 1;
+
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 14px;
-      margin-top: 18px;
+      gap: 18px;
+
+      margin-top: 22px;
     }
 
-    .hint {
-      color: #697283;
+    .flow {
+      color: #6e7380;
       font-size: 12px;
     }
 
     .run {
-      border: 0;
-      color: white;
+      position: relative;
+      overflow: hidden;
+
+      min-height: 49px;
+      padding: 0 23px;
+
       cursor: pointer;
-      padding: 13px 21px;
-      border-radius: 10px;
-      font-weight: 750;
-      background: linear-gradient(135deg, #6674f6, #825ee8);
-      box-shadow: 0 12px 30px rgba(102,116,246,.22);
-      transition: .2s;
-      white-space: nowrap;
+      border: 1px solid rgba(218,196,137,.28);
+      border-radius: 13px;
+
+      color: #111117;
+
+      background:
+        linear-gradient(
+          110deg,
+          #eddca8,
+          #c9ad6d 52%,
+          #a99cff
+        );
+
+      box-shadow:
+        0 13px 32px rgba(170,145,89,.18);
+
+      font-size: 13px;
+      font-weight: 850;
+
+      transition:
+        transform .2s,
+        filter .2s,
+        opacity .2s;
     }
 
     .run:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.08);
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+    }
+
+    .run:active {
+      transform: translateY(0);
     }
 
     .run:disabled {
-      cursor: wait;
       opacity: .55;
+      cursor: wait;
       transform: none;
     }
 
-    /* SIDE */
+    /* -------------------------------------------------- */
+    /* RIGHT SIDE                                         */
+    /* -------------------------------------------------- */
 
     .side {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 22px;
     }
 
-    .system {
-      padding: 24px;
+    .side-card {
+      padding: 26px;
+    }
+
+    .side-card h3 {
+      margin-bottom: 5px;
+      font-size: 15px;
+    }
+
+    .side-description {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .metric-list {
+      margin-top: 19px;
     }
 
     .metric {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 15px 0;
+      justify-content: space-between;
+      gap: 15px;
+
+      min-height: 53px;
       border-bottom: 1px solid var(--border);
-      font-size: 13px;
     }
 
     .metric:last-child {
       border-bottom: 0;
     }
 
-    .metric span:first-child {
+    .metric-label {
       color: var(--muted);
-    }
-
-    .metric strong {
       font-size: 12px;
     }
 
-    .green {
+    .metric-value {
+      text-align: right;
+      color: #d8dae0;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .metric-value.success {
       color: var(--green);
     }
 
-    .agents {
-      padding: 24px;
+    .agent-list {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
     }
 
-    .agent-mini {
+    .agent {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-top: 17px;
+      gap: 13px;
+
+      padding: 12px;
+
+      border: 1px solid rgba(255,255,255,.055);
+      border-radius: 13px;
+
+      background: rgba(255,255,255,.018);
     }
 
     .agent-icon {
-      width: 35px;
-      height: 35px;
-      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+
       display: grid;
       place-items: center;
+
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+
+      color: var(--gold-light);
+      background:
+        linear-gradient(
+          145deg,
+          rgba(200,173,109,.09),
+          rgba(133,116,255,.075)
+        );
+
       font-size: 12px;
-      font-weight: 800;
-      background: #171c29;
-      border: 1px solid var(--border);
+      font-weight: 850;
     }
 
-    .agent-mini strong {
+    .agent-name {
       display: block;
-      font-size: 13px;
+      color: #e4e5e9;
+      font-size: 12px;
+      font-weight: 750;
     }
 
-    .agent-mini small {
-      color: var(--muted);
-      font-size: 11px;
+    .agent-role {
+      display: block;
+      margin-top: 3px;
+      color: #747987;
+      font-size: 10px;
     }
 
-    /* RESULTS */
+    /* -------------------------------------------------- */
+    /* ERRORS                                             */
+    /* -------------------------------------------------- */
 
-    .results-section {
+    .error-box {
       display: none;
-      padding-bottom: 90px;
+      position: relative;
+      z-index: 2;
+
+      margin-top: 17px;
+      padding: 14px 15px;
+
+      border: 1px solid rgba(255,115,130,.25);
+      border-radius: 12px;
+
+      background: rgba(255,115,130,.065);
+      color: #ff9ca7;
+
+      font-size: 12px;
+      line-height: 1.5;
     }
 
-    .results-head {
+    /* -------------------------------------------------- */
+    /* RESULTS                                            */
+    /* -------------------------------------------------- */
+
+    .results {
+      display: none;
+      padding: 0 0 96px;
+    }
+
+    .results-heading {
       display: flex;
       justify-content: space-between;
       align-items: end;
-      margin-bottom: 18px;
+      gap: 20px;
+
+      margin-bottom: 20px;
     }
 
-    .results-head h2 {
-      font-size: 28px;
-      letter-spacing: -1px;
+    .results-kicker {
+      margin-bottom: 7px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: 1.7px;
+      text-transform: uppercase;
+    }
+
+    .results-heading h2 {
+      font-size: 34px;
+      letter-spacing: -1.4px;
     }
 
     .verification {
-      font-size: 12px;
-      font-weight: 700;
-      padding: 7px 10px;
-      border-radius: 8px;
+      padding: 8px 11px;
+
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .8px;
     }
 
     .verified {
-      color: var(--green);
-      border: 1px solid rgba(70,213,151,.25);
-      background: rgba(70,213,151,.08);
+      color: #93e7c2;
+      border: 1px solid rgba(93,215,162,.24);
+      background: rgba(93,215,162,.065);
     }
 
     .failed {
-      color: var(--red);
-      border: 1px solid rgba(255,107,122,.25);
-      background: rgba(255,107,122,.08);
+      color: #ff9aa6;
+      border: 1px solid rgba(255,115,130,.24);
+      background: rgba(255,115,130,.065);
     }
 
-    .result-grid {
+    .results-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
     }
 
-    .result {
-      padding: 22px;
+    .result-card {
       min-width: 0;
+      padding: 24px;
     }
 
     .result-top {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin-bottom: 17px;
+      align-items: center;
+      gap: 15px;
+
+      margin-bottom: 18px;
+      padding-bottom: 15px;
+
+      border-bottom: 1px solid var(--border);
     }
 
-    .role {
-      font-weight: 750;
+    .result-role {
       text-transform: capitalize;
+      font-size: 14px;
+      font-weight: 800;
     }
 
-    .success-mark {
+    .result-status {
       color: var(--green);
-      font-size: 12px;
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .8px;
     }
 
-    .output {
-      color: #c4cad5;
+    .result-output {
+      max-height: 560px;
+      overflow-y: auto;
+
+      padding-right: 6px;
+
+      color: #c7cad2;
       font-size: 13px;
-      line-height: 1.7;
+      line-height: 1.72;
+
       white-space: pre-wrap;
       overflow-wrap: anywhere;
-      max-height: 500px;
-      overflow-y: auto;
-      padding-right: 5px;
     }
 
-    .error-box {
-      display: none;
-      margin-top: 18px;
-      border: 1px solid rgba(255,107,122,.25);
-      background: rgba(255,107,122,.06);
-      color: #ff9aa5;
-      border-radius: 11px;
-      padding: 14px;
-      font-size: 13px;
+    .result-output::-webkit-scrollbar {
+      width: 5px;
     }
+
+    .result-output::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.12);
+      border-radius: 999px;
+    }
+
+    /* -------------------------------------------------- */
+    /* FOOTER                                             */
+    /* -------------------------------------------------- */
 
     footer {
-      color: #596171;
-      font-size: 12px;
-      padding: 25px 0 40px;
-      border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+
+      min-height: 82px;
+
+      border-top: 1px solid var(--border);
+      color: #5f6470;
+
+      font-size: 11px;
     }
 
-    @media (max-width: 900px) {
+    .footer-brand {
+      color: #8c909a;
+      font-weight: 700;
+      letter-spacing: .7px;
+    }
+
+    /* -------------------------------------------------- */
+    /* RESPONSIVE                                         */
+    /* -------------------------------------------------- */
+
+    @media (max-width: 1050px) {
       .workspace {
         grid-template-columns: 1fr;
       }
@@ -449,37 +845,56 @@
         grid-template-columns: 1fr 1fr;
       }
 
-      .result-grid {
+      .results-grid {
         grid-template-columns: 1fr;
-      }
-
-      h1 {
-        letter-spacing: -2.5px;
       }
     }
 
-    @media (max-width: 600px) {
-      .shell {
-        width: min(100% - 24px, 1440px);
+    @media (max-width: 760px) {
+      .page {
+        width: min(100% - 24px, 1520px);
       }
 
       nav {
-        height: 68px;
+        height: 74px;
       }
 
       .api-link {
         display: none;
       }
 
+      .brand-tag {
+        display: none;
+      }
+
       .hero {
-        padding: 52px 0 34px;
+        padding: 66px 0 47px;
+      }
+
+      h1 {
+        font-size: clamp(46px, 14vw, 70px);
+        letter-spacing: -3.3px;
+      }
+
+      .hero-description {
+        font-size: 15px;
+      }
+
+      .workspace {
+        gap: 16px;
+        padding-bottom: 65px;
+      }
+
+      .composer {
+        padding: 21px;
       }
 
       .side {
         grid-template-columns: 1fr;
+        gap: 16px;
       }
 
-      .actions {
+      .composer-footer {
         align-items: stretch;
         flex-direction: column;
       }
@@ -488,9 +903,30 @@
         width: 100%;
       }
 
-      footer {
-        gap: 10px;
+      .results-heading {
+        align-items: flex-start;
         flex-direction: column;
+      }
+
+      footer {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        padding: 22px 0;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .status {
+        padding: 0 10px;
+      }
+
+      .brand-name {
+        font-size: 14px;
+      }
+
+      h1 {
+        font-size: 43px;
       }
     }
   </style>
@@ -498,15 +934,24 @@
 
 <body>
 
-  <div class="shell">
+  <div class="page">
 
     <nav>
-      <div class="brand">
-        <div class="logo">A</div>
-        <span>Agent OS</span>
-      </div>
+
+      <a class="brand" href="/">
+        <div class="brand-mark"></div>
+
+        <div class="brand-copy">
+          <span class="brand-name">THYNACT</span>
+          <span class="brand-tag">
+            BUILT TO THINK. POWERED TO ACT.
+          </span>
+        </div>
+      </a>
+
 
       <div class="nav-right">
+
         <div class="status">
           <span class="dot" id="healthDot"></span>
           <span id="healthText">Connecting</span>
@@ -520,297 +965,616 @@
         >
           API Docs ↗
         </a>
+
       </div>
+
     </nav>
 
 
     <section class="hero">
-      <div class="eyebrow">Autonomous Intelligence Infrastructure</div>
 
-      <h1>Turn objectives into coordinated execution.</h1>
+      <div class="hero-kicker">
+        Autonomous Intelligence System
+      </div>
 
-      <p>
-        Agent OS decomposes an objective into specialized work,
-        coordinates autonomous agents, and verifies their outputs
-        through a production orchestration layer.
+      <h1>
+        Built to think.
+        <span class="hero-gradient">
+          Powered to act.
+        </span>
+      </h1>
+
+      <p class="hero-description">
+        THYNACT transforms a high-level objective into coordinated
+        execution. Specialized agents research, build, review and
+        verify the work through one intelligent orchestration layer.
       </p>
+
+      <div class="tagline">
+        <span class="tagline-line"></span>
+        Think → Orchestrate → Execute → Verify
+      </div>
+
     </section>
 
 
     <main class="workspace">
 
       <section class="card composer">
-        <div class="card-title">
-          <h2>Run orchestration</h2>
-          <span class="badge">LIVE API</span>
+
+        <div class="card-head">
+
+          <div>
+            <h2>Agent Command Center</h2>
+
+            <div class="card-subtitle">
+              Define an objective and let THYNACT coordinate the execution.
+            </div>
+          </div>
+
+          <span class="live-badge">
+            LIVE API
+          </span>
+
         </div>
 
-        <label for="objective">OBJECTIVE</label>
 
-        <textarea
-          id="objective"
-          placeholder="Describe what you want the agent system to accomplish..."
-        ></textarea>
+        <div class="field">
 
-        <label class="context-label" for="context">
-          CONTEXT / CONSTRAINTS
-        </label>
+          <label for="objective">
+            OBJECTIVE
+          </label>
 
-        <textarea
-          id="context"
-          placeholder="Optional context, requirements, constraints or expected output..."
-        ></textarea>
+          <textarea
+            id="objective"
+            placeholder="What do you want THYNACT to accomplish?"
+          ></textarea>
 
-        <div class="actions">
-          <div class="hint">
+        </div>
+
+
+        <div class="field">
+
+          <label for="context">
+            CONTEXT / CONSTRAINTS
+          </label>
+
+          <textarea
+            id="context"
+            placeholder="Add requirements, limitations, expected output or other context..."
+          ></textarea>
+
+        </div>
+
+
+        <div class="composer-footer">
+
+          <div class="flow">
             Research → Build → Review → Verify
           </div>
 
-          <button class="run" id="runButton" onclick="runOrchestration()">
-            Run Agent OS →
+          <button
+            class="run"
+            id="runButton"
+            onclick="runOrchestration()"
+          >
+            Execute Objective →
           </button>
+
         </div>
 
-        <div class="error-box" id="errorBox"></div>
+
+        <div
+          class="error-box"
+          id="errorBox"
+        ></div>
+
       </section>
 
 
       <aside class="side">
 
-        <section class="card system">
-          <div class="card-title">
-            <h2>System</h2>
-            <span class="badge">PRODUCTION</span>
+        <section class="card side-card">
+
+          <h3>System Intelligence</h3>
+
+          <div class="side-description">
+            Live production environment
           </div>
 
-          <div class="metric">
-            <span>API</span>
-            <strong id="apiState">Checking</strong>
+
+          <div class="metric-list">
+
+            <div class="metric">
+              <span class="metric-label">API</span>
+              <strong
+                class="metric-value"
+                id="apiState"
+              >
+                Checking
+              </strong>
+            </div>
+
+            <div class="metric">
+              <span class="metric-label">Endpoint</span>
+              <strong class="metric-value">
+                api.thynact.com
+              </strong>
+            </div>
+
+            <div class="metric">
+              <span class="metric-label">Orchestration</span>
+              <strong class="metric-value success">
+                Enabled
+              </strong>
+            </div>
+
+            <div class="metric">
+              <span class="metric-label">Verification</span>
+              <strong class="metric-value success">
+                Enabled
+              </strong>
+            </div>
+
           </div>
 
-          <div class="metric">
-            <span>Endpoint</span>
-            <strong>api.thynact.com</strong>
-          </div>
-
-          <div class="metric">
-            <span>Orchestration</span>
-            <strong class="green">Enabled</strong>
-          </div>
-
-          <div class="metric">
-            <span>Verification</span>
-            <strong class="green">Enabled</strong>
-          </div>
         </section>
 
 
-        <section class="card agents">
-          <div class="card-title">
-            <h2>Agent team</h2>
+        <section class="card side-card">
+
+          <h3>Active Agent Team</h3>
+
+          <div class="side-description">
+            Specialized intelligence working in sequence
           </div>
 
-          <div class="agent-mini">
-            <div class="agent-icon">R</div>
-            <div>
-              <strong>Researcher</strong>
-              <small>Requirements & risk analysis</small>
+
+          <div class="agent-list">
+
+            <div class="agent">
+              <div class="agent-icon">
+                R
+              </div>
+
+              <div>
+                <span class="agent-name">
+                  Researcher
+                </span>
+
+                <span class="agent-role">
+                  Requirements & risk intelligence
+                </span>
+              </div>
             </div>
+
+
+            <div class="agent">
+              <div class="agent-icon">
+                B
+              </div>
+
+              <div>
+                <span class="agent-name">
+                  Builder
+                </span>
+
+                <span class="agent-role">
+                  Strategy & implementation
+                </span>
+              </div>
+            </div>
+
+
+            <div class="agent">
+              <div class="agent-icon">
+                V
+              </div>
+
+              <div>
+                <span class="agent-name">
+                  Reviewer
+                </span>
+
+                <span class="agent-role">
+                  Quality & acceptance validation
+                </span>
+              </div>
+            </div>
+
           </div>
 
-          <div class="agent-mini">
-            <div class="agent-icon">B</div>
-            <div>
-              <strong>Builder</strong>
-              <small>Implementation strategy</small>
-            </div>
-          </div>
-
-          <div class="agent-mini">
-            <div class="agent-icon">V</div>
-            <div>
-              <strong>Reviewer</strong>
-              <small>Acceptance & verification</small>
-            </div>
-          </div>
         </section>
 
       </aside>
+
     </main>
 
 
-    <section class="results-section" id="resultsSection">
+    <section
+      class="results"
+      id="resultsSection"
+    >
 
-      <div class="results-head">
+      <div class="results-heading">
+
         <div>
-          <div class="eyebrow">Execution output</div>
-          <h2>Agent Results</h2>
+
+          <div class="results-kicker">
+            Execution Output
+          </div>
+
+          <h2>
+            Agent Results
+          </h2>
+
         </div>
 
-        <span id="verificationBadge" class="verification"></span>
+
+        <span
+          id="verificationBadge"
+          class="verification"
+        ></span>
+
       </div>
 
-      <div class="result-grid" id="resultGrid"></div>
+
+      <div
+        class="results-grid"
+        id="resultGrid"
+      ></div>
 
     </section>
 
 
     <footer>
-      <span>Agent OS · Production Interface</span>
-      <span>Powered by coordinated autonomous agents</span>
+
+      <span class="footer-brand">
+        THYNACT
+      </span>
+
+      <span>
+        Built to Think. Powered to Act.
+      </span>
+
     </footer>
 
   </div>
 
 
-<script>
-  const API = "https://api.thynact.com";
+  <script>
 
-  const escapeHTML = (value = "") =>
-    String(value).replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    })[char]);
+    const API = "https://api.thynact.com";
 
 
-  async function checkHealth() {
-    const dot = document.getElementById("healthDot");
-    const text = document.getElementById("healthText");
-    const state = document.getElementById("apiState");
+    const escapeHTML = (value = "") =>
+      String(value).replace(
+        /[&<>"']/g,
+        char => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;"
+        })[char]
+      );
 
-    try {
-      const response = await fetch(`${API}/health`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+    async function checkHealth() {
+
+      const dot =
+        document.getElementById("healthDot");
+
+      const text =
+        document.getElementById("healthText");
+
+      const state =
+        document.getElementById("apiState");
+
+
+      try {
+
+        const response =
+          await fetch(`${API}/health`, {
+            method: "GET",
+            headers: {
+              "Accept": "application/json"
+            }
+          });
+
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP ${response.status}`
+          );
+        }
+
+
+        dot.classList.add("online");
+
+        text.textContent =
+          "Operational";
+
+        state.textContent =
+          "Online";
+
+        state.className =
+          "metric-value success";
+
+
+      } catch (error) {
+
+        dot.classList.remove("online");
+
+        text.textContent =
+          "Unavailable";
+
+        state.textContent =
+          "Offline";
+
+        state.className =
+          "metric-value";
+
+        state.style.color =
+          "var(--red)";
+
       }
 
-      dot.classList.add("online");
-      text.textContent = "Operational";
-      state.textContent = "Online";
-      state.className = "green";
-
-    } catch (error) {
-      dot.classList.remove("online");
-      text.textContent = "Unavailable";
-      state.textContent = "Offline";
-      state.style.color = "var(--red)";
-    }
-  }
-
-
-  async function runOrchestration() {
-    const objective = document.getElementById("objective").value.trim();
-    const context = document.getElementById("context").value.trim();
-
-    const button = document.getElementById("runButton");
-    const errorBox = document.getElementById("errorBox");
-    const section = document.getElementById("resultsSection");
-    const grid = document.getElementById("resultGrid");
-    const verificationBadge =
-      document.getElementById("verificationBadge");
-
-    errorBox.style.display = "none";
-
-    if (!objective) {
-      errorBox.textContent =
-        "Enter an objective before starting orchestration.";
-      errorBox.style.display = "block";
-      return;
     }
 
-    button.disabled = true;
-    button.textContent = "Agents working…";
 
-    try {
-      const response = await fetch(`${API}/api/v1/orchestrate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          objective,
-          context
-        })
-      });
+    async function runOrchestration() {
 
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(
-          `API returned ${response.status}${message ? ": " + message : ""}`
+      const objective =
+        document
+          .getElementById("objective")
+          .value
+          .trim();
+
+
+      const context =
+        document
+          .getElementById("context")
+          .value
+          .trim();
+
+
+      const button =
+        document.getElementById(
+          "runButton"
         );
+
+
+      const errorBox =
+        document.getElementById(
+          "errorBox"
+        );
+
+
+      const section =
+        document.getElementById(
+          "resultsSection"
+        );
+
+
+      const grid =
+        document.getElementById(
+          "resultGrid"
+        );
+
+
+      const verificationBadge =
+        document.getElementById(
+          "verificationBadge"
+        );
+
+
+      errorBox.style.display =
+        "none";
+
+
+      if (!objective) {
+
+        errorBox.textContent =
+          "Enter an objective before starting execution.";
+
+        errorBox.style.display =
+          "block";
+
+        return;
+
       }
 
-      const data = await response.json();
 
-      grid.innerHTML = "";
+      button.disabled = true;
 
-      const results = Array.isArray(data.results)
-        ? data.results
-        : [];
+      button.textContent =
+        "THYNACT is thinking…";
 
-      if (!results.length) {
-        throw new Error("The API returned no agent results.");
-      }
 
-      results.forEach(result => {
-        const card = document.createElement("article");
-        card.className = "card result";
+      try {
 
-        card.innerHTML = `
-          <div class="result-top">
-            <span class="role">${escapeHTML(result.role || "agent")}</span>
-            <span class="success-mark">
-              ${result.success ? "● COMPLETE" : "● FAILED"}
-            </span>
-          </div>
+        /*
+          IMPORTANT:
+          This request goes through the
+          Cloudflare Pages Function proxy.
 
-          <div class="output">${escapeHTML(result.output || "No output returned.")}</div>
-        `;
+          The API key remains server-side
+          and is never exposed in this HTML.
+        */
 
-        grid.appendChild(card);
-      });
+        const response =
+          await fetch(
+            "/api/v1/orchestrate",
+            {
+              method: "POST",
 
-      const passed =
-        data.verification &&
-        data.verification.passed === true;
+              headers: {
+                "Content-Type":
+                  "application/json",
 
-      verificationBadge.textContent =
-        passed ? "✓ VERIFIED" : "⚠ REVIEW REQUIRED";
+                "Accept":
+                  "application/json"
+              },
 
-      verificationBadge.className =
-        "verification " + (passed ? "verified" : "failed");
+              body: JSON.stringify({
+                objective,
+                context
+              })
+            }
+          );
 
-      section.style.display = "block";
 
-      setTimeout(() => {
-        section.scrollIntoView({
-          behavior: "smooth",
-          block: "start"
+        if (!response.ok) {
+
+          const message =
+            await response.text();
+
+
+          throw new Error(
+            `API returned ${response.status}` +
+            (
+              message
+                ? `: ${message}`
+                : ""
+            )
+          );
+
+        }
+
+
+        const data =
+          await response.json();
+
+
+        grid.innerHTML = "";
+
+
+        const results =
+          Array.isArray(data.results)
+            ? data.results
+            : [];
+
+
+        if (!results.length) {
+
+          throw new Error(
+            "No agent results were returned."
+          );
+
+        }
+
+
+        results.forEach(result => {
+
+          const card =
+            document.createElement(
+              "article"
+            );
+
+
+          card.className =
+            "card result-card";
+
+
+          card.innerHTML = `
+            <div class="result-top">
+
+              <span class="result-role">
+                ${escapeHTML(
+                  result.role || "agent"
+                )}
+              </span>
+
+              <span class="result-status">
+                ${
+                  result.success
+                    ? "● COMPLETE"
+                    : "● FAILED"
+                }
+              </span>
+
+            </div>
+
+            <div class="result-output">${
+              escapeHTML(
+                result.output ||
+                "No output returned."
+              )
+            }</div>
+          `;
+
+
+          grid.appendChild(card);
+
         });
-      }, 100);
 
-    } catch (error) {
-      console.error(error);
 
-      errorBox.textContent =
-        "Execution failed: " + error.message;
+        const passed =
+          Boolean(
+            data.verification &&
+            data.verification.passed === true
+          );
 
-      errorBox.style.display = "block";
 
-    } finally {
-      button.disabled = false;
-      button.textContent = "Run Agent OS →";
+        verificationBadge.textContent =
+          passed
+            ? "✓ VERIFIED"
+            : "⚠ REVIEW REQUIRED";
+
+
+        verificationBadge.className =
+          "verification " +
+          (
+            passed
+              ? "verified"
+              : "failed"
+          );
+
+
+        section.style.display =
+          "block";
+
+
+        setTimeout(() => {
+
+          section.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+
+        }, 120);
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        errorBox.textContent =
+          "Execution failed: " +
+          error.message;
+
+
+        errorBox.style.display =
+          "block";
+
+
+      } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+          "Execute Objective →";
+
+      }
+
     }
-  }
 
 
-  checkHealth();
-</script>
+    checkHealth();
+
+  </script>
 
 </body>
 </html>
