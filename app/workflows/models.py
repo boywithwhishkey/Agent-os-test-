@@ -11,6 +11,7 @@ class StepType(StrEnum):
     NOOP = "noop"
     TOOL = "tool"
     AGENT = "agent"
+    INTEGRATION = "integration"
 
 
 class StepStatus(StrEnum):

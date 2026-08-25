@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from app.runtime.registry import ConnectorRegistry
 from app.tools.executor import ToolExecutor
-from app.workflows.handlers import AgentRunner, run_agent, run_noop, run_tool
+from app.workflows.handlers import AgentRunner, run_agent, run_integration, run_noop, run_tool
 from app.workflows.models import (
     StepRun,
     StepStatus,
@@ -12,6 +13,7 @@ from app.workflows.models import (
     WorkflowDefinition,
     WorkflowRun,
     WorkflowStatus,
+    WorkflowStep,
 )
 from app.workflows.store import WorkflowRunStore
 
@@ -23,11 +25,13 @@ class WorkflowEngine:
         store: WorkflowRunStore,
         tool_executor: ToolExecutor,
         agent_runner: AgentRunner,
+        connector_registry: ConnectorRegistry | None = None,
         max_parallel: int = 8,
     ) -> None:
         self.store = store
         self.tool_executor = tool_executor
         self.agent_runner = agent_runner
+        self.connector_registry = connector_registry or ConnectorRegistry()
         self.semaphore = asyncio.Semaphore(max_parallel)
 
     async def start(
@@ -111,6 +115,12 @@ class WorkflowEngine:
                                 run.context,
                                 agent_runner=self.agent_runner,
                             )
+                        elif step.type == StepType.INTEGRATION:
+                            output = await run_integration(
+                                step,
+                                run.context,
+                                connector_registry=self.connector_registry,
+                            )
                         else:
                             raise ValueError(f"Unsupported step type: {step.type}")
 
@@ -118,7 +128,7 @@ class WorkflowEngine:
                     state.error = None
                     state.status = StepStatus.COMPLETED
                     return step.id, state
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 - step failures become retryable state
                     state.error = f"{type(exc).__name__}: {exc}"
                     if attempt > step.max_retries:
                         state.status = StepStatus.FAILED
@@ -131,8 +141,6 @@ class WorkflowEngine:
         definition: WorkflowDefinition,
         run: WorkflowRun,
     ) -> WorkflowRun:
-        step_map = {step.id: step for step in definition.steps}
-
         while True:
             terminal = {
                 StepStatus.COMPLETED,

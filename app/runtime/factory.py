@@ -20,12 +20,16 @@ def build_execution_store() -> ExecutionStore:
     raise RuntimeError(f"Unsupported runtime backend: {backend}")
 
 
-def build_runtime() -> IntegrationRuntime:
+def build_connector_registry() -> ConnectorRegistry:
     registry = ConnectorRegistry()
     if settings.n8n_base_url:
         registry.register("n8n", N8NWebhookAdapter())
+    return registry
+
+
+def build_runtime() -> IntegrationRuntime:
     return IntegrationRuntime(
-        registry=registry,
+        registry=build_connector_registry(),
         store=build_execution_store(),
         circuit_breaker=CircuitBreaker(
             settings.circuit_failures,

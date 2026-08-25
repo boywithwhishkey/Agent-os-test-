@@ -2,22 +2,18 @@ from __future__ import annotations
 
 from app.core.config import settings
 from app.core.lifecycle import register_resource
+from app.llm.factory import build_llm_provider
 from app.persistence.database import AsyncpgDatabase
 from app.persistence.postgres_stores import PostgresWorkflowRunStore
+from app.runtime.factory import build_connector_registry
 from app.tools.approvals import ApprovalStore
 from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
 from app.tools.executor import ToolExecutor
 from app.tools.policy import ToolPolicy
 from app.workflows.engine import WorkflowEngine
+from app.workflows.handlers import build_llm_agent_runner
 from app.workflows.store import InMemoryWorkflowRunStore, WorkflowRunStore
-
-
-async def default_agent_runner(payload: dict):
-    return {
-        "status": "agent_adapter_placeholder",
-        "payload": payload,
-    }
 
 
 def build_workflow_run_store() -> WorkflowRunStore:
@@ -41,5 +37,6 @@ def build_workflow_engine() -> WorkflowEngine:
     return WorkflowEngine(
         store=build_workflow_run_store(),
         tool_executor=executor,
-        agent_runner=default_agent_runner,
+        agent_runner=build_llm_agent_runner(build_llm_provider()),
+        connector_registry=build_connector_registry(),
     )
