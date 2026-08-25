@@ -6,6 +6,8 @@ from dataclasses import asdict, dataclass
 from app.core.config import settings
 from app.llm.base import LLMProvider, LLMRequest
 from app.llm.factory import build_llm_provider
+from app.memory.factory import build_memory_service
+from app.services.context_injection import ContextInjector
 from app.services.llm_agents import ParallelAgentExecutor, SpecialistJob, SpecialistResult
 from app.services.llm_verifier import LLMVerifier, VerificationResult
 
@@ -100,7 +102,27 @@ class FinalSynthesizer:
         )
 
 
-async def execute_phase5(objective: str, context: str | None = None) -> dict:
+async def execute_phase5(
+    objective: str,
+    context: str | None = None,
+    *,
+    project_id: str | None = None,
+    task_id: str | None = None,
+    session_id: str | None = None,
+    memory_service=None,
+) -> dict:
+    if context is None:
+        injector = ContextInjector(memory_service or build_memory_service())
+        context = (
+            await injector.for_task(
+                objective=objective,
+                project_id=project_id,
+                task_id=task_id,
+                session_id=session_id,
+            )
+            or None
+        )
+
     provider = build_llm_provider()
     planner = LLMPlanner(provider, max_jobs=settings.max_jobs)
     plan = await planner.create_plan(objective, context)

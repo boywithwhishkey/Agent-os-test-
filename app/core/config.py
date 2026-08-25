@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     max_parallel: int = Field(default=3, ge=1, validation_alias="AGENT_OS_MAX_PARALLEL")
     max_retries: int = Field(default=2, ge=0, validation_alias="AGENT_OS_MAX_RETRIES")
     max_jobs: int = Field(default=6, ge=1, validation_alias="AGENT_OS_MAX_JOBS")
+    autonomous_timeout_seconds: float = Field(
+        default=120.0, gt=0, validation_alias="AGENT_OS_AUTONOMOUS_TIMEOUT_SECONDS"
+    )
     n8n_base_url: str = Field(default="", validation_alias="N8N_BASE_URL")
     n8n_webhook_prefix: str = Field(default="webhook", validation_alias="N8N_WEBHOOK_PREFIX")
     n8n_auth_header: str | None = Field(

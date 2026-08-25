@@ -75,6 +75,11 @@ async def runtime_error_handler(request: Request, exc: RuntimeError) -> JSONResp
     return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
 # ---------------------------------------------------------
 # API Routers
 # ---------------------------------------------------------

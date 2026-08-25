@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 
 from app.llm.base import LLMProvider, LLMRequest
 from app.services.llm_agents import SpecialistResult
+
 
 @dataclass(slots=True)
 class VerificationResult:
@@ -22,9 +24,12 @@ class LLMVerifier:
             LLMRequest(
                 system=(
                     "You are a verification agent. Review specialist work against the objective. "
-                    "Return a concise verification assessment."
+                    "Start your reply with 'Approved' if the work satisfies the objective, or "
+                    "'Rejected' if it does not, followed by a concise assessment."
                 ),
                 prompt=f"OBJECTIVE:\n{objective}\n\nRESULTS:\n{joined}",
             )
         )
-        return VerificationResult(bool(response.strip()), response)
+        feedback = response.strip()
+        approved = feedback.lower().startswith("approved")
+        return VerificationResult(approved, feedback or "Verifier returned no feedback.")
