@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     queue_backend: str = Field(default="memory", validation_alias="AGENT_OS_QUEUE_BACKEND")
     queue_prefix: str = Field(default="agent-os", validation_alias="AGENT_OS_QUEUE_PREFIX")
     redis_url: str = Field(default="", validation_alias="REDIS_URL")
+    workflow_backend: str = Field(default="memory", validation_alias="AGENT_OS_WORKFLOW_BACKEND")
+    runtime_backend: str = Field(default="memory", validation_alias="AGENT_OS_RUNTIME_BACKEND")
 
     @property
     def allowed_origins(self) -> list[str]:
