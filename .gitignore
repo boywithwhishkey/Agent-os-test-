@@ -40,3 +40,6 @@ infra/n8n/data/
 # OS/editor files
 .DS_Store
 .vscode/settings.json
+
+# Dependencies
+node_modules/
