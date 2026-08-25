@@ -49,6 +49,16 @@ class Settings(BaseSettings):
     retry_backoff_base: float = Field(
         default=0.25, ge=0, validation_alias="AGENT_OS_RETRY_BACKOFF_BASE"
     )
+    memory_backend: str = Field(default="memory", validation_alias="AGENT_OS_MEMORY_BACKEND")
+    database_url: str = Field(default="", validation_alias="DATABASE_URL")
+    db_pool_min: int = Field(default=1, ge=1, validation_alias="AGENT_OS_DB_POOL_MIN")
+    db_pool_max: int = Field(default=10, ge=1, validation_alias="AGENT_OS_DB_POOL_MAX")
+    db_command_timeout: float = Field(
+        default=30.0, gt=0, validation_alias="AGENT_OS_DB_COMMAND_TIMEOUT"
+    )
+    queue_backend: str = Field(default="memory", validation_alias="AGENT_OS_QUEUE_BACKEND")
+    queue_prefix: str = Field(default="agent-os", validation_alias="AGENT_OS_QUEUE_PREFIX")
+    redis_url: str = Field(default="", validation_alias="REDIS_URL")
 
     @property
     def allowed_origins(self) -> list[str]:

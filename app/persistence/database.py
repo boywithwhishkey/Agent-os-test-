@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import os
 from abc import ABC, abstractmethod
 from typing import Any
+
+from app.core.config import settings
 
 
 class Database(ABC):
@@ -28,8 +29,8 @@ class AsyncpgDatabase(Database):
         self._pool = None
 
     @classmethod
-    def from_env(cls) -> "AsyncpgDatabase":
-        dsn = os.getenv("DATABASE_URL", "").strip()
+    def from_settings(cls) -> AsyncpgDatabase:
+        dsn = settings.database_url.strip()
         if not dsn:
             raise RuntimeError("DATABASE_URL is required for PostgreSQL persistence")
         return cls(dsn)
@@ -40,13 +41,13 @@ class AsyncpgDatabase(Database):
                 import asyncpg
             except ImportError as exc:
                 raise RuntimeError(
-                    'asyncpg is required for PostgreSQL. Run: pip install -e ".[dev]"'
+                    'asyncpg is required for PostgreSQL. Run: pip install -e ".[persistence]"'
                 ) from exc
             self._pool = await asyncpg.create_pool(
                 self.dsn,
-                min_size=int(os.getenv("AGENT_OS_DB_POOL_MIN", "1")),
-                max_size=int(os.getenv("AGENT_OS_DB_POOL_MAX", "10")),
-                command_timeout=float(os.getenv("AGENT_OS_DB_COMMAND_TIMEOUT", "30")),
+                min_size=settings.db_pool_min,
+                max_size=settings.db_pool_max,
+                command_timeout=settings.db_command_timeout,
             )
         return self._pool
 

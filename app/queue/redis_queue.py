@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import os
-
+from app.core.config import settings
 from app.queue.base import JobQueue, QueueJob
 
 
@@ -12,11 +11,11 @@ class RedisJobQueue(JobQueue):
         self._client = None
 
     @classmethod
-    def from_env(cls) -> "RedisJobQueue":
-        url = os.getenv("REDIS_URL", "").strip()
+    def from_settings(cls) -> RedisJobQueue:
+        url = settings.redis_url.strip()
         if not url:
             raise RuntimeError("REDIS_URL is required for Redis queue")
-        return cls(url, os.getenv("AGENT_OS_QUEUE_PREFIX", "agent-os"))
+        return cls(url, settings.queue_prefix)
 
     async def _get_client(self):
         if self._client is None:
@@ -24,7 +23,7 @@ class RedisJobQueue(JobQueue):
                 from redis.asyncio import Redis
             except ImportError as exc:
                 raise RuntimeError(
-                    'redis is required for Redis queue. Run: pip install -e ".[dev]"'
+                    'redis is required for Redis queue. Run: pip install -e ".[persistence]"'
                 ) from exc
             self._client = Redis.from_url(self.url, decode_responses=True)
         return self._client
