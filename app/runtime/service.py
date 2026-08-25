@@ -19,8 +19,16 @@ class IntegrationRuntime:
         self.circuit_breaker = circuit_breaker
         self.rate_limiter = rate_limiter
         self.backoff_base_seconds = backoff_base_seconds
+        self._idempotency_locks: dict[str, asyncio.Lock] = {}
 
     async def execute(self, request: RuntimeRequest) -> RuntimeExecution:
+        if request.idempotency_key:
+            lock = self._idempotency_locks.setdefault(request.idempotency_key, asyncio.Lock())
+            async with lock:
+                return await self._execute_locked(request)
+        return await self._execute_locked(request)
+
+    async def _execute_locked(self, request: RuntimeRequest) -> RuntimeExecution:
         if request.idempotency_key:
             old = await self.store.by_idempotency_key(request.idempotency_key)
             if old and old.status == ExecutionStatus.SUCCEEDED:

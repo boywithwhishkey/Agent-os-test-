@@ -15,6 +15,7 @@ from app.api.router import api_router
 from app.core import lifecycle
 from app.core.config import settings
 from app.core.correlation import CORRELATION_HEADER, get_or_create_correlation_id
+from app.core.readiness import check_readiness
 
 
 @asynccontextmanager
@@ -100,3 +101,13 @@ def health() -> dict[str, str]:
         "service": settings.app_name,
         "environment": settings.app_env,
     }
+
+
+@app.get("/ready", tags=["system"])
+async def readiness() -> JSONResponse:
+    checks = await check_readiness()
+    healthy = all(value in {"ok", "unconfigured"} for value in checks.values())
+    return JSONResponse(
+        status_code=200 if healthy else 503,
+        content={"status": "ready" if healthy else "degraded", "checks": checks},
+    )

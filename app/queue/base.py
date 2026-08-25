@@ -14,6 +14,7 @@ class QueueJob(BaseModel):
     type: str
     payload: dict[str, Any] = Field(default_factory=dict)
     correlation_id: str | None = None
+    attempts: int = 0
 
 
 class JobQueue(ABC):
