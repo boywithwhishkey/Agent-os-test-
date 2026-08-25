@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.auth import require_api_key
-from app.memory.factory import build_memory_service
 from app.memory.models import MemoryContext, MemoryQuery, MemoryRecord, MemoryWrite
+from app.memory.semantic_factory import build_semantic_memory_service
 
 router = APIRouter(
     prefix="/api/v1/memory",
     tags=["memory"],
     dependencies=[Depends(require_api_key)],
 )
-memory_service = build_memory_service()
+memory_service = build_semantic_memory_service()
 
 
 @router.post("", response_model=MemoryRecord, status_code=status.HTTP_201_CREATED)

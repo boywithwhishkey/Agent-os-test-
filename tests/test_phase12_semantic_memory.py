@@ -1,9 +1,11 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 
 from app.embeddings.deterministic import DeterministicEmbeddingProvider
 from app.memory.models import MemoryQuery, MemoryRecord, MemoryScope, MemoryWrite
 from app.memory.semantic import RankedMemory, SemanticMemoryService, compress_ranked_memories
+
 
 class FakeStore:
     def __init__(self, records):
@@ -29,7 +31,7 @@ def rec(key, content, importance=0.5):
     return MemoryRecord(
         scope=MemoryScope.PROJECT, key=key, content=content,
         project_id="agent-os", importance=importance,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 @pytest.mark.asyncio
@@ -67,5 +69,8 @@ def test_compression_budget():
 @pytest.mark.asyncio
 async def test_build_context():
     s = SemanticMemoryService(FakeMemory([rec("db", "durable memory")]), DeterministicEmbeddingProvider(8))
-    text = await s.build_context(MemoryQuery(project_id="agent-os", query="durable memory", limit=1), 500)
-    assert "score=" in text
+    context = await s.build_context(
+        MemoryQuery(project_id="agent-os", query="durable memory", limit=1), 500
+    )
+    assert "score=" in context.rendered
+    assert context.records[0].key == "db"

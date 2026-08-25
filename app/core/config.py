@@ -61,6 +61,18 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="", validation_alias="REDIS_URL")
     workflow_backend: str = Field(default="memory", validation_alias="AGENT_OS_WORKFLOW_BACKEND")
     runtime_backend: str = Field(default="memory", validation_alias="AGENT_OS_RUNTIME_BACKEND")
+    embedding_backend: str = Field(
+        default="deterministic", validation_alias="AGENT_OS_EMBEDDING_BACKEND"
+    )
+    embedding_dimensions: int = Field(
+        default=64, ge=1, validation_alias="AGENT_OS_EMBEDDING_DIMENSIONS"
+    )
+    semantic_weight: float = Field(
+        default=0.75, ge=0, validation_alias="AGENT_OS_SEMANTIC_WEIGHT"
+    )
+    lexical_weight: float = Field(
+        default=0.25, ge=0, validation_alias="AGENT_OS_LEXICAL_WEIGHT"
+    )
 
     @property
     def allowed_origins(self) -> list[str]:

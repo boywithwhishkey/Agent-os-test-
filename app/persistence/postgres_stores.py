@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from app.memory.models import MemoryQuery, MemoryRecord, MemoryWrite
@@ -134,6 +134,9 @@ class PostgresMemoryStore(MemoryStore):
             args.append(value)
             return f"${len(args)}"
 
+        if query.scopes:
+            p = bind([scope.value for scope in query.scopes])
+            where.append(f"scope = ANY({p}::text[])")
         if query.project_id is not None:
             where.append(f"project_id = {bind(query.project_id)}")
         if query.task_id is not None:
@@ -142,6 +145,9 @@ class PostgresMemoryStore(MemoryStore):
             where.append(f"session_id = {bind(query.session_id)}")
         if query.agent is not None:
             where.append(f"agent = {bind(query.agent)}")
+        if query.tags:
+            p = bind(query.tags)
+            where.append(f"tags && {p}::text[]")
 
         vector_p = bind("[" + ",".join(str(float(v)) for v in vector) + "]")
         limit_p = bind(limit)
@@ -156,7 +162,7 @@ class PostgresWorkflowRunStore(WorkflowRunStore):
         self.db = db
 
     async def save(self, run: WorkflowRun) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         await self.db.execute(
             '''
             INSERT INTO workflow_runs (id, workflow_id, status, payload, updated_at)

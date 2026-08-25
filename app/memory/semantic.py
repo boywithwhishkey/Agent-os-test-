@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from app.memory.models import MemoryQuery, MemoryRecord, MemoryWrite
+
+from app.memory.models import MemoryContext, MemoryQuery, MemoryRecord, MemoryWrite
+
 
 @dataclass(slots=True)
 class RankedMemory:
@@ -15,6 +17,10 @@ class SemanticMemoryService:
         self.embeddings = embeddings
         self.semantic_weight = semantic_weight / total
         self.lexical_weight = lexical_weight / total
+
+    @property
+    def store(self):
+        return self.memory.store
 
     async def remember(self, memory: MemoryWrite):
         record = await self.memory.remember(memory)
@@ -59,9 +65,10 @@ class SemanticMemoryService:
     async def recall(self, query: MemoryQuery):
         return [x.record for x in await self.hybrid_recall(query)]
 
-    async def build_context(self, query: MemoryQuery, max_characters=6000):
+    async def build_context(self, query: MemoryQuery, max_characters=6000) -> MemoryContext:
         ranked = await self.hybrid_recall(query)
-        return compress_ranked_memories(ranked, max_characters=max_characters)
+        rendered = compress_ranked_memories(ranked, max_characters=max_characters)
+        return MemoryContext(records=[item.record for item in ranked], rendered=rendered)
 
 def compress_ranked_memories(ranked, max_characters=6000):
     lines, used = [], 0

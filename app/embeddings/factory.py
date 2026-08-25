@@ -1,10 +1,9 @@
-import os
+from app.core.config import settings
 from app.embeddings.deterministic import DeterministicEmbeddingProvider
 
+
 def build_embedding_provider():
-    backend = os.getenv("AGENT_OS_EMBEDDING_BACKEND", "deterministic").lower().strip()
+    backend = settings.embedding_backend.lower().strip()
     if backend == "deterministic":
-        return DeterministicEmbeddingProvider(
-            int(os.getenv("AGENT_OS_EMBEDDING_DIMENSIONS", "64"))
-        )
+        return DeterministicEmbeddingProvider(settings.embedding_dimensions)
     raise RuntimeError(f"Unsupported embedding backend: {backend}")
