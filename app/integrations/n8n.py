@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import os
 from urllib.parse import urljoin
 
 import httpx
 
+from app.core.config import settings
 from app.integrations.base import IntegrationAdapter
 from app.integrations.models import (
     IntegrationProvider,
@@ -23,12 +23,12 @@ class N8NWebhookAdapter(IntegrationAdapter):
         auth_value: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.base_url = (base_url or os.getenv("N8N_BASE_URL", "")).rstrip("/") + "/"
+        self.base_url = (base_url or settings.n8n_base_url).rstrip("/") + "/"
         self.webhook_prefix = (
-            webhook_prefix or os.getenv("N8N_WEBHOOK_PREFIX", "webhook")
+            webhook_prefix or settings.n8n_webhook_prefix
         ).strip("/")
-        self.auth_header = auth_header or os.getenv("N8N_WEBHOOK_AUTH_HEADER")
-        self.auth_value = auth_value or os.getenv("N8N_WEBHOOK_AUTH_VALUE")
+        self.auth_header = auth_header or settings.n8n_auth_header
+        self.auth_value = auth_value or settings.n8n_auth_value
         self._client = client
 
         if not self.base_url.strip("/"):

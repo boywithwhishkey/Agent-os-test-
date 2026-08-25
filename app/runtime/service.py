@@ -1,11 +1,14 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
+from app.core.correlation import get_or_create_correlation_id
 from app.integrations.models import IntegrationRequest
 from app.runtime.circuit_breaker import CircuitBreaker
 from app.runtime.models import ExecutionStatus, RuntimeExecution, RuntimeRequest
 from app.runtime.rate_limit import SlidingWindowRateLimiter
 from app.runtime.registry import ConnectorRegistry
 from app.runtime.store import ExecutionStore
+
 
 class IntegrationRuntime:
     def __init__(self, *, registry: ConnectorRegistry, store: ExecutionStore,
@@ -26,7 +29,7 @@ class IntegrationRuntime:
         key = f"{request.provider}:{request.workflow}"
         execution = RuntimeExecution(
             provider=request.provider, workflow=request.workflow,
-            correlation_id=request.correlation_id,
+            correlation_id=get_or_create_correlation_id(request.correlation_id),
             idempotency_key=request.idempotency_key,
         )
 
@@ -55,16 +58,40 @@ class IntegrationRuntime:
 
         for attempt in range(1, request.max_retries + 2):
             execution.attempts = attempt
-            result = await adapter.execute(IntegrationRequest(
-                workflow=request.workflow, payload=request.payload,
-                correlation_id=request.correlation_id,
-                timeout_seconds=request.timeout_seconds,
-            ))
+            try:
+                result = await asyncio.wait_for(
+                    adapter.execute(
+                        IntegrationRequest(
+                            workflow=request.workflow,
+                            payload=request.payload,
+                            correlation_id=execution.correlation_id,
+                            timeout_seconds=request.timeout_seconds,
+                        )
+                    ),
+                    timeout=request.timeout_seconds,
+                )
+            except TimeoutError:
+                result = None
+                execution.error = "Integration execution timed out"
+            except asyncio.CancelledError:
+                execution.status = ExecutionStatus.FAILED
+                execution.error = "Integration execution cancelled"
+                execution.updated_at = datetime.now(UTC)
+                await self.store.save(execution)
+                raise
+            except Exception as exc:  # noqa: BLE001 - adapter failures become execution results
+                result = None
+                execution.error = f"Integration adapter failed: {type(exc).__name__}"
+
+            if result is None:
+                if attempt <= request.max_retries:
+                    await asyncio.sleep(self.backoff_base_seconds * (2 ** (attempt - 1)))
+                continue
             if result.success:
                 execution.status = ExecutionStatus.SUCCEEDED
                 execution.data = result.data
                 execution.error = None
-                execution.updated_at = datetime.now(timezone.utc)
+                execution.updated_at = datetime.now(UTC)
                 self.circuit_breaker.success(key)
                 await self.store.save(execution)
                 return execution
@@ -73,7 +100,7 @@ class IntegrationRuntime:
                 await asyncio.sleep(self.backoff_base_seconds * (2 ** (attempt - 1)))
 
         execution.status = ExecutionStatus.FAILED
-        execution.updated_at = datetime.now(timezone.utc)
+        execution.updated_at = datetime.now(UTC)
         self.circuit_breaker.failure(key)
         await self.store.save(execution)
         return execution

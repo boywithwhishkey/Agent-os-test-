@@ -1,9 +1,14 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.core.auth import require_api_key
 from app.memory.factory import build_memory_service
 from app.memory.models import MemoryContext, MemoryQuery, MemoryRecord, MemoryWrite
 
-router = APIRouter(prefix="/api/v1/memory", tags=["memory"])
+router = APIRouter(
+    prefix="/api/v1/memory",
+    tags=["memory"],
+    dependencies=[Depends(require_api_key)],
+)
 memory_service = build_memory_service()
 
 

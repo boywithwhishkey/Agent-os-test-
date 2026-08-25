@@ -1,13 +1,23 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.core.auth import require_api_key
+from app.core.correlation import get_or_create_correlation_id
 from app.runtime.factory import build_runtime
 from app.runtime.models import RuntimeExecution, RuntimeRequest
 
-router = APIRouter(prefix="/api/v1/runtime", tags=["runtime"])
+router = APIRouter(
+    prefix="/api/v1/runtime",
+    tags=["runtime"],
+    dependencies=[Depends(require_api_key)],
+)
 runtime = build_runtime()
 
 @router.post("/execute", response_model=RuntimeExecution)
 async def execute_runtime(payload: RuntimeRequest) -> RuntimeExecution:
-    return await runtime.execute(payload)
+    request = payload.model_copy(
+        update={"correlation_id": get_or_create_correlation_id(payload.correlation_id)}
+    )
+    return await runtime.execute(request)
 
 @router.get("/executions/{execution_id}", response_model=RuntimeExecution)
 async def get_execution(execution_id: str) -> RuntimeExecution:

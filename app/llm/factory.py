@@ -1,11 +1,11 @@
-import os
+from app.core.config import get_settings
 
 from .base import LLMProvider
 from .mock import MockLLMProvider
 
 
 def build_llm_provider() -> LLMProvider:
-    provider = os.getenv("AGENT_OS_LLM_PROVIDER", "mock").lower().strip()
+    provider = get_settings().llm_provider.lower().strip()
 
     if provider == "mock":
         return MockLLMProvider()

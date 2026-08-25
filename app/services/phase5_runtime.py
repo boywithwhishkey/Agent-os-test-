@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import asdict, dataclass
 
+from app.core.config import settings
 from app.llm.base import LLMProvider, LLMRequest
 from app.llm.factory import build_llm_provider
 from app.services.llm_agents import ParallelAgentExecutor, SpecialistJob, SpecialistResult
@@ -102,12 +102,12 @@ class FinalSynthesizer:
 
 async def execute_phase5(objective: str, context: str | None = None) -> dict:
     provider = build_llm_provider()
-    planner = LLMPlanner(provider)
+    planner = LLMPlanner(provider, max_jobs=settings.max_jobs)
     plan = await planner.create_plan(objective, context)
     executor = ParallelAgentExecutor(
         provider,
-        max_parallel=int(os.getenv("AGENT_OS_MAX_PARALLEL", "3")),
-        max_retries=int(os.getenv("AGENT_OS_MAX_RETRIES", "2")),
+        max_parallel=settings.max_parallel,
+        max_retries=settings.max_retries,
     )
     results = await executor.run(plan.jobs)
     verifier = LLMVerifier(provider)

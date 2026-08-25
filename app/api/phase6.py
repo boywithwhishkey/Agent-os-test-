@@ -1,6 +1,7 @@
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from fastapi import APIRouter
 
+from app.core.auth import require_api_key
 from app.tools.approvals import ApprovalStore
 from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
@@ -8,7 +9,11 @@ from app.tools.executor import ToolExecutor
 from app.tools.models import ApprovalGrant, ToolCall, ToolExecutionResult
 from app.tools.policy import ToolPolicy
 
-router = APIRouter(prefix="/api/v1/tools", tags=["tools"])
+router = APIRouter(
+    prefix="/api/v1/tools",
+    tags=["tools"],
+    dependencies=[Depends(require_api_key)],
+)
 registry = build_default_registry()
 approvals = ApprovalStore()
 audit_log = InMemoryToolAuditLog()

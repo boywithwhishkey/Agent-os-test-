@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,6 +8,51 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     log_level: str = "INFO"
+    api_key: str | None = Field(default=None, validation_alias="AGENT_OS_API_KEY")
+    cors_origins: str = Field(
+        default=(
+            "http://localhost:3000,http://localhost:5173,"
+            "http://127.0.0.1:5000,https://agent-os-test.pages.dev,"
+            "https://app.thynact.com"
+        ),
+        validation_alias="AGENT_OS_CORS_ORIGINS",
+    )
+    llm_provider: str = Field(default="mock", validation_alias="AGENT_OS_LLM_PROVIDER")
+    llm_model: str = Field(
+        default="gemini-3.1-flash-lite",
+        validation_alias="AGENT_OS_LLM_MODEL",
+    )
+    gemini_api_key: str | None = Field(default=None, validation_alias="GEMINI_API_KEY")
+    max_parallel: int = Field(default=3, ge=1, validation_alias="AGENT_OS_MAX_PARALLEL")
+    max_retries: int = Field(default=2, ge=0, validation_alias="AGENT_OS_MAX_RETRIES")
+    max_jobs: int = Field(default=6, ge=1, validation_alias="AGENT_OS_MAX_JOBS")
+    n8n_base_url: str = Field(default="", validation_alias="N8N_BASE_URL")
+    n8n_webhook_prefix: str = Field(default="webhook", validation_alias="N8N_WEBHOOK_PREFIX")
+    n8n_auth_header: str | None = Field(
+        default=None, validation_alias="N8N_WEBHOOK_AUTH_HEADER"
+    )
+    n8n_auth_value: str | None = Field(
+        default=None, validation_alias="N8N_WEBHOOK_AUTH_VALUE"
+    )
+    circuit_failures: int = Field(
+        default=3, ge=1, validation_alias="AGENT_OS_CIRCUIT_FAILURES"
+    )
+    circuit_recovery_seconds: float = Field(
+        default=30.0, gt=0, validation_alias="AGENT_OS_CIRCUIT_RECOVERY_SECONDS"
+    )
+    integration_rate_limit: int = Field(
+        default=60, ge=1, validation_alias="AGENT_OS_INTEGRATION_RATE_LIMIT"
+    )
+    integration_rate_window: float = Field(
+        default=60.0, gt=0, validation_alias="AGENT_OS_INTEGRATION_RATE_WINDOW"
+    )
+    retry_backoff_base: float = Field(
+        default=0.25, ge=0, validation_alias="AGENT_OS_RETRY_BACKOFF_BASE"
+    )
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -16,3 +62,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Load the current environment through the typed settings model."""
+    return Settings()

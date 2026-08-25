@@ -1,10 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.core.auth import require_api_key
 from app.workflows.factory import build_workflow_engine
 from app.workflows.models import WorkflowDefinition, WorkflowRun
 
-router = APIRouter(prefix="/api/v1/workflows", tags=["workflows"])
+router = APIRouter(
+    prefix="/api/v1/workflows",
+    tags=["workflows"],
+    dependencies=[Depends(require_api_key)],
+)
 engine = build_workflow_engine()
 definitions: dict[str, WorkflowDefinition] = {}
 

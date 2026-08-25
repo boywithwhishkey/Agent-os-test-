@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import asyncio
-import os
+
+from app.core.config import get_settings
 
 from .base import LLMProvider, LLMRequest
 
 
 class GeminiLLMProvider(LLMProvider):
     def __init__(self, api_key: str | None = None, model: str | None = None):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
-        self.model = model or os.getenv(
-            "AGENT_OS_LLM_MODEL", "gemini-3.1-flash-lite"
-        )
+        current_settings = get_settings()
+        self.api_key = api_key or current_settings.gemini_api_key
+        self.model = model or current_settings.llm_model
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY is required for the Gemini provider.")
 

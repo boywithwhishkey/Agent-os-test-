@@ -1,17 +1,17 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.orchestration import router as orchestration_router
-from app.api.router import api_router
-from app.core.config import settings
-
 from app.api.phase5 import router as phase5_router
 from app.api.phase6 import router as phase6_router
 from app.api.phase7 import router as phase7_router
 from app.api.phase8 import router as phase8_router
 from app.api.phase9 import router as phase9_router
 from app.api.phase10 import router as phase10_router
-
+from app.api.router import api_router
+from app.core.config import settings
+from app.core.correlation import CORRELATION_HEADER, get_or_create_correlation_id
 
 app = FastAPI(
     title=settings.app_name,
@@ -25,18 +25,42 @@ app = FastAPI(
 # Allow the production Agent OS frontend to access this API.
 # ---------------------------------------------------------
 
-ALLOWED_ORIGINS = [
-    "https://agent-os-test.pages.dev",
-    "https://app.thynact.com",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
+
+
+@app.middleware("http")
+async def correlation_middleware(request: Request, call_next):
+    correlation_id = get_or_create_correlation_id(request.headers.get(CORRELATION_HEADER))
+    request.state.correlation_id = correlation_id
+    response = await call_next(request)
+    response.headers[CORRELATION_HEADER] = correlation_id
+    return response
+
+
+@app.exception_handler(KeyError)
+async def key_error_handler(request: Request, exc: KeyError) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": str(exc).strip("'")})
+
+
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+@app.exception_handler(TimeoutError)
+async def timeout_error_handler(request: Request, exc: TimeoutError) -> JSONResponse:
+    return JSONResponse(status_code=504, content={"detail": "Request timed out"})
+
+
+@app.exception_handler(RuntimeError)
+async def runtime_error_handler(request: Request, exc: RuntimeError) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 # ---------------------------------------------------------

@@ -1,9 +1,14 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.core.auth import require_api_key
 from app.models.task import Task, TaskCreate
 from app.services.task_service import task_service
 
-router = APIRouter(prefix="/tasks", tags=["tasks"])
+router = APIRouter(
+    prefix="/tasks",
+    tags=["tasks"],
+    dependencies=[Depends(require_api_key)],
+)
 
 
 @router.post("", response_model=Task, status_code=status.HTTP_201_CREATED)
