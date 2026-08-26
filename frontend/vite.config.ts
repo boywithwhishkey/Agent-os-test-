@@ -11,6 +11,20 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    host: "0.0.0.0",
+    port: 3000,
+    strictPort: true,
+    // Replit serves the dev server through a proxied *.replit.dev domain,
+    // which sends a Host header Vite's dev server would otherwise reject.
+    allowedHosts: true,
+  },
+  preview: {
+    host: "0.0.0.0",
+    port: 3000,
+    strictPort: true,
+    allowedHosts: true,
+  },
   test: {
     environment: "jsdom",
     globals: true,

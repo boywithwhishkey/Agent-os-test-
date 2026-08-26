@@ -6,3 +6,15 @@ packages = ["libxcrypt"]
 
 [agent]
 expertMode = true
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 5173
+externalPort = 5173
+
+[[ports]]
+localPort = 8000
+externalPort = 80
