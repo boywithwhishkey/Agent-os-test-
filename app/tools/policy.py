@@ -17,7 +17,7 @@ class ToolPolicy:
     def __init__(self, approvals: ApprovalStore):
         self.approvals = approvals
 
-    def authorize(
+    async def authorize(
         self,
         *,
         tool_name: str,
@@ -34,7 +34,7 @@ class ToolPolicy:
                 error="Trusted approval required",
             )
 
-        grant = self.approvals.consume(approval_id, tool_name)
+        grant = await self.approvals.consume(approval_id, tool_name)
         if grant is None:
             return ToolPolicyDecision(
                 allowed=False,

@@ -3,7 +3,7 @@ import pytest
 from app.llm.base import LLMProvider, LLMRequest
 from app.llm.mock import MockLLMProvider
 from app.runtime.registry import ConnectorRegistry
-from app.tools.approvals import ApprovalStore
+from app.tools.approvals import InMemoryApprovalStore
 from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
 from app.tools.executor import ToolExecutor
@@ -24,7 +24,7 @@ class RecordingProvider(LLMProvider):
 
 
 def make_engine(*, agent_runner=None, connector_registry=None):
-    approvals = ApprovalStore()
+    approvals = InMemoryApprovalStore()
     executor = ToolExecutor(
         build_default_registry(),
         ToolPolicy(approvals),

@@ -2,7 +2,7 @@ import asyncio
 import pytest
 from pydantic import ValidationError
 
-from app.tools.approvals import ApprovalStore
+from app.tools.approvals import InMemoryApprovalStore
 from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
 from app.tools.executor import ToolExecutor
@@ -19,7 +19,7 @@ from app.workflows.store import InMemoryWorkflowRunStore
 
 
 def make_engine(agent_runner=None):
-    approvals = ApprovalStore()
+    approvals = InMemoryApprovalStore()
     executor = ToolExecutor(
         build_default_registry(),
         ToolPolicy(approvals),

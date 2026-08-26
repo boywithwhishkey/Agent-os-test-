@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from typing import Any
+from uuid import uuid4
 
 from app.memory.models import MemoryQuery, MemoryRecord, MemoryWrite
 from app.memory.store import MemoryStore
@@ -11,6 +12,9 @@ from app.persistence.database import Database
 from app.runtime.models import RuntimeExecution
 from app.runtime.store import ExecutionStore
 from app.services.task_store import TaskStore
+from app.tools.approvals import ApprovalStore
+from app.tools.audit import ToolAuditLog
+from app.tools.models import ApprovalGrant
 from app.workflows.models import WorkflowRun
 from app.workflows.store import WorkflowRunStore
 
@@ -279,3 +283,91 @@ class PostgresTaskStore(TaskStore):
         if not row:
             return None
         return Task.model_validate(_decode_json(row["payload"]))
+
+
+class PostgresApprovalStore(ApprovalStore):
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    async def issue(
+        self, tool: str, approved_by: str, reason: str | None = None
+    ) -> ApprovalGrant:
+        approval_id = str(uuid4())
+        row = await self.db.fetchrow(
+            '''
+            INSERT INTO tool_approvals (approval_id, tool, approved_by, reason)
+            VALUES ($1,$2,$3,$4)
+            RETURNING approval_id, tool, approved_by, reason
+            ''',
+            approval_id,
+            tool,
+            approved_by,
+            reason,
+        )
+        return ApprovalGrant(**row)
+
+    async def consume(self, approval_id: str, tool: str) -> ApprovalGrant | None:
+        row = await self.db.fetchrow(
+            '''
+            UPDATE tool_approvals
+            SET consumed_at = NOW()
+            WHERE approval_id = $1 AND tool = $2 AND consumed_at IS NULL
+            RETURNING approval_id, tool, approved_by, reason
+            ''',
+            approval_id,
+            tool,
+        )
+        if not row:
+            return None
+        return ApprovalGrant(**row)
+
+
+class PostgresToolAuditLog(ToolAuditLog):
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    async def record(
+        self,
+        *,
+        tool: str,
+        success: bool,
+        risk: str,
+        approval_required: bool,
+        error: str | None = None,
+    ) -> None:
+        await self.db.execute(
+            '''
+            INSERT INTO tool_audit_events (
+                timestamp, tool, success, risk, approval_required, error
+            )
+            VALUES (NOW(), $1,$2,$3,$4,$5)
+            ''',
+            tool,
+            success,
+            risk,
+            approval_required,
+            error,
+        )
+
+    async def list(self) -> list[dict[str, Any]]:
+        rows = await self.db.fetch(
+            '''
+            SELECT timestamp, tool, success, risk, approval_required, error
+            FROM tool_audit_events
+            ORDER BY id ASC
+            LIMIT 1000
+            '''
+        )
+        return [
+            {
+                "timestamp": row["timestamp"].isoformat()
+                if hasattr(row["timestamp"], "isoformat")
+                else row["timestamp"],
+                "tool": row["tool"],
+                "success": row["success"],
+                "risk": row["risk"],
+                "approval_required": row["approval_required"],
+                "error": row.get("error"),
+            }
+            for row in rows
+        ]

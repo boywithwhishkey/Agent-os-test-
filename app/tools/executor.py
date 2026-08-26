@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.tools.audit import InMemoryToolAuditLog
+from app.tools.audit import ToolAuditLog
 from app.tools.models import ToolCall, ToolExecutionResult, ToolRisk
 from app.tools.policy import ToolPolicy
 from app.tools.registry import ToolRegistry
@@ -11,7 +11,7 @@ class ToolExecutor:
         self,
         registry: ToolRegistry,
         policy: ToolPolicy,
-        audit: InMemoryToolAuditLog,
+        audit: ToolAuditLog,
     ):
         self.registry = registry
         self.policy = policy
@@ -32,10 +32,10 @@ class ToolExecutor:
                 risk=ToolRisk.HIGH_RISK,
                 error=str(exc),
             )
-            self._audit(result)
+            await self._audit(result)
             return result
 
-        decision = self.policy.authorize(
+        decision = await self.policy.authorize(
             tool_name=tool.name,
             risk=tool.risk,
             approval_id=approval_id,
@@ -48,7 +48,7 @@ class ToolExecutor:
                 error=decision.error,
                 approval_required=decision.approval_required,
             )
-            self._audit(result)
+            await self._audit(result)
             return result
 
         try:
@@ -67,11 +67,11 @@ class ToolExecutor:
                 error=f"{type(exc).__name__}: {exc}",
             )
 
-        self._audit(result)
+        await self._audit(result)
         return result
 
-    def _audit(self, result: ToolExecutionResult) -> None:
-        self.audit.record(
+    async def _audit(self, result: ToolExecutionResult) -> None:
+        await self.audit.record(
             tool=result.tool,
             success=result.success,
             risk=result.risk.value,

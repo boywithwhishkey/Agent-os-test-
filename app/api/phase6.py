@@ -2,10 +2,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.core.auth import require_api_key
-from app.tools.approvals import ApprovalStore
-from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
 from app.tools.executor import ToolExecutor
+from app.tools.factory import build_approval_store, build_tool_audit_log
 from app.tools.models import ApprovalGrant, ToolCall, ToolExecutionResult
 from app.tools.policy import ToolPolicy
 
@@ -15,8 +14,8 @@ router = APIRouter(
     dependencies=[Depends(require_api_key)],
 )
 registry = build_default_registry()
-approvals = ApprovalStore()
-audit_log = InMemoryToolAuditLog()
+approvals = build_approval_store()
+audit_log = build_tool_audit_log()
 executor = ToolExecutor(registry, ToolPolicy(approvals), audit_log)
 
 
@@ -49,9 +48,9 @@ async def create_approval(payload: ApprovalRequest) -> ApprovalGrant:
     # Temporary local approval service.
     # Authentication/authorization is added before production exposure.
     registry.get(payload.tool)
-    return approvals.issue(payload.tool, payload.approved_by, payload.reason)
+    return await approvals.issue(payload.tool, payload.approved_by, payload.reason)
 
 
 @router.get("/audit")
 async def get_tool_audit() -> list[dict]:
-    return audit_log.list()
+    return await audit_log.list()

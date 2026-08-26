@@ -1,6 +1,6 @@
 import pytest
 
-from app.tools.approvals import ApprovalStore
+from app.tools.approvals import InMemoryApprovalStore
 from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
 from app.tools.executor import ToolExecutor
@@ -9,7 +9,7 @@ from app.tools.policy import ToolPolicy
 
 
 def make_executor():
-    approvals = ApprovalStore()
+    approvals = InMemoryApprovalStore()
     return ToolExecutor(
         build_default_registry(),
         ToolPolicy(approvals),
@@ -41,7 +41,7 @@ async def test_trusted_approval_is_single_use(tmp_path, monkeypatch):
     monkeypatch.setenv("AGENT_OS_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
 
     executor, approvals = make_executor()
-    grant = approvals.issue("artifact.write", approved_by="test-user")
+    grant = await approvals.issue("artifact.write", approved_by="test-user")
     call = ToolCall(tool="artifact.write", arguments={"name": "ok.txt", "content": "safe"})
 
     first = await executor.execute(call, approval_id=grant.approval_id)
@@ -69,7 +69,7 @@ async def test_path_traversal_is_blocked(tmp_path, monkeypatch):
     monkeypatch.setenv("AGENT_OS_ARTIFACT_ROOT", str(tmp_path / "artifacts"))
 
     executor, approvals = make_executor()
-    grant = approvals.issue("artifact.write", approved_by="test-user")
+    grant = await approvals.issue("artifact.write", approved_by="test-user")
     result = await executor.execute(
         ToolCall(
             tool="artifact.write",

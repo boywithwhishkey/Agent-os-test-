@@ -6,9 +6,8 @@ from app.llm.factory import build_llm_provider
 from app.persistence.database import AsyncpgDatabase
 from app.persistence.postgres_stores import PostgresWorkflowRunStore
 from app.runtime.factory import build_connector_registry
-from app.tools.approvals import ApprovalStore
-from app.tools.audit import InMemoryToolAuditLog
 from app.tools.builtin import build_default_registry
+from app.tools.factory import build_approval_store, build_tool_audit_log
 from app.tools.executor import ToolExecutor
 from app.tools.policy import ToolPolicy
 from app.workflows.engine import WorkflowEngine
@@ -27,8 +26,8 @@ def build_workflow_run_store() -> WorkflowRunStore:
 
 
 def build_workflow_engine() -> WorkflowEngine:
-    approvals = ApprovalStore()
-    audit = InMemoryToolAuditLog()
+    approvals = build_approval_store()
+    audit = build_tool_audit_log()
     executor = ToolExecutor(
         build_default_registry(),
         ToolPolicy(approvals),
