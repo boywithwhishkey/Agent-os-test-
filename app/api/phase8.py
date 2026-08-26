@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.auth import require_api_key
-from app.workflows.factory import build_workflow_engine
+from app.workflows.factory import build_workflow_definition_store, build_workflow_engine
 from app.workflows.models import WorkflowDefinition, WorkflowRun
 
 router = APIRouter(
@@ -11,7 +11,7 @@ router = APIRouter(
     dependencies=[Depends(require_api_key)],
 )
 engine = build_workflow_engine()
-definitions: dict[str, WorkflowDefinition] = {}
+definitions = build_workflow_definition_store()
 
 
 class WorkflowStartRequest(BaseModel):
@@ -25,7 +25,7 @@ class WorkflowResumeRequest(BaseModel):
 
 @router.post("/run", response_model=WorkflowRun)
 async def run_workflow(payload: WorkflowStartRequest) -> WorkflowRun:
-    definitions[payload.definition.id] = payload.definition
+    await definitions.save(payload.definition)
     return await engine.start(payload.definition, payload.context)
 
 
@@ -34,7 +34,7 @@ async def resume_workflow(run_id: str, payload: WorkflowResumeRequest) -> Workfl
     run = await engine.store.get(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Workflow run not found")
-    definition = definitions.get(run.workflow_id)
+    definition = await definitions.get(run.workflow_id)
     if definition is None:
         raise HTTPException(status_code=404, detail="Workflow definition not found")
     return await engine.resume(definition, run_id, approvals=payload.approvals)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -50,7 +50,7 @@ class InMemoryToolAuditLog(ToolAuditLog):
     ) -> None:
         self._events.append(
             ToolAuditEvent(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 tool=tool,
                 success=success,
                 risk=risk,

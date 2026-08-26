@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -58,7 +58,7 @@ class FakeAuditDatabase(Database):
         return None
 
     async def fetch(self, query, *args):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return [
             {
                 "timestamp": now,

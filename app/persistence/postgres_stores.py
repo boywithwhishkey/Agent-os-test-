@@ -15,7 +15,8 @@ from app.services.task_store import TaskStore
 from app.tools.approvals import ApprovalStore
 from app.tools.audit import ToolAuditLog
 from app.tools.models import ApprovalGrant
-from app.workflows.models import WorkflowRun
+from app.workflows.definition_store import WorkflowDefinitionStore
+from app.workflows.models import WorkflowDefinition, WorkflowRun
 from app.workflows.store import WorkflowRunStore
 
 
@@ -371,3 +372,34 @@ class PostgresToolAuditLog(ToolAuditLog):
             }
             for row in rows
         ]
+
+
+class PostgresWorkflowDefinitionStore(WorkflowDefinitionStore):
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    async def save(self, definition: WorkflowDefinition) -> None:
+        now = datetime.now(UTC)
+        await self.db.execute(
+            '''
+            INSERT INTO workflow_definitions (id, name, payload, updated_at)
+            VALUES ($1,$2,$3::jsonb,$4)
+            ON CONFLICT (id) DO UPDATE SET
+                name = EXCLUDED.name,
+                payload = EXCLUDED.payload,
+                updated_at = EXCLUDED.updated_at
+            ''',
+            definition.id,
+            definition.name,
+            _json(definition.model_dump(mode="json")),
+            now,
+        )
+
+    async def get(self, definition_id: str) -> WorkflowDefinition | None:
+        row = await self.db.fetchrow(
+            "SELECT payload FROM workflow_definitions WHERE id = $1",
+            definition_id,
+        )
+        if not row:
+            return None
+        return WorkflowDefinition.model_validate(_decode_json(row["payload"]))
