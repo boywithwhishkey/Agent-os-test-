@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/lib/theme";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -37,10 +38,17 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <ErrorBoundary>
+      <MotionConfig reducedMotion="user">
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
             <BrowserRouter>
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-accent-violet focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+              >
+                Skip to content
+              </a>
               <Suspense fallback={<LoadingState label="Loading Agent OS…" />}>
                 <Routes>
                   <Route element={<AppShell />}>
@@ -67,6 +75,7 @@ export function App() {
           </ToastProvider>
         </QueryClientProvider>
       </ThemeProvider>
+      </MotionConfig>
     </ErrorBoundary>
   );
 }
