@@ -3,9 +3,18 @@
 const BASE_URL_KEY = "agent-os:api-base-url";
 const API_KEY_KEY = "agent-os:api-key";
 
+function computeDevDefault(): string {
+  if (typeof window === "undefined") return "http://localhost:8000";
+  const { protocol, hostname } = window.location;
+  // Replit maps the backend's port to the bare https domain (no port suffix);
+  // outside Replit, the backend runs on port 8000 alongside the Vite dev server.
+  if (hostname.endsWith(".replit.dev")) return `${protocol}//${hostname}`;
+  return `${protocol}//${hostname}:8000`;
+}
+
 const DEFAULT_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() ||
-  "https://api.thynact.com";
+  (import.meta.env.DEV ? computeDevDefault() : "https://api.thynact.com");
 
 export function getApiBaseUrl(): string {
   try {
