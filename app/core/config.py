@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="", validation_alias="REDIS_URL")
     workflow_backend: str = Field(default="memory", validation_alias="AGENT_OS_WORKFLOW_BACKEND")
     runtime_backend: str = Field(default="memory", validation_alias="AGENT_OS_RUNTIME_BACKEND")
+    task_backend: str = Field(default="memory", validation_alias="AGENT_OS_TASK_BACKEND")
+    tool_backend: str = Field(default="memory", validation_alias="AGENT_OS_TOOL_BACKEND")
+    workflow_definition_backend: str = Field(
+        default="memory", validation_alias="AGENT_OS_WORKFLOW_DEFINITION_BACKEND"
+    )
     embedding_backend: str = Field(
         default="deterministic", validation_alias="AGENT_OS_EMBEDDING_BACKEND"
     )

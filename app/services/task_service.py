@@ -1,21 +1,19 @@
 from app.models.task import Task, TaskCreate
+from app.services.task_store import TaskStore
 
 
 class TaskService:
-    def __init__(self) -> None:
-        self._tasks: dict[str, Task] = {}
+    def __init__(self, store: TaskStore) -> None:
+        self.store = store
 
-    def create(self, payload: TaskCreate) -> Task:
+    async def create(self, payload: TaskCreate) -> Task:
         task = Task(
             objective=payload.objective,
             priority=payload.priority,
             project_id=payload.project_id,
         )
-        self._tasks[task.id] = task
+        await self.store.save(task)
         return task
 
-    def get(self, task_id: str) -> Task | None:
-        return self._tasks.get(task_id)
-
-
-task_service = TaskService()
+    async def get(self, task_id: str) -> Task | None:
+        return await self.store.get(task_id)

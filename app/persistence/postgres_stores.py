@@ -6,9 +6,11 @@ from typing import Any
 
 from app.memory.models import MemoryQuery, MemoryRecord, MemoryWrite
 from app.memory.store import MemoryStore
+from app.models.task import Task
 from app.persistence.database import Database
 from app.runtime.models import RuntimeExecution
 from app.runtime.store import ExecutionStore
+from app.services.task_store import TaskStore
 from app.workflows.models import WorkflowRun
 from app.workflows.store import WorkflowRunStore
 
@@ -245,3 +247,35 @@ class PostgresExecutionStore(ExecutionStore):
         if not row:
             return None
         return RuntimeExecution.model_validate(_decode_json(row["payload"]))
+
+
+class PostgresTaskStore(TaskStore):
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    async def save(self, task: Task) -> None:
+        now = datetime.now(UTC)
+        await self.db.execute(
+            '''
+            INSERT INTO tasks (id, status, payload, created_at, updated_at)
+            VALUES ($1,$2,$3::jsonb,$4,$5)
+            ON CONFLICT (id) DO UPDATE SET
+                status = EXCLUDED.status,
+                payload = EXCLUDED.payload,
+                updated_at = EXCLUDED.updated_at
+            ''',
+            task.id,
+            task.status.value,
+            _json(task.model_dump(mode="json")),
+            task.created_at,
+            now,
+        )
+
+    async def get(self, task_id: str) -> Task | None:
+        row = await self.db.fetchrow(
+            "SELECT payload FROM tasks WHERE id = $1",
+            task_id,
+        )
+        if not row:
+            return None
+        return Task.model_validate(_decode_json(row["payload"]))
