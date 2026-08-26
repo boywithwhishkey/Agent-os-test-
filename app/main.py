@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.orchestration import router as orchestration_router
 from app.api.phase5 import router as phase5_router
@@ -116,3 +118,25 @@ async def readiness() -> JSONResponse:
         status_code=200 if healthy else 503,
         content={"status": "ready" if healthy else "degraded", "checks": checks},
     )
+
+
+# ---------------------------------------------------------
+# Frontend (production only)
+# In dev, Vite serves the frontend on its own port. In production there is
+# a single process, so if a built frontend is present we serve it here and
+# fall back to index.html for client-side routes.
+# ---------------------------------------------------------
+
+FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+
+if FRONTEND_DIST.is_dir():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str) -> FileResponse:
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        candidate = FRONTEND_DIST / full_path
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(FRONTEND_DIST / "index.html")

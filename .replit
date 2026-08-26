@@ -7,6 +7,10 @@ packages = ["libxcrypt"]
 [agent]
 expertMode = true
 
+[deployment]
+build = ["sh", "-c", "cd frontend && npm ci && npm run build"]
+run = ["sh", "-c", "uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+
 [[ports]]
 localPort = 3000
 externalPort = 3000
@@ -14,6 +18,7 @@ externalPort = 3000
 [[ports]]
 localPort = 5173
 externalPort = 5173
+exposeLocalhost = true
 
 [[ports]]
 localPort = 8000
