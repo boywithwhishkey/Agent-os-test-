@@ -215,6 +215,11 @@ function WorkflowEditor() {
               onConnect={onConnect}
               onNodeClick={onNodeClick}
               nodeTypes={nodeTypes}
+              defaultEdgeOptions={{
+                type: "smoothstep",
+                animated: true,
+                style: { stroke: "var(--color-accent-violet)", strokeWidth: 2 },
+              }}
               fitView
               deleteKeyCode={["Backspace", "Delete"]}
             >

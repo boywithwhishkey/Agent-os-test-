@@ -18,13 +18,26 @@ const typeIcons: Record<StepType, typeof Cog> = {
   integration: Plug,
 };
 
-const statusStyles: Record<StepStatus, { border: string; icon: typeof CheckCircle2 | null; className: string }> = {
+const statusStyles: Record<
+  StepStatus,
+  { border: string; icon: typeof CheckCircle2 | null; className: string; glow?: string }
+> = {
   pending: { border: "border-surface", icon: null, className: "" },
-  running: { border: "border-accent-blue", icon: Loader2, className: "text-accent-blue animate-spin" },
+  running: {
+    border: "border-accent-blue",
+    icon: Loader2,
+    className: "text-accent-blue animate-spin",
+    glow: "shadow-[0_0_18px_-3px_var(--color-accent-blue)] animate-pulse-slow",
+  },
   completed: { border: "border-accent-green", icon: CheckCircle2, className: "text-accent-green" },
   failed: { border: "border-accent-red", icon: XCircle, className: "text-accent-red" },
   skipped: { border: "border-surface", icon: null, className: "text-content-muted" },
-  waiting_approval: { border: "border-accent-amber", icon: ShieldAlert, className: "text-accent-amber" },
+  waiting_approval: {
+    border: "border-accent-amber",
+    icon: ShieldAlert,
+    className: "text-accent-amber",
+    glow: "shadow-[0_0_18px_-3px_var(--color-accent-amber)] animate-breathe",
+  },
 };
 
 export function StepNode({ data, selected }: NodeProps & { data: StepNodeData }) {
@@ -38,6 +51,7 @@ export function StepNode({ data, selected }: NodeProps & { data: StepNodeData })
       className={cn(
         "min-w-[180px] rounded-lg border-2 bg-surface-raised px-3 py-2.5 shadow-sm transition-colors",
         statusStyle?.border ?? "border-surface",
+        statusStyle?.glow,
         selected && "ring-2 ring-accent-violet/50"
       )}
     >
