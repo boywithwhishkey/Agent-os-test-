@@ -8,10 +8,13 @@ contradicting note elsewhere.
 ## PRODUCTION STATUS
 
 - **Live frontend:** https://app.thynact.com — HTTP 200. Verified this
-  session that the served `/assets/index-*.js` hash (`index-CHqTiOts.js`)
+  session that the served `/assets/index-*.js` hash (`index-CwgnVrCF.js`)
   matches a fresh local `pnpm build` byte-for-byte — Cloudflare Pages
-  auto-deployed `origin/main` (commit `8cae377`, the glass-translucency
-  retune) correctly. Re-verify the same way after any future push.
+  auto-deployed `origin/main` (commit `1f9ffdc`, the mobile-responsive
+  fix) correctly. **This confirms the code deployed; it does not confirm
+  it renders correctly on mobile** — no browser tooling was used to check
+  that, see BLOCKED. Re-verify the asset-hash match the same way after
+  any future push.
 - **Live API:** `https://api.thynact.com/health` still returns `200`
   with `"status":"ok"` — reconfirmed this session; unaffected since no
   backend code changed.

@@ -171,35 +171,54 @@ toward ~0.04-0.16 for cards/sections per an updated brief, new
   libraries, and do not re-introduce opaque bordered cards where a
   `Card`/`GlassSurface` already exists.
 
-## 7. Responsive/browser QA — STATUS: TODO (needs browser tooling)
+## 7. Responsive/browser QA — STATUS: TODO (needs browser tooling) — TOP PRIORITY
 - BLOCKED on the same browser tooling as step 3. Once available, check
-  375 / 430 / 768 / 820 / 1024 / 1180 / 1440px, with particular attention
-  to iPad portrait/landscape and the Workflows canvas (React Flow touch
-  behavior, Controls/MiniMap sizing on small screens).
+  320 / 360 / 375 / 390 / 414 / 430 / 768 / 1024px, with particular
+  attention to iPad portrait/landscape and the Workflows canvas (React
+  Flow touch behavior, Controls/MiniMap sizing on small screens). Check
+  `document.documentElement.scrollWidth` vs `clientWidth` at each width —
+  must be equal (no page-level horizontal scrollbar).
 - Requirements to verify: no horizontal overflow, no clipped modals/
   drawers, touch-friendly tap targets, mobile nav works, tables/cards
   degrade sensibly, charts resize, command palette usable on mobile.
-- New this session: the `AccountPopover` sheet/popover on narrow
-  viewports, and whether stacking multiple `backdrop-filter: blur()`
-  glass layers causes any visible jank while scrolling on real iPad
-  hardware (code-level review can't assess GPU compositing cost).
+- **HEAD `1f9ffdc` (this session) — first thing to check, operator-
+  reported issue**: the operator checked the live site on an actual
+  phone and reported the Dashboard stat-card grid squeezed into 2 narrow
+  columns, a cramped Topbar, and poor text wrapping. Fixed via a
+  source-level audit only (grid-cols-1 base classes, Topbar icon-only
+  search + compact `HealthIndicator` below `sm`, several other
+  `grid-cols-2`→responsive fixes — full list in 02_CURRENT_STATE.md's
+  DONE entry for this HEAD) — **none of it has been seen rendered**.
+  Specifically verify: Dashboard at 320-375px (1 stat-card column, hint
+  text not wrapping awkwardly), Topbar at the same widths (hamburger +
+  account + search icon + health pill + theme + settings all fit on one
+  row without collision), and that nothing regressed at 1024px+ desktop
+  (all the fixes were additive `sm:`/base changes, not `lg:`+ changes,
+  so desktop classes are believed unchanged — believed, not seen).
+- Also still open from prior sessions: the `AccountPopover` sheet/
+  popover on narrow viewports, and whether stacking multiple
+  `backdrop-filter: blur()` glass layers causes any visible jank while
+  scrolling on real iPad hardware (code-level review can't assess GPU
+  compositing cost) — and now also the `8cae377` glass-alpha legibility
+  question (see item 3/6 above).
 
 ## 8. Regression tests — STATUS: DONE as of this session, re-run before next push
 - Before the next commit, re-run: `python -m pytest tests/ -q` (backend,
-  208 tests — not re-run this session since no backend code changed, same
-  as last session), `pnpm typecheck && pnpm lint && pnpm test && pnpm
-  build` (frontend, 48 tests, run from `frontend/`). All were green as of
-  commit `8cae377`.
+  208 tests — not re-run this session since no backend code changed,
+  same as last session), `pnpm typecheck && pnpm lint && pnpm test &&
+  pnpm build` (frontend, 48 tests, run from `frontend/`). All were green
+  as of commit `1f9ffdc`.
 
-## 9. Production verification — STATUS: VERIFIED as of this session
+## 9. Production verification — STATUS: VERIFIED (deploy only, not visual) as of this session
 - Re-verify after any new push: `curl https://api.thynact.com/health`,
   `curl https://api.thynact.com/ready`, and compare the frontend's served
   asset hash against a fresh local `pnpm build` to confirm Cloudflare
   actually deployed the latest commit (see 02_CURRENT_STATE.md
   "PRODUCTION STATUS" for the exact method used this session). Reconfirmed
-  this session (HEAD `8cae377`): Cloudflare deployed correctly
-  (`index-CHqTiOts.js` matched a fresh local build byte-for-byte);
-  `/health` unaffected since no backend code changed this session.
+  this session (HEAD `1f9ffdc`): Cloudflare deployed correctly
+  (`index-CwgnVrCF.js` matched a fresh local build byte-for-byte);
+  `/health` unaffected since no backend code changed this session. This
+  confirms the code shipped, not that it renders correctly — see item 7.
 - **Environment note reconfirmed this session**: `git push origin main`
   failed once at the very start with the same "Invalid username or
   token" error documented below — `gh auth setup-git` fixed it
