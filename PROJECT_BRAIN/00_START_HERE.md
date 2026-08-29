@@ -113,6 +113,17 @@ PROJECT_BRAIN/          This canonical knowledge base
   until checked against the Render dashboard.
 - Do **not** attempt to run FastAPI inside Cloudflare Pages — Pages is
   static hosting + edge Functions only.
+- **Database migrations are manual, not automatic.** `app/persistence/
+  migrations.py` (`run_migrations`) applies pending `.sql` files from
+  `migrations/` under a Postgres advisory lock, tracked in a
+  `schema_migrations` table — it's idempotent and safe to re-run, but
+  nothing in `app/main.py`'s startup path calls it. It only runs via
+  `python scripts/migrate.py` (reads `DATABASE_URL` from settings) —
+  run this by hand after `DATABASE_URL` is set and before switching any
+  `AGENT_OS_*_BACKEND` env var to `postgres`. The runner's idempotency
+  logic has a unit test (`tests/test_group2c_reliability.py`, using a
+  fake DB) but the actual `.sql` files have not been executed against a
+  real Postgres instance in any session with access to this repo.
 
 ## Coding & deployment safety conventions (from CLAUDE.md, still binding)
 

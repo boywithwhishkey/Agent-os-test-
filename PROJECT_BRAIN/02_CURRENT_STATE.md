@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `0ebb10e`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `87d32a1`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -172,7 +172,7 @@ directories.
   task_id) between records in the current result set — there is no
   memory-to-memory similarity score available from the API (only
   query-to-record relevance), so this deliberately doesn't fabricate one.
-- **Backend test suite: 136/136 passing** (`uv run pytest tests/ -q`).
+- **Backend test suite: 137/137 passing** (`uv run pytest tests/ -q`).
 - **Frontend: 25/25 tests passing** (`pnpm test`) — test count unchanged
   since the last update because MemoryGraph has no dedicated test file
   yet (rendered/exercised indirectly through Memory page usage only).
@@ -197,9 +197,17 @@ directories.
   Approvals, Tools. These still use the pre-existing (already reasonably
   polished) design system from prior
   sessions without a dedicated additional pass.
-- **Connector registry test coverage** is now complete: route-level
-  coverage via mocked adapters, plus direct `httpx.MockTransport` tests
-  for `N8NWebhookAdapter.test_connection()` itself (see DONE above).
+- **n8n connector completeness audit (this session):** verified
+  registration, config validation (`is_provider_configured`), the
+  test-connection endpoint, auth header handling, timeout handling,
+  correlation-ID passthrough (`X-Agent-OS-Correlation-ID`), network-failure
+  handling, non-2xx handling, and non-JSON response body handling
+  (`tests/test_phase9_n8n.py` — added the missing non-JSON test this
+  session) — all covered by tests. Frontend configured/unconfigured state
+  and execution UI were built in an earlier session and are unchanged.
+  n8n itself is genuinely production-ready code-wise; it is NOT CONFIGURED
+  in production (no `N8N_BASE_URL`) and reports that honestly rather than
+  faking a connection — see PRODUCTION DEPENDENCY / CREDENTIAL AUDIT.
 
 ## BLOCKED (this session, environment-limited — not code issues)
 
@@ -217,19 +225,84 @@ directories.
   run, runtime execution, integration execute) could not be exercised
   end-to-end against the **live** API. They are however fully covered by
   the local backend test suite, which exercises the same code paths
-  in-process (136 tests, all passing).
+  in-process (137 tests, all passing).
 
-## NEEDS CREDENTIALS
+## PRODUCTION DEPENDENCY / CREDENTIAL AUDIT
 
-Report only variable **names** — no secret values known or requested.
+Full inventory of every external dependency for non-mock production, as of
+this session. Never print secret values — names and status only.
 
-| Variable | Needed for | Current state |
+| Service | Purpose | Env var(s) | Required/Optional | Current status (verified live) | Falls back to | How to verify after configuring |
+|---|---|---|---|---|---|---|
+| Operator auth | Gates every `/api/v1/*` route | `AGENT_OS_API_KEY` | **Required** for any protected call | **SET on Render** — confirmed live: unauthenticated calls return `401`, not `503` (`503` is what `require_api_key` returns when the var is unset) | `503 "API authentication is not configured"` if unset | `curl -H "X-API-Key: <key>" https://api.thynact.com/api/v1/tools` → expect `200` |
+| PostgreSQL | Durable storage for tasks/approvals/audit/workflow defs & runs/runtime executions/memory | `DATABASE_URL` | Optional (falls back cleanly) | **NOT set** — `/health` `backends` map shows every subsystem as `memory`; `/ready` has no `database` check (only appears when a backend is set to `postgres`) | All state lives in the FastAPI process's memory — lost on every restart/redeploy | After setting `DATABASE_URL` **and** flipping the relevant `AGENT_OS_*_BACKEND` vars to `postgres`: run `python scripts/migrate.py` once, then `curl https://api.thynact.com/ready` → expect a `"database": "ok"` check |
+| Redis | Durable job queue | `REDIS_URL` | Optional (falls back cleanly) | **NOT set** — `backends.queue` is `memory` | In-memory queue (`InMemoryJobQueue`) — no cross-process/durable queueing | After setting `REDIS_URL` and `AGENT_OS_QUEUE_BACKEND=redis`: `curl https://api.thynact.com/ready` → expect a `"queue": "ok"` check |
+| n8n | Webhook-based workflow/integration execution | `N8N_BASE_URL` (required to enable), `N8N_WEBHOOK_PREFIX` (optional, default `webhook`), `N8N_WEBHOOK_AUTH_HEADER` + `N8N_WEBHOOK_AUTH_VALUE` (optional, only if the n8n instance requires auth) | Optional | **NOT set** — confirmed via code path (`is_provider_configured` checks `settings.n8n_base_url` truthiness); the Integrations page reports "Not configured" and names `N8N_BASE_URL` | `GET /api/v1/integrations` reports `configured: false`; `POST /api/v1/integrations/n8n/test` returns `503` naming the missing var; `POST /api/v1/integrations/execute` returns `400` | Set `N8N_BASE_URL`, then use the "Test connection" button on the Integrations page (or `POST /api/v1/integrations/n8n/test`) → expect `connected: true` with a real latency figure |
+| LLM provider | Powers orchestration/autonomous specialist reasoning | `AGENT_OS_LLM_PROVIDER` (`mock` or `gemini`), `AGENT_OS_LLM_MODEL`, `GEMINI_API_KEY` | Optional (mock works fully, just isn't a real model) | **CONFIRMED `mock`** in production — `/health` now returns `"llm_provider": "mock"` directly (previously unverified; this session added that field so it no longer has to be inferred) | Deterministic mock responses from `app/llm/mock.py` — orchestration/autonomous flows work end-to-end but outputs aren't real LLM reasoning | Set `GEMINI_API_KEY` and `AGENT_OS_LLM_PROVIDER=gemini`, then `curl https://api.thynact.com/health` → expect `"llm_provider": "gemini"`, and run an orchestration to confirm real model output |
+| CORS allowlist | Which origins may call the API from a browser | `AGENT_OS_CORS_ORIGINS` | Required (has a working default) | **SET correctly** — verified live: preflight from `https://app.thynact.com` succeeds (`200`), preflight from an arbitrary origin (`https://evil-example.com`) is rejected (`400`, no `Access-Control-Allow-Origin` reflected) | Defaults to a hardcoded list already including `https://app.thynact.com` (see `app/core/config.py`) | Preflight `OPTIONS` from the origin in question and check `access-control-allow-origin` in the response |
+
+## PERSISTENCE MAP
+
+Every one of these is currently **`memory`** (ephemeral, process-local, lost
+on restart) in production, confirmed via the live `/health` `backends` map:
+
+| Data | Backend setting | Current value |
 |---|---|---|
-| `DATABASE_URL` | Postgres-backed durable stores | Not confirmed set on Render; `/ready` shows no database check active, meaning `AGENT_OS_MEMORY_BACKEND`/`AGENT_OS_TASK_BACKEND`/etc. are all still `memory` in production |
-| `REDIS_URL` | Redis-backed job queue | Not confirmed set; `AGENT_OS_QUEUE_BACKEND` appears to still be `memory` |
-| `N8N_BASE_URL` | n8n connector to leave "unconfigured" state | Not confirmed set; `GET /api/v1/integrations` will report `configured: false` for n8n until this is set |
-| `N8N_WEBHOOK_AUTH_HEADER` / `N8N_WEBHOOK_AUTH_VALUE` | Authenticated n8n webhook calls | Optional, only needed if the n8n instance requires auth |
-| `GEMINI_API_KEY` | Real LLM provider instead of `mock` | `AGENT_OS_LLM_PROVIDER` default is `mock`; UNVERIFIED what's actually set on Render |
+| Tasks | `AGENT_OS_TASK_BACKEND` | `memory` |
+| Approvals & tool audit | `AGENT_OS_TOOL_BACKEND` | `memory` |
+| Memory (semantic/lexical) | `AGENT_OS_MEMORY_BACKEND` | `memory` |
+| Workflow definitions | `AGENT_OS_WORKFLOW_DEFINITION_BACKEND` | `memory` |
+| Workflow runs | `AGENT_OS_WORKFLOW_BACKEND` | `memory` |
+| Runtime executions | `AGENT_OS_RUNTIME_BACKEND` | `memory` |
+| Job queue | `AGENT_OS_QUEUE_BACKEND` | `memory` |
+
+This is reported honestly, not hidden: `/ready` shows an empty `checks: {}`
+(correct — there's nothing to health-check when everything is `memory`),
+and the System Health page's "Persistence map" card visually marks every
+one of these "Ephemeral" rather than implying durability. The
+`postgres`/`redis` code paths exist and are unit-tested (with fakes), but
+have never run against a real Postgres/Redis instance in any session with
+access to this repo — see 00_START_HERE.md's migration note.
+
+## AUTH / CORS BOUNDARY — VERIFIED LIVE THIS SESSION
+
+- No API key → `401 {"detail":"Unauthorized"}` (not `503`, confirming the
+  key **is** configured server-side).
+- Wrong API key → `401` (generic, doesn't leak whether the key was close).
+- Unknown route → `404 {"detail":"Not Found"}`.
+- CORS preflight from `https://app.thynact.com` → `200`, correct
+  `access-control-allow-headers` including `X-API-Key`/`X-Correlation-ID`.
+- CORS preflight from an arbitrary non-allowlisted origin
+  (`https://evil-example.com`) → `400`, origin **not** reflected — the
+  allowlist is real, not a wildcard.
+- What remains unverified: actual authenticated business-logic flows
+  (create task, run orchestration, etc.) against the **live** API, since
+  this session has no valid `AGENT_OS_API_KEY` value. These are fully
+  covered by the local backend test suite instead (137 tests, in-process,
+  same code paths).
+
+## RESPONSIVE QA — STATIC REVIEW DONE, INTERACTIVE STILL BLOCKED
+
+No browser automation tool was available this session, so this is a
+code-level review, not a rendered/visual one. Findings:
+- Both data tables (`WorkflowRuns.tsx`, `Audit.tsx`) that use a
+  `min-w-[...]` are correctly wrapped in `overflow-x-auto` containers —
+  no horizontal page overflow risk.
+- `MemoryGraph.tsx`'s fixed-width SVG is also wrapped in `overflow-x-auto`
+  with `max-w-full` on the element itself.
+- `Drawer.tsx` uses `w-full max-w-md` (full-width on mobile, capped on
+  larger screens) with an internal `overflow-y-auto` content area — no
+  overflow or clipping risk found.
+- `AppShell.tsx` has `overflow-x-hidden` at the root plus `min-w-0` on the
+  flex content column — the standard fix for flex-child overflow.
+- No other hardcoded pixel widths found outside of small fixed-size UI
+  chrome (sidebar width, icon badges) that wouldn't be expected to scale.
+- **No genuine defect found in this pass** — nothing was "fixed" here
+  because nothing broken was found this way. This does **not** replace
+  actual interactive verification at the 7 target breakpoints (375/430/
+  768/820/1024/1180/1440), especially real touch/drag behavior on the
+  Workflows React Flow canvas, which cannot be assessed by reading code —
+  that remains genuinely blocked on browser tooling.
 
 ## Per-subsystem status
 

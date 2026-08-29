@@ -4,6 +4,28 @@ Read `00_START_HERE.md` and `02_CURRENT_STATE.md` first. This is the
 concrete plan for the next work session, in priority order. Update this
 file at the end of every session so the next agent can start cold.
 
+## Manual actions only the operator can take
+
+Nothing else in this file requires the operator directly — everything
+below this point can be done by an agent. These specifically cannot:
+
+1. **Provide a production API key value** to a session, so it can run
+   authenticated live smoke tests against `api.thynact.com` (or run the
+   flows manually and report back what happened).
+2. **Provide `DATABASE_URL`** (a Postgres connection string) if durable
+   persistence is wanted — this may mean provisioning a Postgres instance,
+   which is a paid-infrastructure decision requiring explicit approval.
+3. **Provide `REDIS_URL`** if a durable job queue is wanted — same
+   paid-infrastructure caveat.
+4. **Provide `N8N_BASE_URL`** (+ optional auth vars) if the n8n connector
+   should go live — the code is ready, it just has nothing to point at.
+5. **Provide `GEMINI_API_KEY`** (and set `AGENT_OS_LLM_PROVIDER=gemini`)
+   if real LLM reasoning is wanted instead of the deterministic mock.
+6. **Connect browser automation tooling** (e.g. Claude in Chrome) to this
+   session if interactive/visual QA is wanted — everything reachable
+   without it (tests, typecheck, lint, build, curl-level API checks,
+   static responsive review) has already been done.
+
 ## 1. Production backend/API — STATUS: VERIFIED, monitor only
 - `/health` and `/ready` are live and correct. CORS preflight for
   `X-API-Key`/`X-Correlation-ID` from `app.thynact.com` is fixed and
@@ -30,14 +52,18 @@ file at the end of every session so the next agent can start cold.
 - Do not mark any page "browser-verified" without this step actually
   happening.
 
-## 4. Connectors/integrations — STATUS: PARTIAL, one credential gap
+## 4. Connectors/integrations — STATUS: code-complete, NEEDS CREDENTIAL to go live
+- DONE: full n8n completeness audit this session — registration, config
+  validation, test-connection endpoint, auth header handling, timeout,
+  correlation-ID passthrough, network-failure handling, non-2xx handling,
+  and non-JSON response handling are all implemented and tested (see
+  02_CURRENT_STATE.md "PRODUCTION DEPENDENCY / CREDENTIAL AUDIT" and the
+  n8n audit bullet in DONE). n8n is genuinely production-ready code-wise.
 - NEEDS CREDENTIAL: `N8N_BASE_URL` (+ optionally
   `N8N_WEBHOOK_AUTH_HEADER`/`N8N_WEBHOOK_AUTH_VALUE`) to move n8n from
   "not configured" to a real, testable connection. Once set, run
   "Test connection" from the Integrations page and confirm `connected:
   true` with a real latency figure.
-- DONE: `httpx.MockTransport`-based unit tests for
-  `N8NWebhookAdapter.test_connection()` added in `tests/test_phase9_n8n.py`.
 - Do not add another connector adapter unless there's a concrete product
   need (see 07_DEFERRED_GOALS.md).
 
@@ -51,10 +77,16 @@ file at the end of every session so the next agent can start cold.
   restart or redeploy.
 - NEEDS CREDENTIAL: `REDIS_URL` to move `AGENT_OS_QUEUE_BACKEND` off
   `memory` onto a real job queue.
-- Run `migrations/` against the new database once `DATABASE_URL` exists,
-  then flip the relevant `AGENT_OS_*_BACKEND` env vars to `postgres` /
-  `redis` on Render, then confirm `/ready` reports real `database`/`queue`
-  checks (not an empty `checks: {}`).
+- Exact sequence once `DATABASE_URL` exists (do not skip the manual
+  migration step — nothing runs it automatically, see 00_START_HERE.md):
+  1. `python scripts/migrate.py` (applies `migrations/*.sql`, idempotent).
+  2. Flip the relevant `AGENT_OS_*_BACKEND` env vars to `postgres` (and
+     `AGENT_OS_QUEUE_BACKEND=redis` once `REDIS_URL` exists too) on Render.
+  3. Redeploy, then `curl https://api.thynact.com/ready` → expect real
+     `database`/`queue` checks (not an empty `checks: {}`), and `/health`
+     → `backends` map should show `postgres`/`redis` instead of `memory`.
+- Do not provision Postgres/Redis infrastructure without the user's
+  explicit approval — this is a paid-infrastructure decision.
 
 ## 6. Premium UI completion — STATUS: mostly DONE, small remainder
 Essentially every page in the product brief now has a dedicated
@@ -83,9 +115,10 @@ section for the full list with implementation notes.
   degrade sensibly, charts resize, command palette usable on mobile.
 
 ## 8. Regression tests — STATUS: DONE as of this session, re-run before next push
-- Before the next commit, re-run: `uv run pytest tests/ -q` (backend),
-  `pnpm typecheck && pnpm lint && pnpm test && pnpm build` (frontend, run
-  from `frontend/`). All were green as of commit `6aae299`.
+- Before the next commit, re-run: `uv run pytest tests/ -q` (backend, 137
+  tests), `pnpm typecheck && pnpm lint && pnpm test && pnpm build`
+  (frontend, 25 tests, run from `frontend/`). All were green as of commit
+  `87d32a1`.
 
 ## 9. Production verification — STATUS: VERIFIED as of this session
 - Re-verify after any new push: `curl https://api.thynact.com/health`,
