@@ -169,13 +169,13 @@ session.
 ## 9. Production verification — STATUS: VERIFIED as of this session
 - Re-verify after any new push: `curl https://api.thynact.com/health`,
   `curl https://api.thynact.com/ready`, and compare the frontend's served
-  asset hash against a fresh local `npm run build`/`pnpm build` to confirm
-  Cloudflare actually deployed the latest commit (see 02_CURRENT_STATE.md
-  "PRODUCTION STATUS" for the exact method used this session). This
-  session also confirmed `GET /api/v1/integrations` live reflects newly
-  pushed catalog changes within the same session — both Render and
-  Cloudflare auto-deploy `origin/main` fast (well under the time it takes
-  to finish a session).
+  asset hash against a fresh local `pnpm build` to confirm Cloudflare
+  actually deployed the latest commit (see 02_CURRENT_STATE.md
+  "PRODUCTION STATUS" for the exact method used this session). Reconfirmed
+  this session (HEAD `3a6b1b8`): Cloudflare deployed within ~40s of the
+  push (`index-CB2y6IpY.js` matched a fresh local build byte-for-byte);
+  `/health`/`/ready` unaffected since no backend code changed this
+  session.
 
 ## 10. Final docs update — STATUS: recurring
 - At the end of every session: update `02_CURRENT_STATE.md` with what's
