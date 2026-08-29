@@ -41,6 +41,22 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "GitHub",
         "requires": ["GITHUB_OAUTH_CLIENT_ID", "GITHUB_OAUTH_CLIENT_SECRET"],
     },
+    IntegrationProvider.SLACK: {
+        "name": "Slack",
+        "requires": ["SLACK_OAUTH_CLIENT_ID", "SLACK_OAUTH_CLIENT_SECRET"],
+    },
+    IntegrationProvider.NOTION: {
+        "name": "Notion",
+        "requires": ["NOTION_OAUTH_CLIENT_ID", "NOTION_OAUTH_CLIENT_SECRET"],
+    },
+    IntegrationProvider.GITLAB: {
+        "name": "GitLab",
+        "requires": ["GITLAB_OAUTH_CLIENT_ID", "GITLAB_OAUTH_CLIENT_SECRET"],
+    },
+    IntegrationProvider.MAKE: {
+        "name": "Make",
+        "requires": ["MAKE_WEBHOOK_URL"],
+    },
 }
 
 
@@ -84,6 +100,25 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.oauth.registry import oauth_connection_store
 
         return GitHubOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "slack":
+        from app.integrations.oauth.registry import oauth_connection_store
+        from app.integrations.slack import SlackOAuthAdapter
+
+        return SlackOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "notion":
+        from app.integrations.notion import NotionOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return NotionOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "gitlab":
+        from app.integrations.gitlab import GitLabOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return GitLabOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "make":
+        from app.integrations.make import MakeWebhookAdapter
+
+        return MakeWebhookAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -119,4 +154,12 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.render_api_key)
     if provider == IntegrationProvider.GITHUB:
         return bool(settings.github_oauth_client_id) and bool(settings.github_oauth_client_secret)
+    if provider == IntegrationProvider.SLACK:
+        return bool(settings.slack_oauth_client_id) and bool(settings.slack_oauth_client_secret)
+    if provider == IntegrationProvider.NOTION:
+        return bool(settings.notion_oauth_client_id) and bool(settings.notion_oauth_client_secret)
+    if provider == IntegrationProvider.GITLAB:
+        return bool(settings.gitlab_oauth_client_id) and bool(settings.gitlab_oauth_client_secret)
+    if provider == IntegrationProvider.MAKE:
+        return bool(settings.make_webhook_url)
     return False

@@ -147,12 +147,37 @@ def _render_live_status() -> dict:
     return _status_store_backed_status("render", configured=is_provider_configured(provider))
 
 
-def _github_live_status() -> dict:
-    provider = next(p for p in list_providers() if p.value == "github")
-    connection = oauth_connection_store.get("github")
+def _make_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "make")
+    return _status_store_backed_status("make", configured=is_provider_configured(provider))
+
+
+def _oauth_live_status(provider_id: str) -> dict:
+    """Shared status shape for every OAuth2 connector: CONNECTED once the
+    OAuth callback has stored a real access token (`oauth_connection_store`),
+    regardless of whether "Test connection" has been clicked since —
+    obtaining the token already proves the account is linked."""
+    provider = next(p for p in list_providers() if p.value == provider_id)
+    connection = oauth_connection_store.get(provider_id)
     return _status_store_backed_status(
-        "github", configured=is_provider_configured(provider), force_connected=connection.connected
+        provider_id, configured=is_provider_configured(provider), force_connected=connection.connected
     )
+
+
+def _github_live_status() -> dict:
+    return _oauth_live_status("github")
+
+
+def _slack_live_status() -> dict:
+    return _oauth_live_status("slack")
+
+
+def _notion_live_status() -> dict:
+    return _oauth_live_status("notion")
+
+
+def _gitlab_live_status() -> dict:
+    return _oauth_live_status("gitlab")
 
 
 _LIVE_STATUS_RESOLVERS = {
@@ -165,6 +190,10 @@ _LIVE_STATUS_RESOLVERS = {
     "cloudflare": _cloudflare_live_status,
     "render": _render_live_status,
     "github": _github_live_status,
+    "slack": _slack_live_status,
+    "notion": _notion_live_status,
+    "gitlab": _gitlab_live_status,
+    "make": _make_live_status,
 }
 
 

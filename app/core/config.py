@@ -31,6 +31,25 @@ class Settings(BaseSettings):
     github_oauth_client_secret: str | None = Field(
         default=None, validation_alias="GITHUB_OAUTH_CLIENT_SECRET"
     )
+    slack_oauth_client_id: str | None = Field(default=None, validation_alias="SLACK_OAUTH_CLIENT_ID")
+    slack_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="SLACK_OAUTH_CLIENT_SECRET"
+    )
+    notion_oauth_client_id: str | None = Field(default=None, validation_alias="NOTION_OAUTH_CLIENT_ID")
+    notion_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="NOTION_OAUTH_CLIENT_SECRET"
+    )
+    gitlab_oauth_client_id: str | None = Field(default=None, validation_alias="GITLAB_OAUTH_CLIENT_ID")
+    gitlab_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="GITLAB_OAUTH_CLIENT_SECRET"
+    )
+    make_webhook_url: str | None = Field(default=None, validation_alias="MAKE_WEBHOOK_URL")
+    make_webhook_auth_header: str | None = Field(
+        default=None, validation_alias="MAKE_WEBHOOK_AUTH_HEADER"
+    )
+    make_webhook_auth_value: str | None = Field(
+        default=None, validation_alias="MAKE_WEBHOOK_AUTH_VALUE"
+    )
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

@@ -119,3 +119,44 @@ def test_disconnect_requires_auth_and_clears_connection(monkeypatch):
     response = client.delete("/api/v1/integrations/oauth/github", headers=AUTH)
     assert response.status_code == 204
     assert oauth_connection_store.get("github").connected is False
+
+
+@pytest.mark.parametrize(
+    "provider_id,client_id_setting,client_secret_setting,authorize_prefix",
+    [
+        ("slack", "slack_oauth_client_id", "slack_oauth_client_secret", "https://slack.com/oauth/v2/authorize?"),
+        ("notion", "notion_oauth_client_id", "notion_oauth_client_secret", "https://api.notion.com/v1/oauth/authorize?"),
+        ("gitlab", "gitlab_oauth_client_id", "gitlab_oauth_client_secret", "https://gitlab.com/oauth/authorize?"),
+    ],
+)
+def test_generic_oauth_routes_work_for_every_registered_provider(
+    monkeypatch, provider_id, client_id_setting, client_secret_setting, authorize_prefix
+):
+    """The authorize/callback/disconnect routes are provider-agnostic — this
+    proves it for Slack/Notion/GitLab, not just the GitHub example above."""
+    monkeypatch.setattr(settings, client_id_setting, "client-123")
+    monkeypatch.setattr(settings, client_secret_setting, "secret-456")
+
+    authorize = client.get(f"/api/v1/integrations/oauth/{provider_id}/authorize", headers=AUTH)
+    assert authorize.status_code == 200
+    assert authorize.json()["authorize_url"].startswith(authorize_prefix)
+
+    state = oauth_state_store.create(provider_id)
+
+    async def fake_exchange(config, *, code, connection_store, client=None):
+        connection_store.record_success(config.id, access_token="tok", token_type="bearer", scope=None)
+
+    monkeypatch.setattr(phase9, "exchange_code", fake_exchange)
+    callback = client.get(
+        f"/api/v1/integrations/oauth/{provider_id}/callback?state={state}&code=the-code", follow_redirects=False
+    )
+    assert f"provider={provider_id}" in callback.headers["location"]
+    assert "oauth=connected" in callback.headers["location"]
+
+    listing = client.get("/api/v1/integrations").json()
+    entry = next(item for item in listing if item["id"] == provider_id)
+    assert entry["status"] == "connected"
+
+    disconnect = client.delete(f"/api/v1/integrations/oauth/{provider_id}", headers=AUTH)
+    assert disconnect.status_code == 204
+    assert oauth_connection_store.get(provider_id).connected is False

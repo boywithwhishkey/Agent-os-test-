@@ -18,6 +18,39 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="GITHUB_OAUTH_CLIENT_ID",
         client_secret_env="GITHUB_OAUTH_CLIENT_SECRET",
     ),
+    "slack": OAuthProviderConfig(
+        id="slack",
+        name="Slack",
+        authorize_url="https://slack.com/oauth/v2/authorize",
+        token_url="https://slack.com/api/oauth.v2.access",
+        scope="chat:write channels:read",
+        client_id_env="SLACK_OAUTH_CLIENT_ID",
+        client_secret_env="SLACK_OAUTH_CLIENT_SECRET",
+        # Slack always answers 200, even on failure — it reports errors as
+        # {"ok": false, "error": "..."} in the body, which the generic
+        # `"error" in body` check in exchange_code() already handles.
+    ),
+    "notion": OAuthProviderConfig(
+        id="notion",
+        name="Notion",
+        authorize_url="https://api.notion.com/v1/oauth/authorize",
+        token_url="https://api.notion.com/v1/oauth/token",
+        scope="",  # Notion has no OAuth scope param — capabilities are chosen when the integration is created
+        client_id_env="NOTION_OAUTH_CLIENT_ID",
+        client_secret_env="NOTION_OAUTH_CLIENT_SECRET",
+        token_auth="basic",
+        token_body_format="json",
+        extra_authorize_params={"owner": "user"},
+    ),
+    "gitlab": OAuthProviderConfig(
+        id="gitlab",
+        name="GitLab",
+        authorize_url="https://gitlab.com/oauth/authorize",
+        token_url="https://gitlab.com/oauth/token",
+        scope="read_api read_user",
+        client_id_env="GITLAB_OAUTH_CLIENT_ID",
+        client_secret_env="GITLAB_OAUTH_CLIENT_SECRET",
+    ),
 }
 
 

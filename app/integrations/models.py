@@ -16,6 +16,10 @@ class IntegrationProvider(StrEnum):
     CLOUDFLARE = "cloudflare"
     RENDER = "render"
     GITHUB = "github"
+    SLACK = "slack"
+    NOTION = "notion"
+    GITLAB = "gitlab"
+    MAKE = "make"
 
 
 class IntegrationRequest(BaseModel):

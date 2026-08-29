@@ -24,11 +24,11 @@ def test_catalog_only_entries_are_always_available_and_unimplemented():
     response = client.get("/api/v1/integrations")
 
     body = response.json()
-    slack = next(item for item in body if item["id"] == "slack")
-    assert slack["implemented"] is False
-    assert slack["status"] == "available"
-    assert slack["configured"] is False
-    assert slack["connected"] is None
+    zapier = next(item for item in body if item["id"] == "zapier")
+    assert zapier["implemented"] is False
+    assert zapier["status"] == "available"
+    assert zapier["configured"] is False
+    assert zapier["connected"] is None
 
 
 def test_n8n_reflects_real_configuration_state(monkeypatch):

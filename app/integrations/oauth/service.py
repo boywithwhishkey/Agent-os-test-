@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from urllib.parse import urlencode
 
 import httpx
@@ -49,10 +50,12 @@ def build_authorize_url(config: OAuthProviderConfig, state_store: OAuthStateStor
     params = {
         "client_id": cid,
         "redirect_uri": redirect_uri(config),
-        "scope": config.scope,
         "state": state,
         "response_type": "code",
     }
+    if config.scope:
+        params["scope"] = config.scope
+    params.update(config.extra_authorize_params)
     return f"{config.authorize_url}?{urlencode(params)}"
 
 
@@ -74,16 +77,29 @@ async def exchange_code(
     own_client = client is None
     http_client = client or httpx.AsyncClient()
     try:
+        headers = {"Accept": "application/json"}
+        payload = {"code": code, "redirect_uri": redirect_uri(config)}
+        request_kwargs: dict[str, object]
+
+        if config.token_auth == "basic":
+            credentials = base64.b64encode(f"{client_id(config)}:{secret}".encode()).decode()
+            headers["Authorization"] = f"Basic {credentials}"
+            payload["grant_type"] = "authorization_code"
+        else:
+            payload["client_id"] = client_id(config)
+            payload["client_secret"] = secret
+
+        if config.token_body_format == "json":
+            headers["Content-Type"] = "application/json"
+            request_kwargs = {"json": payload}
+        else:
+            request_kwargs = {"data": payload}
+
         response = await http_client.post(
             config.token_url,
-            data={
-                "client_id": client_id(config),
-                "client_secret": secret,
-                "code": code,
-                "redirect_uri": redirect_uri(config),
-            },
-            headers={"Accept": "application/json"},
+            headers=headers,
             timeout=15.0,
+            **request_kwargs,
         )
         try:
             body = response.json()

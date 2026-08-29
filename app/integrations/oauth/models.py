@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from pydantic import BaseModel
@@ -11,7 +11,14 @@ class OAuthProviderConfig:
     """Static OAuth2 metadata for one provider. Registering a new provider
     here — plus a CLIENT_ID/CLIENT_SECRET pair in Settings — is the entire
     integration surface; the authorize/callback routes and state handling
-    below are fully generic."""
+    below are fully generic.
+
+    Most providers (GitHub, Slack, GitLab) accept client_id/client_secret
+    as form fields in the token exchange body — that's `token_auth="body"`.
+    Notion instead requires HTTP Basic auth with a JSON body
+    (`token_auth="basic"`, `token_body_format="json"`) — see
+    app/integrations/oauth/service.py's exchange_code().
+    """
 
     id: str
     name: str
@@ -20,6 +27,9 @@ class OAuthProviderConfig:
     scope: str
     client_id_env: str
     client_secret_env: str
+    token_auth: str = "body"  # "body" | "basic"
+    token_body_format: str = "form"  # "form" | "json"
+    extra_authorize_params: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
