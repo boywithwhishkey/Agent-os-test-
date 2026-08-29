@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateWorkflowGraph } from "./workflow-validate";
+import { validateWorkflowGraph, invalidStepIds } from "./workflow-validate";
 import type { WorkflowStep } from "./types";
 
 function step(overrides: Partial<WorkflowStep>): WorkflowStep {
@@ -48,5 +48,16 @@ describe("validateWorkflowGraph", () => {
       step({ id: "b", depends_on: ["a"] }),
     ]);
     expect(errors.some((e) => e.includes("cycle"))).toBe(true);
+  });
+});
+
+describe("invalidStepIds", () => {
+  it("extracts the step id named in each error message", () => {
+    const errors = validateWorkflowGraph([step({ id: "a", depends_on: ["missing"] })]);
+    expect(invalidStepIds(errors)).toEqual(new Set(["a"]));
+  });
+
+  it("returns an empty set for errors that don't name a step", () => {
+    expect(invalidStepIds(["Add at least one step."])).toEqual(new Set());
   });
 });

@@ -22,14 +22,16 @@ import { Input, Label, Textarea } from "@/components/ui/Input";
 import { ErrorState } from "@/components/ui/States";
 import { StepNode, type StepNodeData } from "@/components/workflows/StepNode";
 import { StepEditorDialog } from "@/components/workflows/StepEditorDialog";
+import { PulseEdge } from "@/components/workflows/PulseEdge";
 import { useRunWorkflow } from "@/lib/api/queries";
 import { useToast } from "@/components/ui/Toast";
 import { recordHistory } from "@/lib/session-history";
-import { validateWorkflowGraph } from "@/lib/workflow-validate";
+import { validateWorkflowGraph, invalidStepIds } from "@/lib/workflow-validate";
 import type { WorkflowStep } from "@/lib/types";
 import { Link } from "react-router-dom";
 
 const nodeTypes = { step: StepNode };
+const edgeTypes = { pulse: PulseEdge };
 
 function stepToNode(step: WorkflowStep, position: { x: number; y: number }): Node<StepNodeData> {
   return {
@@ -86,14 +88,26 @@ function WorkflowEditor() {
     [setEdges]
   );
 
-  const onNodeClick: NodeMouseHandler<Node<StepNodeData>> = (_, node) => {
-    const steps = stepsFromGraph();
-    const step = steps.find((s) => s.id === node.id);
-    if (step) {
-      setEditingStep(step);
-      setDialogOpen(true);
-    }
-  };
+  const editStep = useCallback(
+    (nodeId: string) => {
+      const step = stepsFromGraph().find((s) => s.id === nodeId);
+      if (step) {
+        setEditingStep(step);
+        setDialogOpen(true);
+      }
+    },
+    [stepsFromGraph]
+  );
+
+  const deleteStep = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+      setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+    },
+    [setNodes, setEdges]
+  );
+
+  const onNodeClick: NodeMouseHandler<Node<StepNodeData>> = (_, node) => editStep(node.id);
 
   const addStep = () => {
     setEditingStep(undefined);
@@ -116,6 +130,33 @@ function WorkflowEditor() {
   };
 
   const existingIds = useMemo(() => nodes.map((n) => n.id), [nodes]);
+
+  const invalidIds = useMemo(() => invalidStepIds(validationErrors), [validationErrors]);
+
+  const displayNodes = useMemo(
+    () =>
+      nodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          hasValidationError: invalidIds.has(n.id),
+          onEdit: () => editStep(n.id),
+          onDelete: () => deleteStep(n.id),
+        },
+      })),
+    [nodes, invalidIds, editStep, deleteStep]
+  );
+
+  const displayEdges = useMemo(() => {
+    const statusById = new Map(nodes.map((n) => [n.id, n.data.runStatus]));
+    return edges.map((e) => ({
+      ...e,
+      type: "pulse",
+      data: {
+        active: statusById.get(e.source) === "running" || statusById.get(e.target) === "running",
+      },
+    }));
+  }, [edges, nodes]);
 
   const run = () => {
     const steps = stepsFromGraph();
@@ -208,15 +249,15 @@ function WorkflowEditor() {
         <CardContent className="p-0">
           <div className="h-[480px] w-full">
             <ReactFlow
-              nodes={nodes}
-              edges={edges}
+              nodes={displayNodes}
+              edges={displayEdges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onNodeClick={onNodeClick}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               defaultEdgeOptions={{
-                type: "smoothstep",
                 animated: true,
                 style: { stroke: "var(--color-accent-violet)", strokeWidth: 2 },
               }}

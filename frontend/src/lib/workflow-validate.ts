@@ -36,3 +36,15 @@ export function validateWorkflowGraph(steps: WorkflowStep[]): string[] {
 
   return errors;
 }
+
+// Every message above that names a step wraps its id in double quotes
+// (`Step "x" ...`), so this stays in sync with validateWorkflowGraph without
+// needing a structured error type that would ripple through its API/tests.
+export function invalidStepIds(errors: string[]): Set<string> {
+  const ids = new Set<string>();
+  for (const error of errors) {
+    const match = error.match(/Step "([^"]+)"/);
+    if (match) ids.add(match[1]);
+  }
+  return ids;
+}
