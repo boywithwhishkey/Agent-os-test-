@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `8a9dd81`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `776dd63`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -7,12 +7,13 @@ contradicting note elsewhere.
 
 ## PRODUCTION STATUS
 
-- **Live frontend:** https://app.thynact.com — HTTP 200. Verified this
-  session that the served `/assets/index-*.js` hash
-  (`index-B6Q6PYw6.js`) matches a fresh local `pnpm build` byte-for-byte —
-  Cloudflare Pages auto-deployed `origin/main` (commit `8a9dd81`, the
-  cream/bronze/navy-palette + border-sweep push) correctly, live within
-  ~60s of the push. Re-verify the same way after any future push.
+- **Live frontend:** https://app.thynact.com — as of the last push
+  (commit `8a9dd81`), HTTP 200 with the served asset hash confirmed
+  matching a fresh local build. Commit `776dd63` (the invisible-
+  background fix, portal `AccountPopover`, multi-cycle `HeartbeatLine`)
+  was committed locally but had **not yet been pushed** as of the start
+  of this session — see the entry below for what it contains. Re-verify
+  the asset hash the same way after it's pushed.
 - **Live API:** https://api.thynact.com — `/health` returns
   `{"status":"ok","service":"THYNACT","environment":"development","llm_provider":"mock",...}`
   (HTTP 200). `/ready` returns `{"status":"ready","checks":{}}` (HTTP 200).
@@ -416,6 +417,57 @@ directories.
   - Verified via `pnpm typecheck`/`pnpm lint`/`pnpm test` (43/43)/`pnpm
     build` — all clean. No backend code touched.
 
+- **Invisible-background root-cause fix + portal `AccountPopover` +
+  multi-cycle `HeartbeatLine` (HEAD `776dd63`, committed but not yet
+  pushed at the start of this session — see push status above/below).**
+  The actual root cause, finally found: `AppShell`'s root `div` carried
+  `bg-surface-canvas`, a fully **opaque** background-color, painted
+  directly on top of `body`. Every prior session's ambient-gradient/
+  cream-bronze-navy work (HEAD `70cf378` through `8a9dd81`) was rendering
+  onto a layer nothing could ever see — this is why three consecutive
+  sessions kept re-tuning gradient opacity by reasoning alone and it
+  never looked right. `bg-surface-canvas` removed from `AppShell`'s root;
+  `body`'s gradient now actually reaches the screen. Also: dropped a
+  fourth "vignette" radial layer from `body`'s dark-mode gradient that was
+  cancelling out most of the cream/bronze/navy color underneath it,
+  roughly doubled the remaining three layers' color-mix intensity, and
+  moved the navy blob on-screen (was 98%/102%, now 88%/82%). Reduced
+  dark-mode glass alpha to compensate now that the gradient is actually
+  visible (`.dark .glass-ambient` 0.28→0.2, `.dark .glass-soft` 0.46→0.34,
+  `.dark .glass-panel` 0.62→0.5 in `index.css`; `.dark .glass-focus`
+  (0.88), used for dialogs/drawers, deliberately left alone for
+  legibility). Separately:
+  `AccountPopover` rewritten to render through a portal to `document.body`
+  (matching `Drawer`/`Dialog`/`CommandPalette`, the pattern it should have
+  followed originally) with position computed from the trigger's real
+  `getBoundingClientRect()`, clamped on-screen, recomputed on resize —
+  below the `sm` breakpoint it renders as a full-width bottom sheet
+  instead of a floating popover. This replaces the `right-0`/`left-0`
+  coordinate-guessing fix from two sessions ago with a fix to the actual
+  positioning strategy. `HeartbeatLine` fixed to derive its SVG `viewBox`
+  width from the requested aspect ratio and repeat the correct number of
+  waveform cycles to fill it, instead of letterboxing one stretched cycle
+  in empty space on wide instances (e.g. Dashboard's). `AuthRequiredState`
+  copy changed to "Operator authentication required" / "Authenticate".
+  New `HeartbeatLine.test.tsx` (5 new tests: multi-cycle online rendering,
+  more cycles on a wider instance, static offline line, static amber
+  connecting state, reduced-motion behavior).
+  - **Per the commit message**, this was the first session with headless
+    Chromium available in a scratch environment, and the above was found
+    and confirmed by actually rendering the app and looking, not by code
+    review alone — at desktop/iPad-portrait/mobile, confirming the
+    gradient visible, cards reading as glass against it, the account
+    popover/sheet on-screen at every size, and the offline heartbeat as a
+    flat red line. **This session found no repository record of how that
+    browser tooling was obtained** — nothing in `frontend/package.json`,
+    no Playwright/Puppeteer dependency, no committed script — so it was
+    evidently ephemeral to that prior sandbox and should not be assumed
+    available in a future session by default; see BLOCKED below.
+  - Verified via `pnpm typecheck`/`pnpm lint` (0 errors, 2 pre-existing
+    warnings)/`pnpm test` (48/48, 5 new)/`pnpm build` — all clean, per the
+    commit message. Not independently re-run this session since no code
+    has changed since that commit. No backend code touched.
+
 ## PARTIAL
 
 - **Workflow builder** is functional and has 3/4 flagship features (node
@@ -456,32 +508,45 @@ directories.
 
 ## BLOCKED (this session, environment-limited — not code issues)
 
-- **No interactive browser tooling connected.** Claude-in-Chrome was not
-  available this session. All frontend verification was via `vitest`
-  (jsdom), `tsc`, `eslint`, `vite build`, and `curl`-level checks
-  (index.html + asset fetch, `/health`, `/ready`, CORS preflight headers).
-  Full interactive QA (click-through every page, browser console errors,
-  live network tab, actual responsive rendering at 375/430/768/820/1024/
-  1180/1440px) has **not** been performed. **Reconfirmed this session**
-  (still no browser tooling) for the glass/motion design-system pass —
-  the visual result (glass legibility/contrast, ambient-background
-  parallax feel, scroll-reveal timing, the new AccountPopover on
-  touch/iPad, backdrop-blur performance on Safari) has only been reasoned
-  about from code, never actually seen rendered. Treat this as the single
-  highest-priority follow-up before calling the visual upgrade "done" —
-  see 10_NEXT_STEPS.md. **Reconfirmed again this session** (still no
-  browser tooling): the `AccountPopover` positioning bug fix was
-  diagnosed and fixed by reasoning through the CSS layout (an `absolute
-  right-0` panel near the toolbar's *left* edge places most of its width
-  off-screen) — a genuine, verifiable-from-code defect and fix, but it
-  has still not actually been seen opening correctly in a browser. Same
-  for the new `HeartbeatLine` SMIL animation (vitest/jsdom passing only
-  proves it doesn't crash, not that the waveform visibly loops/scales
-  correctly) and the ambient background gradient's real visual balance —
-  **reconfirmed a third time this session**, now for the cream/bronze/
-  navy palette that superseded the prior gold/red one; the exact opacity
-  mix (5-9% cream/bronze, 22% navy) was tuned by reasoning about contrast
-  against the near-black base, not by looking at a rendered page.
+- **No interactive browser tooling connected in this session.**
+  Claude-in-Chrome was not available here. All frontend verification this
+  session was via `vitest` (jsdom), `tsc`, `eslint`, and `vite build` (no
+  code changed this session, so these were not re-run — see the
+  `776dd63` DONE entry above for what its own commit message reports).
+  **Status changed from the prior four sessions**: HEAD `776dd63`
+  reports the first-ever real rendered visual QA (headless Chromium in a
+  scratch environment) and used it to find and fix the actual
+  invisible-background root cause — a genuine break from the pattern
+  below of reasoning about visual results from code alone. However, this
+  session found no repository-committed record of how that browser
+  tooling was set up (no Playwright/Puppeteer in `frontend/package.json`,
+  no script), so it appears to have been ephemeral to that one sandbox
+  and is **not confirmed available again** — treat "get real interactive
+  browser verification" as still the top priority, either via
+  Claude-in-Chrome or by re-establishing whatever headless setup
+  `776dd63` used (and committing it this time, e.g. as a `package.json`
+  devDependency + documented script, so it survives to the next
+  session).
+  - Everything below predates `776dd63` and describes work that, per the
+    above, has now had a first real look — but the specific claims below
+    (exact opacity/positioning tuning) were made before that fix and
+    should be treated as superseded by `776dd63`'s own re-tuning, not as
+    still-open questions on the pre-`776dd63` code.
+  - The glass/motion design-system pass (glass legibility/contrast,
+    ambient-background parallax feel, scroll-reveal timing, backdrop-blur
+    performance on Safari): still only reasoned about from code prior to
+    `776dd63`; `776dd63`'s own visual QA covered gradient visibility,
+    glass-vs-background contrast, and the account popover/heartbeat, but
+    not scroll-reveal timing or Safari blur performance specifically.
+  - The original `AccountPopover` positioning bug (`right-0` near the
+    toolbar's left edge) was superseded by `776dd63`'s portal rewrite,
+    which `776dd63` reports as visually confirmed open/on-screen at
+    desktop/iPad-portrait/mobile.
+  - The `HeartbeatLine` SMIL/multi-cycle rendering and the cream/bronze/
+    navy gradient's real visual balance were both re-tuned and visually
+    confirmed per `776dd63`'s commit message (see DONE above) — no longer
+    an open "reasoned but unseen" item for those two specifically, though
+    still worth a second look once standing browser tooling exists.
 - **No production API key available to this session.** Confirmed one is
   configured on Render (`401` not `503` on protected routes), but its value
   isn't available here, so authenticated production flows (create task,

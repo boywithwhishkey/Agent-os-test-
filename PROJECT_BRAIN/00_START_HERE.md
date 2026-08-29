@@ -139,9 +139,21 @@ THYNACT's frontend runs on a shared glass-material + motion system, not
 page-by-page bespoke styling. A new agent touching UI should build on these
 primitives rather than reinventing bordered cards:
 
+- **Load-bearing fact (HEAD `776dd63`): `AppShell`'s root element must
+  never carry an opaque background class.** From `70cf378` through
+  `8a9dd81`, `AppShell`'s root `div` had `bg-surface-canvas` (fully
+  opaque) painted directly over `body`, silently hiding the entire
+  ambient-gradient system underneath every glass surface — three
+  sessions of gradient/glass-alpha retuning happened on a layer nothing
+  could see. Fixed by removing it; if the background ever looks flat
+  again, check this first before re-tuning gradient math.
 - **Glass depth hierarchy** (`frontend/src/index.css` — `.glass-ambient`,
   `.glass-soft`, `.glass-panel`, `.glass-focus`): increasing opacity/blur/
   shadow, used instead of opaque `bg-surface-raised` + bright borders.
+  Dark-mode background alpha as of `776dd63` (`.dark .glass-*` rules,
+  `index.css` ~L184-232): `.glass-ambient` 0.2, `.glass-soft` 0.34,
+  `.glass-panel` 0.5, `.glass-focus` 0.88 (dialogs/drawers, intentionally
+  left highest for legibility — untouched by `776dd63`).
   `border-hairline` (very low-opacity tonal edge) replaces `border-surface`
   wherever a surface only needs a whisper of separation rather than a
   visible outline; `border-surface` itself is untouched and still used for
