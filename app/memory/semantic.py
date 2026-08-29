@@ -63,7 +63,16 @@ class SemanticMemoryService:
         return ranked[:query.limit]
 
     async def recall(self, query: MemoryQuery):
-        return [x.record for x in await self.hybrid_recall(query)]
+        return [
+            item.record.model_copy(
+                update={
+                    "score": item.score,
+                    "semantic_score": item.semantic_score,
+                    "lexical_score": item.lexical_score,
+                }
+            )
+            for item in await self.hybrid_recall(query)
+        ]
 
     async def build_context(self, query: MemoryQuery, max_characters=6000) -> MemoryContext:
         ranked = await self.hybrid_recall(query)

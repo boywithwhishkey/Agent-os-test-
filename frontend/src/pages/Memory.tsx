@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Trash2, Search as SearchIcon, PenLine } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -15,6 +16,21 @@ import { formatDateTime, truncate } from "@/lib/utils";
 import type { MemoryScope } from "@/lib/types";
 
 const scopes: MemoryScope[] = ["session", "task", "project", "decision", "agent_run"];
+
+function MatchScore({ score }: { score: number }) {
+  const pct = Math.round(Math.min(1, Math.max(0, score)) * 100);
+  return (
+    <div className="mt-1 flex items-center gap-2" title={`Relevance score ${score.toFixed(3)}`}>
+      <div className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-surface">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-accent-violet to-accent-blue transition-[width] duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-xs font-medium text-accent-violet">{pct}% match</span>
+    </div>
+  );
+}
 
 export default function Memory() {
   return (
@@ -118,8 +134,16 @@ function MemorySearchPanel() {
             <EmptyState icon={<Brain className="h-5 w-5" />} title="No memories found" description="Try a different query or scope." />
           ) : (
             <ul className="divide-y divide-surface">
-              {results.data.map((record) => (
-                <li key={record.id} className="py-3">
+              <AnimatePresence initial={false}>
+                {results.data.map((record, i) => (
+                  <motion.li
+                    key={record.id}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2, delay: Math.min(i, 8) * 0.03 }}
+                    className="py-3"
+                  >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -128,6 +152,7 @@ function MemorySearchPanel() {
                           {record.scope}
                         </Badge>
                       </div>
+                      {record.score != null && <MatchScore score={record.score} />}
                       <p className="mt-1 text-sm text-content-secondary">{truncate(record.content, 220)}</p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-content-muted">
                         <span>Importance {record.importance.toFixed(2)}</span>
@@ -144,8 +169,9 @@ function MemorySearchPanel() {
                       <Trash2 className="h-4 w-4 text-accent-red" />
                     </Button>
                   </div>
-                </li>
-              ))}
+                  </motion.li>
+                ))}
+              </AnimatePresence>
             </ul>
           )}
         </CardContent>

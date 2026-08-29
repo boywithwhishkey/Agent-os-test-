@@ -107,6 +107,9 @@ export interface MemoryRecord {
   metadata: Record<string, unknown>;
   importance: number;
   created_at: string;
+  score: number | null;
+  semantic_score: number | null;
+  lexical_score: number | null;
 }
 
 export interface MemoryWrite {

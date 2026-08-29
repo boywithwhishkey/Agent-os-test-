@@ -62,6 +62,22 @@ async def test_recall_returns_records():
     result = await s.recall(MemoryQuery(project_id="agent-os", query="pgvector", limit=1))
     assert result[0].key == "decision"
 
+
+@pytest.mark.asyncio
+async def test_recall_attaches_real_similarity_scores():
+    s = SemanticMemoryService(
+        FakeMemory([rec("postgres", "durable memory", 0.9), rec("redis", "queue", 0.2)]),
+        DeterministicEmbeddingProvider(8),
+    )
+    result = await s.recall(MemoryQuery(project_id="agent-os", query="durable memory", limit=2))
+
+    assert result[0].score is not None
+    assert result[0].score > 0.0
+    assert result[0].semantic_score is not None
+    assert result[0].lexical_score is not None
+    # Scores are not fabricated placeholders: they vary between records.
+    assert result[0].score != result[1].score
+
 def test_compression_budget():
     text = compress_ranked_memories([RankedMemory(rec("a", "A"*200), .9)], 100)
     assert len(text) <= 100

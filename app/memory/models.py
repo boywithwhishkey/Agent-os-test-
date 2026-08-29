@@ -29,6 +29,9 @@ class MemoryRecord(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     importance: float = Field(default=0.5, ge=0.0, le=1.0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    score: float | None = None
+    semantic_score: float | None = None
+    lexical_score: float | None = None
 
 
 class MemoryWrite(BaseModel):
