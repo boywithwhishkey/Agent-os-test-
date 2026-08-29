@@ -68,7 +68,7 @@ export function Sidebar({
                         "focus-ring relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
                         isActive
                           ? "text-accent-violet"
-                          : "text-content-secondary hover:bg-surface-hover hover:text-content-primary"
+                          : "text-content-primary hover:bg-surface-hover hover:text-content-primary"
                       )}
                       title={collapsed ? item.label : undefined}
                     >

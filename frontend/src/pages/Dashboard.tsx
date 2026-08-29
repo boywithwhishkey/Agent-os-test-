@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Activity, Wrench, ScrollText, ListChecks, Workflow, Bot, ArrowUpRight } from "lucide-react";
-import { BrandMark, BRAND_TAGLINE } from "@/components/ui/BrandMark";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -39,21 +39,17 @@ export default function Dashboard() {
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
-            className="relative flex flex-col gap-3"
+            className="relative"
           >
             <motion.div variants={staggerItem}>
               <BrandMark variant="full" size="lg" />
             </motion.div>
-            <motion.p variants={staggerItem} className="max-w-lg text-sm text-content-muted">
-              {BRAND_TAGLINE} From intelligence to execution — this is the live state of your platform
-              and this session's activity.
-            </motion.p>
           </motion.div>
         </div>
       </div>
 
       <StaggerGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StaggerItem>
+        <StaggerItem className="h-full">
           <MetricCard
             label="API status"
             value={health.isLoading ? "…" : health.data ? "Online" : "Offline"}
@@ -65,7 +61,7 @@ export default function Dashboard() {
             }
           />
         </StaggerItem>
-        <StaggerItem>
+        <StaggerItem className="h-full">
           <MetricCard
             label="Tools available"
             value={tools.isLoading ? "…" : (tools.data?.length ?? "—")}
@@ -73,7 +69,7 @@ export default function Dashboard() {
             icon={<Wrench className="h-4 w-4" />}
           />
         </StaggerItem>
-        <StaggerItem>
+        <StaggerItem className="h-full">
           <MetricCard
             label="Audit events"
             value={audit.isLoading ? "…" : (audit.data?.length ?? "—")}
@@ -81,7 +77,7 @@ export default function Dashboard() {
             icon={<ScrollText className="h-4 w-4" />}
           />
         </StaggerItem>
-        <StaggerItem>
+        <StaggerItem className="h-full">
           <MetricCard
             label="This session"
             value={tasks.length + workflowRuns.length + executions.length}

@@ -38,7 +38,7 @@ export function MetricCard({
   return (
     <motion.div
       variants={metricReveal}
-      className="glass-soft relative overflow-hidden rounded-2xl border border-hairline p-5"
+      className="glass-soft relative flex h-full flex-col overflow-hidden rounded-2xl border border-hairline p-5"
     >
       <div className={cn("pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl", glowStyles[tone])} aria-hidden />
       <div className="relative flex items-center justify-between">
