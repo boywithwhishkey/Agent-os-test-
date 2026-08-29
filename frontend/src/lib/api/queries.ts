@@ -4,10 +4,13 @@ import type {
   ApprovalGrant,
   AutonomousRunRequest,
   AutonomousRunResult,
+  ConnectorEntry,
   HealthResponse,
   IntegrationRequest,
   IntegrationResult,
   IntegrationStatus,
+  MCPServer,
+  MCPServerCreate,
   MemoryContext,
   MemoryQuery,
   MemoryRecord,
@@ -211,11 +214,14 @@ export function useRuntimeStatus(provider: string, workflow: string, options?: {
   });
 }
 
-// ---------- Integrations ----------
-export function useIntegrations() {
+// ---------- Integrations: unified connector catalog ----------
+// Catalog reads are public on the backend (no operator API key required) so
+// the Integration Hub renders for any visitor — only mutating actions below
+// (test/execute/MCP create/test/delete) require auth and will 401 without it.
+export function useConnectorCatalog() {
   return useQuery({
-    queryKey: ["integrations"],
-    queryFn: () => api.get<IntegrationStatus[]>("/api/v1/integrations"),
+    queryKey: ["connector-catalog"],
+    queryFn: () => api.get<ConnectorEntry[]>("/api/v1/integrations", { skipAuth: true }),
     refetchInterval: 30_000,
   });
 }
@@ -225,10 +231,8 @@ export function useTestIntegration() {
   return useMutation({
     mutationFn: (provider: string) =>
       api.post<IntegrationStatus>(`/api/v1/integrations/${provider}/test`, undefined, { timeoutMs: 15_000 }),
-    onSuccess: (status) => {
-      queryClient.setQueryData<IntegrationStatus[]>(["integrations"], (current) =>
-        current?.map((item) => (item.provider === status.provider ? status : item))
-      );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["connector-catalog"] });
     },
   });
 }
@@ -239,7 +243,47 @@ export function useExecuteIntegration() {
     mutationFn: (payload: { provider: string; request: IntegrationRequest }) =>
       api.post<IntegrationResult>("/api/v1/integrations/execute", payload, { timeoutMs: 60_000 }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+      queryClient.invalidateQueries({ queryKey: ["connector-catalog"] });
+    },
+  });
+}
+
+// ---------- Integrations: MCP servers ----------
+export function useMCPServers() {
+  return useQuery({
+    queryKey: ["mcp-servers"],
+    queryFn: () => api.get<MCPServer[]>("/api/v1/integrations/mcp/servers", { skipAuth: true }),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useCreateMCPServer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: MCPServerCreate) => api.post<MCPServer>("/api/v1/integrations/mcp/servers", payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
+    },
+  });
+}
+
+export function useTestMCPServer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (serverId: string) =>
+      api.post<MCPServer>(`/api/v1/integrations/mcp/servers/${serverId}/test`, undefined, { timeoutMs: 20_000 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
+    },
+  });
+}
+
+export function useDeleteMCPServer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (serverId: string) => api.delete<void>(`/api/v1/integrations/mcp/servers/${serverId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mcp-servers"] });
     },
   });
 }

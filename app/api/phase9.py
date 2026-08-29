@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from app.core.auth import require_api_key
 from app.core.config import settings
 from app.core.correlation import get_or_create_correlation_id
-from app.integrations.catalog import CatalogSpec, get_catalog_spec, list_catalog
+from app.integrations.catalog import CatalogSpec, list_catalog
 from app.integrations.factory import (
     build_integration_adapter,
     is_provider_configured,
@@ -46,13 +46,21 @@ class IntegrationExecutePayload(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-def _n8n_live_status() -> dict:
-    provider = next(p for p in list_providers() if p.value == "n8n")
-    record = status_store.get("n8n")
-    configured = is_provider_configured(provider)
+def _status_store_backed_status(provider_id: str, *, configured: bool, force_connected: bool = False) -> dict:
+    """Shared status shape for any implemented connector whose only source of
+    truth for "connected" is the last real test_connection() call recorded in
+    status_store — i.e. every implemented connector except n8n's webhook
+    reachability check, which uses this same shape directly.
+
+    `force_connected` additionally reports CONNECTED when the connector is
+    known to be in active use right now (e.g. Postgres/Redis already backing
+    a live feature) even if no explicit "Test connection" click has happened
+    yet this process.
+    """
+    record = status_store.get(provider_id)
     if not configured:
         status = ConnectorStatusValue.NEEDS_SETUP
-    elif record.connected is True:
+    elif record.connected is True or force_connected:
         status = ConnectorStatusValue.CONNECTED
     elif record.connected is False:
         status = ConnectorStatusValue.ERROR
@@ -61,7 +69,7 @@ def _n8n_live_status() -> dict:
     return {
         "status": status,
         "configured": configured,
-        "connected": record.connected,
+        "connected": True if force_connected else record.connected,
         "last_check": record.last_check,
         "last_check_latency_ms": record.last_check_latency_ms,
         "last_check_error": record.last_check_error,
@@ -70,19 +78,21 @@ def _n8n_live_status() -> dict:
     }
 
 
+def _n8n_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "n8n")
+    return _status_store_backed_status("n8n", configured=is_provider_configured(provider))
+
+
 def _gemini_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "gemini")
     active = settings.llm_provider.lower().strip() == "gemini"
-    has_key = bool(settings.gemini_api_key)
-    if active:
-        status = ConnectorStatusValue.CONNECTED
-    elif has_key:
-        status = ConnectorStatusValue.CONFIGURED
-    else:
-        status = ConnectorStatusValue.NEEDS_SETUP
-    return {"status": status, "configured": has_key, "connected": active if has_key else None}
+    return _status_store_backed_status(
+        "gemini", configured=is_provider_configured(provider), force_connected=active
+    )
 
 
 def _postgresql_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "postgresql")
     backends = {
         settings.memory_backend,
         settings.task_backend,
@@ -92,26 +102,37 @@ def _postgresql_live_status() -> dict:
         settings.workflow_definition_backend,
     }
     in_use = "postgres" in backends
-    has_url = bool(settings.database_url)
-    if in_use:
-        status = ConnectorStatusValue.CONNECTED
-    elif has_url:
-        status = ConnectorStatusValue.CONFIGURED
-    else:
-        status = ConnectorStatusValue.NEEDS_SETUP
-    return {"status": status, "configured": has_url, "connected": in_use if has_url else None}
+    return _status_store_backed_status(
+        "postgresql", configured=is_provider_configured(provider), force_connected=in_use
+    )
 
 
 def _redis_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "redis")
     in_use = settings.queue_backend.lower().strip() == "redis"
-    has_url = bool(settings.redis_url)
-    if in_use:
-        status = ConnectorStatusValue.CONNECTED
-    elif has_url:
-        status = ConnectorStatusValue.CONFIGURED
-    else:
-        status = ConnectorStatusValue.NEEDS_SETUP
-    return {"status": status, "configured": has_url, "connected": in_use if has_url else None}
+    return _status_store_backed_status(
+        "redis", configured=is_provider_configured(provider), force_connected=in_use
+    )
+
+
+def _openai_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "openai")
+    return _status_store_backed_status("openai", configured=is_provider_configured(provider))
+
+
+def _anthropic_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "anthropic")
+    return _status_store_backed_status("anthropic", configured=is_provider_configured(provider))
+
+
+def _cloudflare_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "cloudflare")
+    return _status_store_backed_status("cloudflare", configured=is_provider_configured(provider))
+
+
+def _render_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "render")
+    return _status_store_backed_status("render", configured=is_provider_configured(provider))
 
 
 _LIVE_STATUS_RESOLVERS = {
@@ -119,11 +140,15 @@ _LIVE_STATUS_RESOLVERS = {
     "gemini": _gemini_live_status,
     "postgresql": _postgresql_live_status,
     "redis": _redis_live_status,
+    "openai": _openai_live_status,
+    "anthropic": _anthropic_live_status,
+    "cloudflare": _cloudflare_live_status,
+    "render": _render_live_status,
 }
 
 
 def _resolve_entry(spec: CatalogSpec) -> ConnectorEntry:
-    live = _LIVE_STATUS_RESOLVERS.get(spec.id, lambda: {})() if spec.implemented else {}
+    live = _LIVE_STATUS_RESOLVERS.get(spec.id, dict)() if spec.implemented else {}
     return ConnectorEntry(
         id=spec.id,
         name=spec.name,

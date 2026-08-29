@@ -15,7 +15,13 @@ export type StatusKind =
   | "unconfigured"
   | "unavailable"
   | "healthy"
-  | "degraded";
+  | "degraded"
+  | "connected"
+  | "configured"
+  | "needs_setup"
+  | "available"
+  | "error"
+  | "disabled";
 
 const config: Record<StatusKind, { label: string; tone: "neutral" | "violet" | "blue" | "green" | "red" | "amber"; pulse?: boolean }> = {
   pending: { label: "Pending", tone: "neutral" },
@@ -32,6 +38,12 @@ const config: Record<StatusKind, { label: string; tone: "neutral" | "violet" | "
   unconfigured: { label: "Unconfigured", tone: "neutral" },
   unavailable: { label: "Unavailable", tone: "red" },
   degraded: { label: "Degraded", tone: "amber" },
+  connected: { label: "Connected", tone: "green", pulse: true },
+  configured: { label: "Configured", tone: "blue" },
+  needs_setup: { label: "Needs setup", tone: "amber" },
+  available: { label: "Available", tone: "neutral" },
+  error: { label: "Error", tone: "red" },
+  disabled: { label: "Disabled", tone: "neutral" },
 };
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {

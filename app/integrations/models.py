@@ -8,6 +8,13 @@ from pydantic import BaseModel, Field
 
 class IntegrationProvider(StrEnum):
     N8N = "n8n"
+    GEMINI = "gemini"
+    POSTGRESQL = "postgresql"
+    REDIS = "redis"
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    CLOUDFLARE = "cloudflare"
+    RENDER = "render"
 
 
 class IntegrationRequest(BaseModel):

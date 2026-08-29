@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from app.integrations.models import IntegrationRequest, IntegrationResult
+from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
 
 
 class IntegrationAdapter(ABC):
@@ -18,3 +18,19 @@ class IntegrationAdapter(ABC):
         success.
         """
         return False, None, "Connection test is not supported for this provider"
+
+
+def unsupported_execute_result(
+    provider: IntegrationProvider, request: IntegrationRequest, *, reason: str
+) -> IntegrationResult:
+    """Shared response for adapters that only support a connection test, not
+    the generic webhook-style execute() (e.g. a database, queue, or an AI/API
+    provider verified by a read-only capability check rather than a triggered
+    workflow)."""
+    return IntegrationResult(
+        provider=provider,
+        workflow=request.workflow,
+        success=False,
+        error=reason,
+        correlation_id=request.correlation_id,
+    )

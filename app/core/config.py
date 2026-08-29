@@ -23,6 +23,10 @@ class Settings(BaseSettings):
         validation_alias="AGENT_OS_LLM_MODEL",
     )
     gemini_api_key: str | None = Field(default=None, validation_alias="GEMINI_API_KEY")
+    openai_api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
+    anthropic_api_key: str | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
+    cloudflare_api_token: str | None = Field(default=None, validation_alias="CLOUDFLARE_API_TOKEN")
+    render_api_key: str | None = Field(default=None, validation_alias="RENDER_API_KEY")
     max_parallel: int = Field(default=3, ge=1, validation_alias="AGENT_OS_MAX_PARALLEL")
     max_retries: int = Field(default=2, ge=0, validation_alias="AGENT_OS_MAX_RETRIES")
     max_jobs: int = Field(default=6, ge=1, validation_alias="AGENT_OS_MAX_JOBS")

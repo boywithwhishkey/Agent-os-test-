@@ -303,6 +303,76 @@ export interface IntegrationStatus {
   last_execution_success: boolean | null;
 }
 
+// --- Integration Hub: unified connector catalog + MCP ---
+export type ConnectorType = "mcp" | "api" | "oauth" | "webhook";
+export type ConnectorCategory = "automation" | "ai" | "developer" | "productivity" | "google" | "data" | "other";
+export type ConnectorAuthType = "none" | "api_key" | "oauth2" | "bearer" | "webhook_secret";
+export type ConnectorStatusValue = "connected" | "configured" | "needs_setup" | "available" | "error" | "disabled";
+
+export interface ConnectorEntry {
+  id: string;
+  name: string;
+  description: string;
+  category: ConnectorCategory;
+  connector_type: ConnectorType;
+  icon: string;
+  auth_type: ConnectorAuthType;
+  capabilities: string[];
+  provider: string;
+  popular: boolean;
+  documentation_url: string | null;
+  implemented: boolean;
+  requires: string[];
+  status: ConnectorStatusValue;
+  configured: boolean;
+  connected: boolean | null;
+  last_check: string | null;
+  last_check_latency_ms: number | null;
+  last_check_error: string | null;
+  last_execution: string | null;
+  last_execution_success: boolean | null;
+}
+
+export type MCPAuthType = "none" | "bearer" | "header";
+
+export interface MCPCapabilityItem {
+  name: string;
+  description: string | null;
+}
+
+export interface MCPCapabilities {
+  tools: MCPCapabilityItem[];
+  resources: MCPCapabilityItem[];
+  prompts: MCPCapabilityItem[];
+}
+
+export interface MCPServerCreate {
+  name: string;
+  endpoint: string;
+  auth_type: MCPAuthType;
+  header_name?: string | null;
+  secret_value?: string | null;
+  timeout_seconds?: number;
+  enabled?: boolean;
+}
+
+export interface MCPServer {
+  id: string;
+  name: string;
+  endpoint: string;
+  auth_type: MCPAuthType;
+  header_name: string | null;
+  has_secret: boolean;
+  timeout_seconds: number;
+  enabled: boolean;
+  created_at: string;
+  connected: boolean | null;
+  last_check: string | null;
+  last_check_latency_ms: number | null;
+  last_check_error: string | null;
+  capabilities: MCPCapabilities;
+}
+
 // --- System ---
 export interface HealthResponse {
   status: string;
