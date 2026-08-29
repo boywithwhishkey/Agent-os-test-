@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `8cae377`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `1f9ffdc`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -516,6 +516,92 @@ directories.
     highest-priority follow-up — see BLOCKED below and 10_NEXT_STEPS.md.
   - Backend untouched.
 
+- **Mobile/small-tablet responsive layout fix (this session, HEAD
+  `1f9ffdc`), source-level audit only — see BLOCKED below.** The operator
+  checked the live site on an actual mobile device after the glass
+  retune shipped and reported it "still behaving like a squeezed desktop
+  layout," with a concrete list of symptoms (Dashboard stat cards stuck
+  at 2 narrow columns, cramped Topbar, poor text wrapping, inconsistent
+  card sizing). Audited the responsive architecture first (Tailwind v4
+  defaults — `sm`=640/`md`=768/`lg`=1024px, no custom breakpoints
+  configured) rather than patching screens individually. Root causes
+  found:
+  - Dashboard's 4 stat cards used `grid-cols-2` as an **unconditional
+    base class** (`pages/Dashboard.tsx`), so they rendered 2-up at every
+    width below 1024px, including phones — this was the actual cause of
+    both the "2-column squeeze" complaint and the "This session" card's
+    hint text ("Tasks, runs & executions started here") wrapping badly:
+    the card was simply too narrow, there was no separate text-wrapping
+    bug to fix. Now `grid-cols-1` (base) → `sm:grid-cols-2` (640px+) →
+    `lg:grid-cols-4` (1024px+, unchanged).
+  - The same unconditional `grid-cols-2` pattern existed in six other
+    places for paired form fields / metadata `dl`s:
+    `StepEditorDialog.tsx` (x2), `Runtime.tsx` (Execute form + execution
+    detail `dl`), `Tasks.tsx` (New-task form + task-card `dl`),
+    `ConnectorCard.tsx` (last-checked `dl`) — all switched to
+    `grid-cols-1 sm:grid-cols-2` so they stack below 640px instead of
+    cramming two fields into ~150px each on a phone.
+  - `Topbar.tsx` was genuinely overcrowded: hamburger + `AccountPopover`
+    + a `flex-1` search bar + (API-key badge + `HealthIndicator` with a
+    waveform *and* text label + theme toggle + settings) all competing
+    for one 320-375px row. Fixed by making the search control collapse
+    to an icon-only square button below `sm` (it was previously an empty
+    stretched pill — the label was already hidden but the container
+    still claimed `flex-1` space) and `HealthIndicator.tsx` dropping its
+    text label below `sm` (keeps the colored heartbeat waveform +
+    tooltip, which already conveys state). Header padding/gaps tightened
+    on mobile (`px-3`/`gap-1.5`) vs desktop (`px-4`/`gap-3`, unchanged).
+    Hamburger touch target `p-1.5`→`p-2`; `AccountPopover`'s trigger
+    `h-8`→`h-9` to match the other 36px icon buttons in the header.
+  - `Workflows.tsx`'s "Step graph" toolbar (3 buttons — Add step/Delete
+    selected/Run workflow — with no `flex-wrap`) could overflow its row
+    on narrow screens; added `flex-wrap`. `WorkflowRuns.tsx`'s
+    resume-step rows (a fixed `w-32` label next to an `Input` in a flex
+    row) now stack label-above-input below `sm`. `CommandPalette.tsx`'s
+    outer overlay had no horizontal padding at all, so the palette sat
+    flush against both screen edges on mobile; added `px-4`.
+  - Two Dashboard grids that already relied on bare `grid`'s default
+    single-column-stacking behavior (no explicit `grid-cols-N`) got an
+    explicit `grid-cols-1` base added anyway, for clarity/consistency —
+    not because they were broken.
+  - **Audited and found already correct, deliberately not touched**:
+    `Sidebar` (proper off-canvas drawer below `lg`, `-translate-x-full`
+    when closed, fixed-positioned so it can't contribute to page width);
+    `Dialog` (`w-full` + `max-w-*` inside a `p-4` flex-centered overlay —
+    this correctly caps at `100vw - 32px`, verified by reasoning through
+    how percentage widths resolve in a flex-centered container, not
+    guessed); `Drawer` (`w-full max-w-md` with no container padding —
+    correctly fills exactly `100vw` on mobile, the standard full-screen-
+    sheet pattern, not a bug); `AccountPopover`'s existing popover/sheet
+    split (already switches to a full-width bottom sheet below 640px
+    with a viewport-clamped floating popover above it — built in the
+    `776dd63` session, still correct); `PageHeader` (already
+    `flex-col` → `sm:flex-row`, used on every page); `Audit.tsx`'s and
+    `WorkflowRuns.tsx`'s tables (already wrapped in `overflow-x-auto`
+    with `min-w-[...]` on the `<table>` itself — the correct
+    "intentional internal scroll" pattern the brief asked to preserve,
+    left as-is); every other bare `grid ... sm:grid-cols-N` /
+    `lg:grid-cols-N` pattern app-wide (roughly two dozen instances across
+    `Approvals`/`Autonomous`/`Agents`/`Tools`/`Memory`/`Integrations`/
+    `SystemHealth`/etc.) — CSS grid's documented default behavior
+    (`grid-template-columns: none`) is to stack items in a single column
+    below the first breakpoint that defines columns, so these were
+    already correct and did not need a `grid-cols-1` base added.
+  - Verified via `pnpm typecheck`/`pnpm lint` (0 errors, 2 pre-existing
+    warnings)/`pnpm test` (48/48, no test changes needed)/`pnpm build` —
+    all clean. **Explicitly NOT visually verified in a real browser** —
+    Claude-in-Chrome tools were checked for (via tool search) at the
+    start of this task and are still not available. Every finding and
+    fix above comes from reading component source and applying Tailwind
+    v4's documented breakpoint/grid semantics, never from seeing the
+    rendered UI. The operator's original mobile screenshot was referenced
+    in their instructions but was not actually attached/visible to this
+    session, so this fix was also not checked against that specific
+    image. **Do not describe mobile as "fixed" or "verified" beyond
+    this source-level audit until it has actually been rendered and
+    looked at** — see BLOCKED below.
+  - Backend untouched. No API/auth/route changes.
+
 ## PARTIAL
 
 - **Workflow builder** is functional and has 3/4 flagship features (node
@@ -557,18 +643,28 @@ directories.
 ## BLOCKED (this session, environment-limited — not code issues)
 
 - **No interactive browser tooling connected in this session.**
-  Claude-in-Chrome was not available here (checked via tool search, found
-  nothing). All frontend verification this session was via `vitest`
-  (jsdom), `tsc`, `eslint`, and `vite build` — including for the
-  `8cae377` glass-alpha retune, which has real visual risk (lower alpha
-  could hurt text contrast on some surfaces) that none of those checks
-  can catch. **This is now the single most important thing to get for
-  this project** — two consecutive sessions have made significant visual
-  changes (`776dd63`'s actual rendered QA, then this session's alpha
-  retune reasoned about but not rendered) and only one of them was ever
-  actually seen. If Claude-in-Chrome or equivalent becomes available,
-  point it at `776dd63`'s and `8cae377`'s combined result before touching
-  anything else.
+  Claude-in-Chrome was checked for (via tool search) twice this session —
+  once before the glass-alpha work and again before the mobile-responsive
+  work — and was not available either time. All frontend verification
+  this session was via `vitest` (jsdom), `tsc`, `eslint`, and `vite
+  build` — including for both the `8cae377` glass-alpha retune (real
+  visual risk: lower alpha could hurt text contrast on some surfaces)
+  and the `1f9ffdc` mobile-responsive fix (the operator explicitly
+  reported a live-device mobile screenshot as source of truth for this
+  work, but that image was not actually attached to/visible in this
+  session — the fix is a source-level Tailwind-breakpoint/grid audit
+  only, not checked against that specific screenshot or any rendered
+  page). None of typecheck/lint/test/build can catch a genuine visual
+  regression in either of these. **This is now the single most important
+  thing to get for this project, three sessions running** — `776dd63`'s
+  real rendered QA remains the only one of the last three visual
+  sessions actually seen. If Claude-in-Chrome or equivalent becomes
+  available, check, in order: (1) the Dashboard stat-card grid and
+  Topbar at 320/375/768px — the operator's specific complaint — (2) the
+  rest of `1f9ffdc`'s changes (dialog/form grids, CommandPalette,
+  WorkflowRuns resume rows), (3) `8cae377`'s glass-alpha legibility, (4)
+  `776dd63`'s original claims (no longer confirmable as a standing
+  capability — see below).
   **Status changed from the prior four sessions**: HEAD `776dd63`
   reports the first-ever real rendered visual QA (headless Chromium in a
   scratch environment) and used it to find and fix the actual
