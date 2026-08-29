@@ -66,10 +66,14 @@ file at the end of every session so the next agent can start cold.
   gauge (backed by new read-only status/usage getters + a new `GET
   /api/v1/runtime/status` route). System Health now has a persistence/LLM
   service map (backed by an enriched `/health` response).
+- DONE: Audit now has a Table/Timeline view toggle.
 - Remaining: Autonomous (existing `Timeline` + `AgentCard` combo is
   functional, lower priority), Memory graph/network view, Runtime
-  execution-timeline/circuit-breaker-diagram view, Audit timeline view
-  mode. See 07_DEFERRED_GOALS.md for specifics.
+  execution-timeline/circuit-breaker-diagram view, Audit correlation-ID
+  quick-copy (needs a `DATABASE_URL`-backed migration — see
+  07_DEFERRED_GOALS.md). Workflows flagship features (node toolbar,
+  context panel, execution-pulse-along-edge) are still the biggest
+  remaining UI lift.
 - Continue the Workflows builder toward the flagship vision: node toolbar,
   context side panel, execution-pulse-along-edge animation, per-node
   validation highlighting.

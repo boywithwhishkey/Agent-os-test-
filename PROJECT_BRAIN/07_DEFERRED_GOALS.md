@@ -30,12 +30,16 @@ for what's left:
   visual ranking is DONE — see 02_CURRENT_STATE.md).
 - Runtime: a circuit-breaker state diagram / execution timeline view
   (live badge + rate-limit gauge are DONE — see 02_CURRENT_STATE.md).
-- Audit: a timeline view mode as an alternative to the table.
+- Audit: correlation-ID quick-copy — needs a Postgres migration to add a
+  `correlation_id` column to `tool_audit_events` plus threading a
+  correlation id through `ToolExecutor`/`ToolExecuteRequest`; do this once
+  `DATABASE_URL` exists and can be tested against for real (timeline view
+  mode itself is DONE — see 02_CURRENT_STATE.md).
 
 Done this session (removed from this list): Orchestration's researcher →
 builder → reviewer connected-node visualization
 (`OrchestrationPipeline.tsx`); System Health's persistence/LLM service
-map.
+map; Audit's table/timeline view toggle.
 
 ## Integrations / connectors
 

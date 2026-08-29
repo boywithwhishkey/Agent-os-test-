@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `96baeae`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `05aca45`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -138,6 +138,15 @@ directories.
   runtime/tool/queue → which backend each is using). System Health has a
   new "Persistence map" card visualizing durable (postgres/redis) vs
   ephemeral (memory) per subsystem.
+- **Audit timeline view.** Added a Table/Timeline segmented toggle to the
+  Audit Logs page — pure frontend, reuses the existing
+  `/api/v1/tools/audit` data, no backend change. Correlation-ID
+  quick-copy (also requested for Audit) is genuinely deferred: the
+  `tool_audit_events` table/dataclass has no `correlation_id` field at
+  all, so adding it needs a Postgres migration plus threading a
+  correlation id through `ToolExecutor`/`ToolExecuteRequest` — not done
+  blind without a real database to test the migration against (this repo
+  has no `DATABASE_URL` available to this session).
 - **Backend test suite: 136/136 passing** (`uv run pytest tests/ -q`).
 - **Frontend: 23/23 tests passing** (`pnpm test`), **typecheck clean**
   (`pnpm typecheck`), **lint clean** — 0 errors, 2 pre-existing warnings
@@ -211,7 +220,7 @@ Report only variable **names** — no secret values known or requested.
 | Runtime | DONE, motion pass PARTIAL | Execute/retries/rate-limit/circuit-breaker/idempotency, live circuit-breaker badge + rate-limit gauge (this session); no execution timeline view yet |
 | Tools | DONE (prior session) | List/execute/risk levels/approval-required/audit |
 | Integrations | DONE (this session) | Connector registry + test-connection, n8n only, extensible adapter architecture |
-| Audit | DONE (prior session) | Tool events, correlation IDs, status, timestamps |
+| Audit | DONE, motion pass DONE | Tool events, status, timestamps, table + timeline views (this session). No correlation ID on audit events yet — see NEEDS CREDENTIALS/DATABASE_URL, this requires a migration |
 | Health | DONE | Live `/health` + `/ready` + persistence/LLM service map (this session) |
 | Settings | DONE (this session: About/brand section added) | API base URL + key (sessionStorage only), theme, About |
 | Persistence | PARTIAL — production is memory-only | Code supports Postgres/Redis backends (`app/persistence/`, `app/queue/redis_queue.py`) but production has none configured (see NEEDS CREDENTIALS) |
