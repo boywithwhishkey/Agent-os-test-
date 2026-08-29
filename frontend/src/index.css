@@ -96,6 +96,16 @@ body {
   color: #14161c;
   -webkit-font-smoothing: antialiased;
   font-family: var(--font-sans);
+  /* Same cream/bronze/navy ambient tokens as dark mode, at much lower
+     intensity — light backgrounds go muddy fast, so this is a soft warm
+     wash rather than the deep saturated blobs dark mode uses. Without
+     this, low-alpha glass surfaces in light mode had nothing but flat
+     gray behind them to reveal. */
+  background-image:
+    radial-gradient(ellipse 56rem 42rem at 18% -8%, color-mix(in srgb, var(--color-ambient-cream) 55%, transparent), transparent 68%),
+    radial-gradient(ellipse 66rem 50rem at 4% 14%, color-mix(in srgb, var(--color-ambient-bronze) 10%, transparent), transparent 72%),
+    radial-gradient(ellipse 74rem 62rem at 88% 82%, color-mix(in srgb, var(--color-ambient-navy) 7%, transparent), transparent 75%);
+  background-attachment: fixed;
 }
 .dark body {
   background-color: #05060a;
@@ -177,58 +187,82 @@ body {
 
 /* ------------------------------------------------------------------ */
 /* THYNACT glass material system                                       */
-/* Depth hierarchy: ambient < glass-soft < glass-panel < glass-focus.   */
-/* Each level trades opacity/blur for legibility — dialogs/drawers get  */
-/* the strongest blur + highest opacity so text stays WCAG-readable.    */
+/* Transparency hierarchy: page background -> glass-ambient (large      */
+/* sections: Topbar/large washes) -> glass-soft (Sidebar/MetricCard) -> */
+/* glass-panel (Card, the default content surface) -> glass-focus       */
+/* (dialogs/drawers/popovers/dropdowns) -> glass-field (form controls,  */
+/* nested one level deeper than the card they sit in). Alpha stays in   */
+/* the ~0.04-0.16 range through glass-panel so the ambient gradient/    */
+/* mesh glows clearly read through every card and section; glass-focus  */
+/* and glass-field step up in opacity deliberately since they either    */
+/* overlay real page content (modals/dropdowns, need contrast to stay   */
+/* legible) or need to read as a distinct clickable target nested       */
+/* inside an already-translucent card. Blur does the heavy lifting for  */
+/* legibility at low alpha, not opacity.                                */
 /* ------------------------------------------------------------------ */
 .glass-ambient {
-  background-color: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(6px) saturate(120%);
-  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  background-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(9px) saturate(130%);
+  -webkit-backdrop-filter: blur(9px) saturate(130%);
 }
 .dark .glass-ambient {
-  background-color: rgba(16, 19, 28, 0.2);
-  backdrop-filter: blur(6px) saturate(140%);
-  -webkit-backdrop-filter: blur(6px) saturate(140%);
+  background-color: rgba(16, 19, 28, 0.06);
+  backdrop-filter: blur(9px) saturate(150%);
+  -webkit-backdrop-filter: blur(9px) saturate(150%);
 }
 
 .glass-soft {
-  background-color: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(20, 22, 28, 0.04);
+  background-color: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(20, 22, 28, 0.04);
 }
 .dark .glass-soft {
-  background-color: rgba(16, 19, 28, 0.34);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background-color: rgba(16, 19, 28, 0.1);
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .glass-panel {
-  background-color: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 8px 24px -12px rgba(20, 22, 28, 0.12);
+  background-color: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.3), 0 8px 24px -12px rgba(20, 22, 28, 0.12);
 }
 .dark .glass-panel {
-  background-color: rgba(16, 19, 28, 0.5);
-  backdrop-filter: blur(20px) saturate(170%);
-  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  background-color: rgba(16, 19, 28, 0.15);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
 }
 
 .glass-focus {
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.7), 0 24px 48px -16px rgba(20, 22, 28, 0.22);
 }
 .dark .glass-focus {
-  background-color: rgba(12, 14, 21, 0.88);
+  background-color: rgba(12, 14, 21, 0.4);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+}
+
+/* One tier deeper than glass-panel: form controls nested inside an
+   already-translucent card need slightly more body to still read as a
+   distinct clickable target, plus a visible (not hairline) border for
+   affordance — this is the "forms/inputs" tier of the hierarchy. */
+.glass-field {
+  background-color: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+}
+.dark .glass-field {
+  background-color: rgba(16, 19, 28, 0.28);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
 }
 
 /* ------------------------------------------------------------------ */
