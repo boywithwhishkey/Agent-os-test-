@@ -73,6 +73,48 @@ async def test_n8n_failure_is_structured():
 
 
 @pytest.mark.asyncio
+async def test_n8n_test_connection_reports_reachable_host():
+    transport = httpx.MockTransport(lambda request: httpx.Response(404))
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = N8NWebhookAdapter(base_url="https://n8n.example", client=client)
+        connected, latency_ms, error = await adapter.test_connection()
+
+    assert connected is True
+    assert latency_ms is not None and latency_ms >= 0
+    assert error is None
+
+
+@pytest.mark.asyncio
+async def test_n8n_test_connection_reports_timeout():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.TimeoutException("timed out", request=request)
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = N8NWebhookAdapter(base_url="https://n8n.example", client=client)
+        connected, latency_ms, error = await adapter.test_connection()
+
+    assert connected is False
+    assert latency_ms is None
+    assert "timed out" in (error or "").lower()
+
+
+@pytest.mark.asyncio
+async def test_n8n_test_connection_reports_network_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = N8NWebhookAdapter(base_url="https://n8n.example", client=client)
+        connected, latency_ms, error = await adapter.test_connection()
+
+    assert connected is False
+    assert latency_ms is None
+    assert "ConnectError" in (error or "")
+
+
+@pytest.mark.asyncio
 async def test_workflow_integration_handler_returns_data():
     transport = httpx.MockTransport(
         lambda request: httpx.Response(200, json={"execution": "done"})
