@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Server, PlayCircle, Search } from "lucide-react";
+import { Server, PlayCircle, Search, ShieldCheck, ShieldAlert, Gauge } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -8,10 +8,11 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ErrorState, EmptyState } from "@/components/ui/States";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import { JSONViewer } from "@/components/ui/JSONViewer";
-import { useExecuteRuntime, useRuntimeExecution } from "@/lib/api/queries";
+import { useExecuteRuntime, useRuntimeExecution, useRuntimeStatus } from "@/lib/api/queries";
 import { useSessionHistory, recordHistory } from "@/lib/session-history";
 import { useToast } from "@/components/ui/Toast";
-import { formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
+import type { RuntimeStatus } from "@/lib/types";
 
 export default function Runtime() {
   const [provider, setProvider] = useState("n8n");
@@ -90,6 +91,7 @@ export default function Runtime() {
               Execute
             </Button>
             {execute.isError && <ErrorState error={execute.error} onRetry={run} />}
+            {provider && workflow && <RuntimeGauges provider={provider} workflow={workflow} />}
           </CardContent>
         </Card>
 
@@ -179,6 +181,63 @@ function ExecutionLookup({ executionId }: { executionId: string | undefined }) {
       </dl>
       {data.error && <p className="text-sm text-accent-red">{data.error}</p>}
       <JSONViewer data={data.data} />
+    </div>
+  );
+}
+
+function RuntimeGauges({ provider, workflow }: { provider: string; workflow: string }) {
+  const { data, isLoading } = useRuntimeStatus(provider, workflow);
+  if (isLoading || !data) return null;
+  return <RuntimeGaugesDisplay data={data} />;
+}
+
+function RuntimeGaugesDisplay({ data }: { data: RuntimeStatus }) {
+  const { circuit_breaker: breaker, rate_limit: rateLimit } = data;
+  const isOpen = breaker.state === "open";
+  const usagePct = Math.min(100, Math.round((rateLimit.used / Math.max(1, rateLimit.limit)) * 100));
+  const gaugeTone = usagePct >= 90 ? "bg-accent-red" : usagePct >= 60 ? "bg-accent-amber" : "bg-accent-green";
+
+  return (
+    <div className="grid gap-3 rounded-lg border border-surface bg-surface-canvas p-3 sm:grid-cols-2">
+      <div className="space-y-1.5">
+        <p className="flex items-center gap-1.5 text-xs font-medium text-content-muted">
+          {isOpen ? <ShieldAlert className="h-3.5 w-3.5 text-accent-red" /> : <ShieldCheck className="h-3.5 w-3.5 text-accent-green" />}
+          Circuit breaker
+        </p>
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium capitalize",
+              isOpen
+                ? "border-accent-red/25 bg-accent-red/10 text-accent-red animate-pulse-slow"
+                : "border-accent-green/25 bg-accent-green/10 text-accent-green"
+            )}
+          >
+            {breaker.state}
+          </span>
+          {isOpen && breaker.recovers_in_seconds != null && (
+            <span className="text-xs text-content-muted">recovers in {Math.ceil(breaker.recovers_in_seconds)}s</span>
+          )}
+          {!isOpen && breaker.failures > 0 && (
+            <span className="text-xs text-content-muted">{breaker.failures} recent failure(s)</span>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <p className="flex items-center gap-1.5 text-xs font-medium text-content-muted">
+          <Gauge className="h-3.5 w-3.5 text-accent-violet" /> Rate limit
+        </p>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface">
+          <div
+            className={cn("h-full rounded-full transition-[width] duration-500", gaugeTone)}
+            style={{ width: `${usagePct}%` }}
+          />
+        </div>
+        <p className="text-xs text-content-muted">
+          {rateLimit.used}/{rateLimit.limit} in {rateLimit.window_seconds}s
+        </p>
+      </div>
     </div>
   );
 }

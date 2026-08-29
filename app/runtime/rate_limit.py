@@ -17,3 +17,11 @@ class SlidingWindowRateLimiter:
             return False
         events.append(now)
         return True
+
+    def usage(self, key: str) -> dict:
+        """Read-only snapshot for display — never consumes a slot."""
+        now = time.monotonic()
+        events = self._events.get(key, deque())
+        cutoff = now - self.window_seconds
+        used = sum(1 for e in events if e > cutoff)
+        return {"used": used, "limit": self.limit, "window_seconds": self.window_seconds}

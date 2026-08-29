@@ -1,4 +1,6 @@
 import pytest
+from fastapi.testclient import TestClient
+
 from app.integrations.base import IntegrationAdapter
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
 from app.runtime.circuit_breaker import CircuitBreaker
@@ -71,3 +73,47 @@ async def test_circuit_breaker():
     assert first.status == ExecutionStatus.FAILED
     assert second.status == ExecutionStatus.REJECTED
     assert second.error == "Circuit breaker is open"
+
+
+@pytest.mark.asyncio
+async def test_circuit_breaker_status_reports_open_after_failure():
+    runtime = make_runtime(FakeAdapter(99), threshold=1)
+    key = "n8n:broken"
+    assert runtime.circuit_breaker.status(key)["state"] == "closed"
+
+    await runtime.execute(RuntimeRequest(provider="n8n", workflow="broken", max_retries=0))
+
+    status = runtime.circuit_breaker.status(key)
+    assert status["state"] == "open"
+    assert status["failures"] == 1
+    assert status["recovers_in_seconds"] is not None
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_usage_reports_consumed_slots():
+    runtime = make_runtime(FakeAdapter(), rate_limit=5)
+    key = "n8n:limited"
+    assert runtime.rate_limiter.usage(key) == {"used": 0, "limit": 5, "window_seconds": 60}
+
+    await runtime.execute(RuntimeRequest(provider="n8n", workflow="limited"))
+
+    usage = runtime.rate_limiter.usage(key)
+    assert usage["used"] == 1
+    assert usage["limit"] == 5
+
+
+def test_runtime_status_route_returns_closed_breaker_and_zero_usage():
+    from app.main import app
+
+    client = TestClient(app)
+    response = client.get(
+        "/api/v1/runtime/status",
+        params={"provider": "n8n", "workflow": "some-fresh-workflow"},
+        headers={"X-API-Key": "test-api-key"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["circuit_breaker"]["state"] == "closed"
+    assert body["rate_limit"]["used"] == 0
+    assert body["rate_limit"]["limit"] > 0

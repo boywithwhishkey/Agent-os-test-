@@ -29,3 +29,15 @@ class CircuitBreaker:
         state.failures += 1
         if state.failures >= self.failure_threshold:
             state.opened_at = time.monotonic()
+
+    def status(self, key: str) -> dict:
+        """Read-only snapshot for display — never mutates breaker state."""
+        state = self._states.get(key, CircuitState())
+        if state.opened_at is None:
+            return {"state": "closed", "failures": state.failures, "recovers_in_seconds": None}
+        remaining = max(0.0, self.recovery_seconds - (time.monotonic() - state.opened_at))
+        return {
+            "state": "open" if remaining > 0 else "closed",
+            "failures": state.failures,
+            "recovers_in_seconds": remaining if remaining > 0 else None,
+        }

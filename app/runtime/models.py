@@ -33,3 +33,19 @@ class RuntimeExecution(BaseModel):
     error: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CircuitBreakerStatus(BaseModel):
+    state: str
+    failures: int
+    recovers_in_seconds: float | None = None
+
+class RateLimitStatus(BaseModel):
+    used: int
+    limit: int
+    window_seconds: float
+
+class RuntimeStatus(BaseModel):
+    provider: str
+    workflow: str
+    circuit_breaker: CircuitBreakerStatus
+    rate_limit: RateLimitStatus

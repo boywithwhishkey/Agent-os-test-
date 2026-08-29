@@ -253,6 +253,25 @@ export interface RuntimeExecution {
   updated_at: string;
 }
 
+export interface CircuitBreakerStatus {
+  state: "closed" | "open";
+  failures: number;
+  recovers_in_seconds: number | null;
+}
+
+export interface RateLimitStatus {
+  used: number;
+  limit: number;
+  window_seconds: number;
+}
+
+export interface RuntimeStatus {
+  provider: string;
+  workflow: string;
+  circuit_breaker: CircuitBreakerStatus;
+  rate_limit: RateLimitStatus;
+}
+
 // --- Integrations ---
 export interface IntegrationRequest {
   workflow: string;

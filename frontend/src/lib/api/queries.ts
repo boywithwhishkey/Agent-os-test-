@@ -17,6 +17,7 @@ import type {
   ReadinessResponse,
   RuntimeExecution,
   RuntimeRequest,
+  RuntimeStatus,
   Task,
   TaskCreate,
   ToolAuditEvent,
@@ -197,6 +198,16 @@ export function useRuntimeExecution(executionId: string | undefined) {
     queryFn: () => api.get<RuntimeExecution>(`/api/v1/runtime/executions/${executionId}`),
     enabled: Boolean(executionId),
     retry: false,
+  });
+}
+
+export function useRuntimeStatus(provider: string, workflow: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ["runtime-status", provider, workflow],
+    queryFn: () =>
+      api.get<RuntimeStatus>(`/api/v1/runtime/status?provider=${encodeURIComponent(provider)}&workflow=${encodeURIComponent(workflow)}`),
+    enabled: (options?.enabled ?? true) && Boolean(provider) && Boolean(workflow),
+    refetchInterval: 15_000,
   });
 }
 
