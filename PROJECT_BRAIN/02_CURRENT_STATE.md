@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `1f9ffdc`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `aad329e`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -605,6 +605,105 @@ directories.
     looked at** — see BLOCKED below.
   - Backend untouched. No API/auth/route changes.
 
+- **Dashboard hero cleanup, equal metric cards, light-theme contrast,
+  Space Grotesk (this session, HEAD `aad329e`) — first session with
+  real committed browser QA, see BLOCKED-RESOLVED above.** A focused UI
+  refinement request with 5 parts, all done and actually rendered
+  (not just reasoned about) at 320/360/390/430/640/768/1024px in both
+  themes via the new `pnpm screenshot` tooling:
+  - **Hero paragraph removed.** `Dashboard.tsx`'s long descriptive
+    line ("Built to Think. Powered to Act. From intelligence to
+    execution...") is gone; the short tagline "Built to Think.
+    Powered to Act." remains because it was already rendered
+    separately by `BrandMark`'s `variant="full"` (the removed line was
+    a second, redundant copy of the same tagline plus extra text).
+    The wrapping `flex flex-col gap-3` collapsed to a plain block since
+    it now has one child, so no dead vertical space was left — visually
+    confirmed the metric cards now sit directly under the wordmark.
+  - **Four dashboard metric cards now equal height.** `MetricCard.tsx`'s
+    root now has `flex h-full flex-col`, and each `StaggerItem` wrapping
+    one on the Dashboard grid got `className="h-full"` — CSS grid's
+    default `align-items: stretch` already gives every grid item the
+    tallest row's height, this just makes the two nested divs actually
+    fill it. No arbitrary per-card pixel heights. Confirmed visually:
+    API Status/Tools Available/Audit Events/This Session render as one
+    consistent card system regardless of hint/graphic content; shorter
+    cards get blank space at the bottom rather than shrinking, which
+    is the intended tradeoff (no fabricated filler content).
+  - **Sidebar light-theme text contrast fixed — real defect, not just
+    a token-value tweak.** `Sidebar.tsx`'s inactive nav item labels
+    (Dashboard/Tasks/Orchestrate/.../Settings) were using
+    `text-content-secondary` (`#4b4f5a`), the app's *secondary* text
+    tier, for what is semantically primary navigation copy — changed
+    to `text-content-primary` (`#14161c`). Both tokens technically
+    passed WCAG AA against white in isolation, but the secondary tier
+    read visibly paler than the rest of the app's primary text, which
+    is what the operator's annotated screenshot flagged. Section group
+    headers (OVERVIEW/EXECUTION/etc.) intentionally kept softer via
+    `text-content-muted`.
+  - **`--text-content-muted` darkened for light theme** (`#767a86` →
+    `#5b6270` in `index.css`) — the old value computed to ~4.3:1
+    contrast against white, under the 4.5:1 AA threshold for normal-
+    size text; used app-wide for hints/timestamps/uppercase labels, so
+    this is one central fix rather than a per-page sweep. Dark-theme
+    muted (`#8d919d`) untouched.
+  - **Light-theme-only `--color-accent-violet` retune** (`index.css`,
+    inside the existing `html:not(.dark)` block): `#8574ff` (~3.5:1
+    against white — under AA for both text and white-on-violet button
+    labels) → `#5b4fd6` (~5.9:1), still clearly violet/on-brand. This
+    is a single CSS-custom-property override, unlayered so it beats
+    Tailwind v4's `@theme`-generated (layered) declaration regardless
+    of source order/specificity — every existing `text-accent-violet`/
+    `bg-accent-violet`/`border-accent-violet` usage across the app
+    (buttons, sidebar active state, links, badges) picks it up
+    automatically in light mode only. Dark mode's `#8574ff` is
+    completely untouched (no `.dark` override needed — it was never
+    overridden, only light mode was). Visually confirmed: sidebar
+    active-item text, the Settings "Save configuration" button
+    (white-on-violet), and the Settings "Light" appearance toggle
+    (violet-on-white) all read clearly now in both the light Dashboard
+    and Settings screenshots.
+  - **Typography switched to Space Grotesk app-wide, one token.**
+    Installed `@fontsource-variable/space-grotesk` (self-hosted, no
+    external CDN — avoids the FOUC/CSP/offline-dev risk of a Google
+    Fonts `<link>`) as a real `dependency`; `index.css` gained
+    `@import "@fontsource-variable/space-grotesk";` and
+    `--font-sans: "Space Grotesk Variable", "Inter", ui-sans-serif,
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;` — one line, no per-component font-family edits
+    anywhere. The variable font's declared weight range is 300–700, so
+    the app's existing `font-medium`/`font-semibold`/`font-bold`
+    utility classes (400/500/600/700) all render correctly without any
+    additional weight-specific imports. Confirmed via a fresh `pnpm
+    build` that all 3 latin/latin-ext/vietnamese `.woff2` subsets are
+    emitted to `dist/assets/` with `font-display: swap`, and that the
+    built CSS's `--font-sans` and `@font-face` rules are present and
+    correct (not just present in dev). Visually confirmed rendering
+    (distinctive Space Grotesk letterforms visible in the wordmark, nav
+    labels, numerals) with no clipped/wrapped/overflowing labels found
+    in the Dashboard, Tools, or Settings screenshots at any tested
+    width, and no horizontal page overflow at any of the 7 target
+    breakpoints (`document.documentElement.scrollWidth ===
+    clientWidth` checked programmatically, not just visually, at all
+    of 320/360/390/430/640/768/1024px).
+  - **Dark theme reconfirmed unchanged**: screenshot comparison at
+    1440×900 shows glass translucency, ambient background particles,
+    card equal-height fix, and the (untouched) `#8574ff` violet all
+    still correct.
+  - **New reusable QA tooling** (see BLOCKED-RESOLVED above for the
+    technical why): `frontend/scripts/screenshot.mjs` +
+    `pnpm screenshot`, `playwright` added as a real `devDependency`.
+  - Verified via `pnpm typecheck` (clean) / `pnpm lint` (0 errors, the
+    same 2 pre-existing warnings) / `pnpm test` (48/48, no test changes
+    needed — no test asserted the old hero paragraph or old colors) /
+    `pnpm build` (clean, `.woff2`/`@font-face`/`--font-sans` confirmed
+    in the built CSS) / actual rendering via the new `pnpm screenshot`
+    tooling as detailed above. Backend untouched — frontend-only
+    presentation change, no API/auth/route/business-logic edits.
+    **Not yet re-verified against the live `app.thynact.com` deploy**
+    at the time this entry was written — see PRODUCTION STATUS for
+    whether that follow-up check happened this session.
+
 ## PARTIAL
 
 - **Workflow builder** is functional and has 3/4 flagship features (node
@@ -643,7 +742,25 @@ directories.
   in production (no `N8N_BASE_URL`) and reports that honestly rather than
   faking a connection — see PRODUCTION DEPENDENCY / CREDENTIAL AUDIT.
 
-## BLOCKED (this session, environment-limited — not code issues)
+## BLOCKED (historical — RESOLVED this session, HEAD `aad329e`, see DONE below)
+
+**Update, HEAD `aad329e`:** the "no browser tooling" blocker below is now
+resolved and, unlike `776dd63`'s one-off ephemeral setup, **committed** so
+it survives to future sessions: `frontend/scripts/screenshot.mjs` (run via
+`pnpm screenshot <url> <outPath> [theme] [width] [height]`) launches
+Playwright's `chromium` with `executablePath` pointed at
+`$REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE` — the Replit-provided nix-linked
+Chromium binary. This was necessary because playwright's own downloaded
+browser (`~/.cache/ms-playwright`) fails to launch in this container
+(`error while loading shared libraries: libglib-2.0.so.0`, a nix/glibc
+mismatch, not a playwright bug) — `npx playwright screenshot` and any
+plain `chromium.launch()` without an explicit `executablePath` will hit
+this and fail. `playwright` itself is a committed `devDependency` (not a
+prod dependency — dev-only, doesn't affect the deployed bundle). Rest of
+this section describes the state before this fix, kept for history —
+treat "browser tooling unavailable" as no longer true going forward,
+re-verify `REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE` is still set if a future
+session finds `scripts/screenshot.mjs` failing.
 
 - **No interactive browser tooling connected in this session.**
   Claude-in-Chrome was checked for (via tool search) twice this session —
@@ -802,7 +919,7 @@ code-level review, not a rendered/visual one. Findings:
 
 | Subsystem | Status | Notes |
 |---|---|---|
-| Dashboard | DONE (this session: heading/hero rework — see DONE above) | Metrics, recent audit, quick actions, session activity — all backed by real queries; borderless ambient hero replaces the old bordered brand card, "Dashboard / Live status..." heading removed |
+| Dashboard | DONE (this session: hero paragraph removed, 4 metric cards now equal height — see DONE above, visually confirmed) | Metrics, recent audit, quick actions, session activity — all backed by real queries; borderless ambient hero replaces the old bordered brand card, "Dashboard / Live status..." heading removed |
 | Tasks | DONE (prior session) | Create/retrieve, validation, error states — covered by `Tasks.test.tsx` + backend tests |
 | Orchestration | DONE, motion pass DONE | researcher/builder/reviewer roles + `OrchestrationPipeline` connected-node visualization (this session) |
 | Autonomous | DONE, motion pass DONE | planner/specialists/verifier/synthesis, real "Up to N in parallel" badge + staggered grid layout (this session) |
@@ -818,4 +935,4 @@ code-level review, not a rendered/visual one. Findings:
 | Health | DONE | Live `/health` + `/ready` + persistence/LLM service map (this session) |
 | Settings | DONE (this session: About/brand section added) | API base URL + key (sessionStorage only), theme, About |
 | Persistence | PARTIAL — production is memory-only | Code supports Postgres/Redis backends (`app/persistence/`, `app/queue/redis_queue.py`) but production has none configured (see NEEDS CREDENTIALS) |
-| Responsive UI | UNVERIFIED at real breakpoints | Codebase has solid responsive primitives (`overflow-x-hidden`, `min-w-0`, mobile sidebar drawer, responsive grids) but has not been checked in an actual browser at the 7 target breakpoints this session. The new `AmbientBackground`/glass layers reuse the same responsive containers and add no new fixed widths, but their actual iPad/mobile appearance (blur cost, particle placement, AccountPopover touch sizing) is likewise unverified in a real browser |
+| Responsive UI | Dashboard + mobile sidebar drawer VERIFIED at 320/360/390/430/640/768/1024px, both themes, HEAD `aad329e` (real rendering + programmatic overflow check, not just code review) | Codebase has solid responsive primitives (`overflow-x-hidden`, `min-w-0`, mobile sidebar drawer, responsive grids). Verified this session: no horizontal overflow at any of the 7 breakpoints, Dashboard cards 1-up below 640px / 2-up 640-1023px / 4-up 1024px+, mobile drawer opens and is fully legible. NOT yet re-verified this way: every other page (Tasks/Workflows/Memory/etc. were audited at the source level in a prior session, and Tools/Settings were spot-checked at desktop width only this session — not at all 7 breakpoints), iPad/tablet-specific AmbientBackground blur cost, AccountPopover touch sizing |

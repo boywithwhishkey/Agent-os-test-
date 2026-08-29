@@ -30,15 +30,16 @@ below this point can be done by an agent. These specifically cannot:
    and provide `GITHUB_OAUTH_CLIENT_ID`/`GITHUB_OAUTH_CLIENT_SECRET` if
    connecting a GitHub account is wanted — this is the only OAuth
    connector implemented so far (READY_FOR_AUTH).
-9. **Connect browser automation tooling** (e.g. Claude in Chrome) to this
-   session if interactive/visual QA is wanted — everything reachable
-   without it (tests, typecheck, lint, build, curl-level API checks,
-   static responsive review) has already been done. **This is now the
-   top priority of this entire list** — see item 3 below. Two sessions
-   in a row have made real visual changes (`776dd63`'s invisible-
-   background root-cause fix, this session's `8cae377` glass-alpha
-   retune down to ~0.04-0.16) and only the first one was ever actually
-   seen rendered.
+9. ~~Connect browser automation tooling~~ **RESOLVED, HEAD `aad329e`** —
+   no longer needs the operator. `frontend/scripts/screenshot.mjs`
+   (`pnpm screenshot <url> <outPath> [theme] [width] [height]`) gives any
+   future session real rendered screenshots via Playwright pointed at the
+   Replit-provided `$REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE` binary — see
+   `02_CURRENT_STATE.md`'s "BLOCKED (historical — RESOLVED...)" section
+   for why a plain `chromium.launch()` doesn't work in this container.
+   `playwright` is now a committed `devDependency`, so this survives to
+   the next session unlike `776dd63`'s one-off setup. Item 3 below is no
+   longer blocked — use this tool for it.
 
 ## 1. Production backend/API — STATUS: VERIFIED, monitor only
 - `/health` and `/ready` are live and correct. CORS preflight for
@@ -56,13 +57,22 @@ below this point can be done by an agent. These specifically cannot:
   read-only test key to run a handful of live smoke calls, or have the
   operator run through the flows manually in production and report back.
 
-## 3. Real feature E2E verification — STATUS: TODO (needs browser tooling)
-- BLOCKED on browser automation: connect Claude-in-Chrome (or equivalent)
-  and, for each of Dashboard, Tasks, Orchestrate, Autonomous, Agents,
+## 3. Real feature E2E verification — STATUS: TODO, no longer blocked
+- **No longer needs the operator or Claude-in-Chrome** — use
+  `pnpm screenshot <url> <outPath> [theme] [width] [height]`
+  (`frontend/scripts/screenshot.mjs`, added HEAD `aad329e`) with the dev
+  server running (`pnpm dev`, port 3000). This session used it for
+  Dashboard + the mobile sidebar drawer + a spot-check of Tools/Settings
+  only (see `02_CURRENT_STATE.md`'s DONE entry for HEAD `aad329e`) — the
+  full sweep below is still outstanding.
+- For each of Dashboard, Tasks, Orchestrate, Autonomous, Agents,
   Workflows, Workflow Runs, Approvals, Memory, Runtime, Tools,
   Integrations, Audit, Health, Settings — verify navigation, forms,
   dialogs, loading/empty/success/error states, real API traffic, and a
-  clean browser console (no errors from our own code).
+  clean browser console (no errors from our own code — the script writes
+  `<outPath>.errors.txt` automatically when there are any; note that
+  `net::ERR_CONNECTION_REFUSED` to `localhost:8000` is expected with no
+  local backend running, not a real error).
 - Do not mark any page "browser-verified" without this step actually
   happening.
 - **Highest-priority single check now (HEAD `8cae377`)**: the glass-alpha
