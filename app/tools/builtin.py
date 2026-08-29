@@ -101,7 +101,7 @@ def build_default_registry() -> ToolRegistry:
     registry.register(
         RegisteredTool(
             "file.read_text",
-            "Read a non-sensitive UTF-8 text file inside the Agent OS workspace.",
+            "Read a non-sensitive UTF-8 text file inside the THYNACT workspace.",
             ToolRisk.READ,
             read_text_file,
         )

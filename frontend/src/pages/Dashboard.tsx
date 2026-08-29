@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Activity, Wrench, ScrollText, ListChecks, Workflow, Bot, ArrowUpRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -27,8 +28,15 @@ export default function Dashboard() {
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
-        description="Live status of the Agent OS platform and this session's activity."
+        description="Live status of the THYNACT platform and this session's activity."
       />
+
+      <div className="relative overflow-hidden rounded-2xl border border-surface bg-gradient-to-br from-accent-violet/10 via-surface-raised to-accent-blue/5 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <BrandMark variant="full" />
+          <p className="text-sm text-content-muted">From intelligence to execution.</p>
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <MetricCard

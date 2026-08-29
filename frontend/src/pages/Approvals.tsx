@@ -49,7 +49,7 @@ export default function Approvals() {
     <div className="space-y-6">
       <PageHeader
         title="Approval Center"
-        description="Agent OS uses single-use, pre-authorized approval grants rather than a pending-request queue."
+        description="THYNACT uses single-use, pre-authorized approval grants rather than a pending-request queue."
       />
 
       <Card className="border-accent-blue/25 bg-accent-blue/5">

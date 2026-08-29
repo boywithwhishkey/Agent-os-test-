@@ -17,6 +17,9 @@
 
   --animate-pulse-slow: pulse-slow 2.4s ease-in-out infinite;
   --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+  --animate-heartbeat: heartbeat 1.8s ease-in-out infinite;
+  --animate-heartbeat-ring: heartbeat-ring 1.8s ease-in-out infinite;
+  --animate-breathe: breathe 2.2s ease-in-out infinite;
 
   @keyframes pulse-slow {
     0%, 100% { opacity: 1; }
@@ -25,6 +28,21 @@
   @keyframes shimmer {
     0% { background-position: -400px 0; }
     100% { background-position: 400px 0; }
+  }
+  /* Double-beat rhythm (lub-dub, then rest) for the "API online" indicator. */
+  @keyframes heartbeat {
+    0%, 26%, 100% { transform: scale(1); }
+    13% { transform: scale(1.35); }
+    39% { transform: scale(1.35); }
+    52% { transform: scale(1); }
+  }
+  @keyframes heartbeat-ring {
+    0% { transform: scale(1); opacity: 0.55; }
+    70%, 100% { transform: scale(2.4); opacity: 0; }
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.5; transform: scale(0.92); }
+    50% { opacity: 1; transform: scale(1); }
   }
 }
 

@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
-import { ChevronsLeft, Sparkles } from "lucide-react";
+import { ChevronsLeft } from "lucide-react";
 import { navGroups } from "@/lib/nav";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({
@@ -31,15 +32,8 @@ export function Sidebar({
         )}
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-surface px-4">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent-violet/15 text-accent-violet">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            {!collapsed && (
-              <span className="truncate text-sm font-semibold tracking-tight text-content-primary">
-                Agent OS
-              </span>
-            )}
+          <div className="overflow-hidden">
+            <BrandMark variant={collapsed ? "mark" : "compact"} size="sm" />
           </div>
           <button
             onClick={onToggle}

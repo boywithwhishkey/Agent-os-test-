@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Agent OS"
+    app_name: str = "THYNACT"
     app_env: str = "development"
     app_host: str = "0.0.0.0"
     app_port: int = 8000

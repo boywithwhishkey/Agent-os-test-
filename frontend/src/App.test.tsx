@@ -8,7 +8,7 @@ function mockBackend() {
     vi.fn().mockImplementation(async (url: string) => {
       const json = (body: unknown, status = 200) =>
         new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-      if (url.endsWith("/health")) return json({ status: "ok", service: "Agent OS", environment: "test" });
+      if (url.endsWith("/health")) return json({ status: "ok", service: "THYNACT", environment: "test" });
       if (url.endsWith("/ready")) return json({ status: "ready", checks: {} });
       if (url.endsWith("/api/v1/tools/audit")) return json([]);
       if (url.endsWith("/api/v1/tools")) return json([]);

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Search, CornerDownLeft } from "lucide-react";
 import { allNavItems } from "@/lib/nav";
 import { Input } from "@/components/ui/Input";
+import { BrandMark } from "@/components/ui/BrandMark";
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
@@ -110,6 +111,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 </li>
               ))}
             </ul>
+            <div className="flex items-center justify-between border-t border-surface px-3 py-2">
+              <BrandMark variant="mark" size="sm" />
+              <kbd className="rounded border border-surface bg-surface-hover px-1.5 py-0.5 font-mono text-[10px] text-content-muted">
+                Esc to close
+              </kbd>
+            </div>
           </motion.div>
         </div>
       )}

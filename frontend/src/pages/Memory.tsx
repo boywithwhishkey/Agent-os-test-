@@ -21,7 +21,7 @@ export default function Memory() {
     <div className="space-y-6">
       <PageHeader
         title="Memory"
-        description="Search Agent OS's semantic + lexical memory, or write new memories directly."
+        description="Search THYNACT's semantic + lexical memory, or write new memories directly."
       />
       <Tabs defaultValue="search">
         <TabsList>

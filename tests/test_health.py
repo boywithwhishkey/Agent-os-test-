@@ -11,7 +11,7 @@ def test_health() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["service"] == "Agent OS"
+    assert body["service"] == "THYNACT"
 
 
 def test_cors_preflight_allows_api_key_and_correlation_headers() -> None:

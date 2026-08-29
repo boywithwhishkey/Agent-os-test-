@@ -27,7 +27,7 @@ export default function Agents() {
     <div className="space-y-6">
       <PageHeader
         title="Agents"
-        description="Agent OS runs three fixed roles per orchestration, and dynamically named specialists per autonomous run."
+        description="THYNACT runs three fixed roles per orchestration, and dynamically named specialists per autonomous run."
       />
 
       <Card className="border-accent-blue/25 bg-accent-blue/5">

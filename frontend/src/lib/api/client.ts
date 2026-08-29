@@ -91,7 +91,7 @@ export async function apiRequest<T>(
     }
     throw new ApiError({
       status: 0,
-      detail: "Unable to reach the Agent OS API. Check your network or API configuration.",
+      detail: "Unable to reach the THYNACT API. Check your network or API configuration.",
       correlationId,
       isNetworkError: true,
     });

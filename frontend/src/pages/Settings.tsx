@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { KeyRound, Moon, Sun, Monitor, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input, Label } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -43,7 +44,7 @@ export default function Settings() {
     <div className="max-w-2xl space-y-6">
       <PageHeader
         title="Settings"
-        description="Local, frontend-only configuration. Nothing here is sent anywhere except the Agent OS API you point it at."
+        description="Local, frontend-only configuration. Nothing here is sent anywhere except the THYNACT API you point it at."
       />
 
       <Card>
@@ -84,7 +85,7 @@ export default function Settings() {
               autoComplete="off"
               value={apiKey}
               onChange={(e) => setApiKeyState(e.target.value)}
-              placeholder="Enter your Agent OS API key"
+              placeholder="Enter your THYNACT API key"
             />
           </div>
           <div className="flex gap-2">
@@ -123,6 +124,16 @@ export default function Settings() {
               </button>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>About</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <BrandMark variant="full" />
+          <p className="text-xs text-content-muted">v0.1.0</p>
         </CardContent>
       </Card>
     </div>

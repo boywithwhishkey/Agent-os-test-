@@ -29,14 +29,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
-    description="Agent OS API",
+    description="THYNACT API",
     lifespan=lifespan,
 )
 
 
 # ---------------------------------------------------------
 # CORS
-# Allow the production Agent OS frontend to access this API.
+# Allow the production THYNACT frontend to access this API.
 # ---------------------------------------------------------
 
 app.add_middleware(

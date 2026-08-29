@@ -49,7 +49,7 @@ export function App() {
               >
                 Skip to content
               </a>
-              <Suspense fallback={<LoadingState label="Loading Agent OS…" />}>
+              <Suspense fallback={<LoadingState label="Loading THYNACT…" />}>
                 <Routes>
                   <Route element={<AppShell />}>
                     <Route index element={<Dashboard />} />
