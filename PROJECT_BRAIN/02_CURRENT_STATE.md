@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `87d32a1`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `f7c7373`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -7,30 +7,39 @@ contradicting note elsewhere.
 
 ## PRODUCTION STATUS
 
-- **Live frontend:** https://app.thynact.com — HTTP 200. Repeatedly
-  verified throughout this session (most recently at HEAD `ec554d6`) that
-  the served `index.html` asset hashes match a fresh local `pnpm build`
-  byte-for-byte — Cloudflare Pages deploys `origin/main` correctly,
-  usually within ~1-2 minutes of a push. Re-verify this the same way after
-  any future push: `pnpm build` locally, then compare
-  `dist/assets/index-*.{js,css}` filenames against what
-  `curl https://app.thynact.com/` serves.
+- **Live frontend:** https://app.thynact.com — HTTP 200. Verified this
+  session that the served `/assets/index-*.js` hash
+  (`index-CWtDyjeH.js`) matches a fresh local `npm run build` byte-for-byte
+  — Cloudflare Pages auto-deployed `origin/main` (commit `f7c7373`)
+  correctly. Re-verify the same way after any future push.
 - **Live API:** https://api.thynact.com — `/health` returns
-  `{"status":"ok","service":"THYNACT","environment":"development"}` (HTTP 200).
-  `/ready` returns `{"status":"ready","checks":{}}` (HTTP 200). The empty
-  `checks` object is expected/correct: it means every backend (memory/queue)
-  is currently set to `memory`, so there's nothing to health-check yet (see
-  PERSISTENCE below).
+  `{"status":"ok","service":"THYNACT","environment":"development","llm_provider":"mock",...}`
+  (HTTP 200). `/ready` returns `{"status":"ready","checks":{}}` (HTTP 200).
+  `GET /api/v1/integrations` (public, no key needed) was fetched live this
+  session and confirmed to already reflect this session's catalog changes
+  (openai/anthropic/cloudflare/render/github all `implemented:true`,
+  github's `requires` lists `GITHUB_OAUTH_CLIENT_ID`/`_SECRET`) — Render
+  auto-deployed `origin/main` within the session, before this file was
+  even updated. The empty `/ready` `checks` object is expected/correct: it
+  means every backend (memory/queue) is currently set to `memory`, so
+  there's nothing to health-check yet (see PERSISTENCE below).
 - `environment: "development"` in the live `/health` response — the Render
   service does not have `AGENT_OS_APP_ENV`/environment override set to
   `production`. Cosmetic, not a functional blocker. UNVERIFIED whether this
   is intentional.
-- Auth is live and enforced: unauthenticated `GET /api/v1/integrations`
-  returns `401 {"detail":"Unauthorized"}` (not `503`), which means
-  `AGENT_OS_API_KEY` **is** configured on the Render production service.
-  This session does not have that key's value and cannot exercise
-  authenticated endpoints against production directly — see "NEEDS
-  CREDENTIALS" and 10_NEXT_STEPS.md.
+- Auth is live and enforced on protected routes, confirmed fresh this
+  session: unauthenticated `GET /api/v1/tools` returns `401
+  {"detail":"Unauthorized"}` (not `503`), which means `AGENT_OS_API_KEY`
+  **is** configured on the Render production service. **Correction to a
+  stale claim in an earlier version of this file:** `GET
+  /api/v1/integrations` (the connector catalog) is deliberately public
+  and returns `200` with no auth header at all — that's intentional
+  (`public_router` in `app/api/phase9.py`, added in an earlier session so
+  the Integration Hub renders for any visitor) and was reconfirmed live
+  this session, not a regression. This session does not have the real
+  `AGENT_OS_API_KEY` value and cannot exercise *protected* endpoints
+  against production directly — see "NEEDS CREDENTIALS" and
+  10_NEXT_STEPS.md.
 
 ## Environment note
 
@@ -41,7 +50,11 @@ even though `gh auth status` showed a valid, active GitHub CLI login with
 resolution through the already-authenticated `gh` CLI) and retrying — no
 secrets were exposed, nothing destructive was done. If a future session
 hits the same "Invalid username or token" push error, try this first
-before assuming a deeper auth problem.
+before assuming a deeper auth problem. **Confirmed recurring**: this exact
+same failure + fix happened again at the start of the very next session
+(this one) — the git credential wiring does not persist across sessions
+in this environment, so expect to run `gh auth setup-git` once per fresh
+session, every time, rather than treating it as a one-off fix.
 
 Also: a broad `find / -iname ...` (or `bfs`-backed) filesystem-wide search
 launched in the background can run for over an hour and grow to several
@@ -172,15 +185,100 @@ directories.
   task_id) between records in the current result set — there is no
   memory-to-memory similarity score available from the API (only
   query-to-record relevance), so this deliberately doesn't fabricate one.
-- **Backend test suite: 137/137 passing** (`uv run pytest tests/ -q`).
-- **Frontend: 25/25 tests passing** (`pnpm test`) — test count unchanged
-  since the last update because MemoryGraph has no dedicated test file
-  yet (rendered/exercised indirectly through Memory page usage only).
-  **Typecheck clean**
-  (`pnpm typecheck`), **lint clean** — 0 errors, 2 pre-existing warnings
-  unrelated to this session's changes (`Toast.tsx`, `theme.tsx`,
-  `react-refresh/only-export-components`), **production build clean**
-  (`pnpm build`).
+- **Integration Hub UX overhaul (this session).** Replaced the old
+  alarm-styled "Not configured. Set `X` on the backend to enable this
+  connector." box with neutral requires-setup copy/styling
+  (`ConnectorDrawer.tsx`), matching CLAUDE.md's setup-state-is-not-an-
+  error rule. New reusable components: `ConnectorCard`, `ConnectorDrawer`,
+  `AddMcpServerDialog`, `AuthRequiredBanner`, `connectorIcons.ts`, and
+  `lib/integration-hub.ts` (merges the static catalog with user-added MCP
+  servers into one `UnifiedConnector` list — Currently
+  integrated/Popular/All sections, search, and category/type filter
+  chips). Fixed a real crash: `mcpServerToConnector()` threw
+  `Cannot read properties of undefined (reading 'tools')` whenever an MCP
+  server API response omitted `capabilities` — now defensively defaults to
+  empty capability lists (`ConnectorDrawer.tsx` had the same unguarded
+  access, fixed too).
+- **App-wide "missing operator key" UX fix (this session, real bug).**
+  `ErrorState` (used by 12 pages — Dashboard, Tasks, Workflows, Memory,
+  Tools, Runtime, Audit, etc.) rendered a 401/503 from any protected
+  endpoint with the same alarm-red "Something went wrong" full panel as a
+  genuine failure. Since most API calls require the operator key and a
+  fresh browser tab has none set, **most pages showed a giant red error
+  box on first load** — exactly the "giant Unauthorized panel" CLAUDE.md
+  says to avoid. `ErrorState` now special-cases `ApiError.isUnauthorized`
+  (401/503) into a compact neutral banner with a "Configure API key" link
+  to Settings, reusing the treatment already built for the Integrations
+  page. `States.test.tsx` updated to assert the neutral treatment and that
+  the old alarm copy is gone.
+- **Fixed a real 404 bug: Test connection on Gemini/PostgreSQL/Redis.**
+  These three have had `implemented=True` catalog entries with live status
+  computed since an earlier session, and their "Test connection" button
+  was enabled in the UI — but `IntegrationProvider`/`list_providers()`
+  only ever contained `n8n`, so clicking Test on any of the other three
+  404'd. Fixed by giving each a real adapter (`GeminiAdapter` — lists
+  models via a free read call; `PostgresAdapter` — `SELECT 1` against
+  `DATABASE_URL` independent of whether Postgres is the active backend;
+  `RedisAdapter` — `PING` against `REDIS_URL` independent of whether Redis
+  is the active queue) and registering all three in
+  `app/integrations/factory.py`. Live status resolution in
+  `app/api/phase9.py` was also refactored into one shared
+  `_status_store_backed_status()` helper so `connected`/`error` now
+  reflects the actual last test result via `status_store`, not just static
+  settings — previously Postgres/Redis status literally ignored
+  `status_store` even though the (broken) Test button wrote to it.
+- **New real adapters: OpenAI, Anthropic, Cloudflare, Render (this
+  session).** Each does a genuine, free, read-only verification call
+  (`GET /v1/models` for OpenAI/Anthropic/Gemini, Cloudflare's dedicated
+  `/user/tokens/verify`, Render's `/v1/owners`) — never a fake success,
+  never an expensive/destructive call. All four flipped from
+  `CATALOG_ONLY` to `READY_FOR_AUTH` (`implemented=True`,
+  `requires=["<PROVIDER>_API_KEY"]` / `CLOUDFLARE_API_TOKEN` /
+  `RENDER_API_KEY`). `execute()` is intentionally "not supported" for all
+  of these — they're identity/read-only connectors, not triggered
+  webhooks, and catalog `capabilities` were corrected to match (e.g.
+  OpenAI now lists "Verify API key"/"List models", not "Chat completion",
+  which isn't wired to anything).
+- **Generic OAuth2 foundation + GitHub reference implementation (this
+  session).** New `app/integrations/oauth/` package: provider config
+  (authorize/token URLs, scope, env var names), a single-use/TTL'd CSRF
+  state store, a redacted connection store (access tokens never leave
+  process memory or appear in any API response), and
+  `build_authorize_url()`/`exchange_code()`. New routes:
+  `GET/POST /api/v1/integrations/oauth/{provider}/authorize` (operator-
+  gated), `GET .../callback` (necessarily public — the provider's browser
+  redirect can't carry an `X-API-Key`; protected by the state token
+  instead), `DELETE /api/v1/integrations/oauth/{provider}` (disconnect).
+  GitHub is wired end-to-end: catalog flipped to `implemented=True`,
+  `GitHubOAuthAdapter.test_connection()` verifies a stored token via
+  `GET /user`, live status is `needs_setup` (no client id/secret) →
+  `configured` (creds present, not yet authorized) → `connected` (token
+  obtained). Frontend: `ConnectorDrawer` shows "Authorize" (redirects to
+  the provider) for unconnected OAuth connectors and "Disconnect" once
+  connected; `Integrations.tsx` shows a toast and cleans the URL when the
+  browser returns from the callback redirect (`?oauth=connected&provider=`
+  / `?oauth=error&...`). Adding the next OAuth provider (Slack, Notion,
+  ...) is a config entry in `oauth/config.py` plus two Settings fields —
+  see 10_NEXT_STEPS.md.
+- **Backend test suite: 208/208 passing** (`python -m pytest tests/ -q`) —
+  up from 137, all net-new tests from this session's adapter/OAuth/UX work
+  (none removed; the two stale n8n-shaped assertions in
+  `Integrations.test.tsx` and `test_integrations_catalog.py`'s
+  now-implemented `github` example were updated in place, not skipped).
+- **Frontend: 29/29 tests passing** (`npm run test`) — up from 25.
+  **Typecheck clean** (`npm run typecheck`), **lint clean** — 0 errors, 2
+  pre-existing warnings unrelated to this session's changes (`Toast.tsx`,
+  `theme.tsx`, `react-refresh/only-export-components`), **production
+  build clean** (`npm run build`).
+- **Environment note (this session):** the frontend was built/tested with
+  `npm` (a `package-lock.json` exists alongside `pnpm-lock.yaml`), not
+  `pnpm` as 00_START_HERE.md's deployment section describes for
+  Cloudflare's build step. Both installed the same dependency versions
+  (no `package.json` changes this session, so no lockfile drift) and the
+  live asset-hash check above confirms Cloudflare's actual `pnpm`-based
+  build still matches — but a future session should prefer `pnpm` if
+  available, to stay consistent with what production actually builds
+  with.
 
 ## PARTIAL
 
@@ -240,6 +338,13 @@ this session. Never print secret values — names and status only.
 | n8n | Webhook-based workflow/integration execution | `N8N_BASE_URL` (required to enable), `N8N_WEBHOOK_PREFIX` (optional, default `webhook`), `N8N_WEBHOOK_AUTH_HEADER` + `N8N_WEBHOOK_AUTH_VALUE` (optional, only if the n8n instance requires auth) | Optional | **NOT set** — confirmed via code path (`is_provider_configured` checks `settings.n8n_base_url` truthiness); the Integrations page reports "Not configured" and names `N8N_BASE_URL` | `GET /api/v1/integrations` reports `configured: false`; `POST /api/v1/integrations/n8n/test` returns `503` naming the missing var; `POST /api/v1/integrations/execute` returns `400` | Set `N8N_BASE_URL`, then use the "Test connection" button on the Integrations page (or `POST /api/v1/integrations/n8n/test`) → expect `connected: true` with a real latency figure |
 | LLM provider | Powers orchestration/autonomous specialist reasoning | `AGENT_OS_LLM_PROVIDER` (`mock` or `gemini`), `AGENT_OS_LLM_MODEL`, `GEMINI_API_KEY` | Optional (mock works fully, just isn't a real model) | **CONFIRMED `mock`** in production — `/health` now returns `"llm_provider": "mock"` directly (previously unverified; this session added that field so it no longer has to be inferred) | Deterministic mock responses from `app/llm/mock.py` — orchestration/autonomous flows work end-to-end but outputs aren't real LLM reasoning | Set `GEMINI_API_KEY` and `AGENT_OS_LLM_PROVIDER=gemini`, then `curl https://api.thynact.com/health` → expect `"llm_provider": "gemini"`, and run an orchestration to confirm real model output |
 | CORS allowlist | Which origins may call the API from a browser | `AGENT_OS_CORS_ORIGINS` | Required (has a working default) | **SET correctly** — verified live: preflight from `https://app.thynact.com` succeeds (`200`), preflight from an arbitrary origin (`https://evil-example.com`) is rejected (`400`, no `Access-Control-Allow-Origin` reflected) | Defaults to a hardcoded list already including `https://app.thynact.com` (see `app/core/config.py`) | Preflight `OPTIONS` from the origin in question and check `access-control-allow-origin` in the response |
+| OpenAI | Alternate LLM provider identity check | `OPENAI_API_KEY` | Optional | **NOT set** (confirmed live: catalog reports `needs_setup`) | `POST /api/v1/integrations/openai/test` returns `503` naming `OPENAI_API_KEY` | Set the var, then "Test connection" → expect `connected: true` (a real `GET /v1/models` call) |
+| Anthropic | Alternate LLM provider identity check | `ANTHROPIC_API_KEY` | Optional | **NOT set** (confirmed live) | Same 503 pattern as above | Same as above, naming `ANTHROPIC_API_KEY` |
+| Cloudflare | Verify an API token (DNS/Pages actions not yet wired to execute()) | `CLOUDFLARE_API_TOKEN` | Optional | **NOT set** (confirmed live) | Same 503 pattern | Set the var, Test connection calls Cloudflare's own `/user/tokens/verify` endpoint |
+| Render | Verify an API key (deploy/service actions not yet wired to execute()) | `RENDER_API_KEY` | Optional | **NOT set** (confirmed live) | Same 503 pattern | Set the var, Test connection calls `GET /v1/owners` |
+| GitHub OAuth | Connect a GitHub account (identity check only; issues/PRs not yet wired) | `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET` | Optional | **NOT set** (confirmed live: catalog reports `needs_setup`) | `GET /api/v1/integrations/oauth/github/authorize` returns `503` naming the missing var(s) | Register an OAuth app on GitHub with callback URL `https://api.thynact.com/api/v1/integrations/oauth/github/callback`, set both vars, then click "Authorize" on the Integrations page and confirm the catalog flips to `connected: true` |
+| OAuth redirect base | Where GitHub's (and future OAuth providers') callback points | `AGENT_OS_OAUTH_REDIRECT_BASE_URL` | Optional (defaults to `https://api.thynact.com`, already correct for production) | Uses the default | n/a | Only needs overriding for a non-default backend domain (e.g. local dev) |
+| Frontend redirect base | Where the OAuth callback redirects the browser back to after connecting/failing | `AGENT_OS_FRONTEND_URL` | Optional (defaults to `https://app.thynact.com`, already correct for production) | Uses the default | n/a | Only needs overriding for a non-default frontend domain |
 
 ## PERSISTENCE MAP
 
@@ -264,10 +369,13 @@ one of these "Ephemeral" rather than implying durability. The
 have never run against a real Postgres/Redis instance in any session with
 access to this repo — see 00_START_HERE.md's migration note.
 
-## AUTH / CORS BOUNDARY — VERIFIED LIVE THIS SESSION
+## AUTH / CORS BOUNDARY — VERIFIED LIVE (partially re-confirmed this session)
 
-- No API key → `401 {"detail":"Unauthorized"}` (not `503`, confirming the
-  key **is** configured server-side).
+- No API key on a protected route → `401 {"detail":"Unauthorized"}` (not
+  `503`, confirming the key **is** configured server-side) — re-confirmed
+  this session against `GET /api/v1/tools`. Note: the connector catalog
+  (`GET /api/v1/integrations`) is the one deliberate exception — see
+  PRODUCTION STATUS above.
 - Wrong API key → `401` (generic, doesn't leak whether the key was close).
 - Unknown route → `404 {"detail":"Not Found"}`.
 - CORS preflight from `https://app.thynact.com` → `200`, correct
@@ -319,7 +427,7 @@ code-level review, not a rendered/visual one. Findings:
 | Memory | DONE, motion pass DONE | Semantic + lexical search, context, filters, delete, real match-score bar, staggered result animation, and a shared-field relationship graph view (this session) |
 | Runtime | DONE, motion pass PARTIAL | Execute/retries/rate-limit/circuit-breaker/idempotency, live circuit-breaker badge + rate-limit gauge (this session); no execution timeline view yet |
 | Tools | DONE (prior session) | List/execute/risk levels/approval-required/audit |
-| Integrations | DONE (this session) | Connector registry + test-connection, n8n only, extensible adapter architecture |
+| Integrations | DONE (this session) | Flagship Integration Hub UX (search/filters/Currently integrated/Popular/All, neutral setup states, MCP + OAuth + API-key + webhook types unified). 8 connectors READY_FOR_AUTH with real test/verify adapters: n8n, Gemini, PostgreSQL, Redis, OpenAI, Anthropic, Cloudflare, Render. GitHub has a full OAuth2 authorize/callback/disconnect flow (READY_FOR_AUTH, reference implementation for the remaining 11 OAuth catalog-only entries). Every other catalog entry (Slack, Notion, Gmail, GitLab, Jira, HubSpot, Salesforce, Zapier, Make, Discord, Teams, Vercel, Linear, Supabase, Dropbox, OneDrive, Stripe, Google Calendar/Drive) is CATALOG_ONLY, honestly reported as such |
 | Audit | DONE, motion pass DONE | Tool events, status, timestamps, table + timeline views (this session). No correlation ID on audit events yet — see NEEDS CREDENTIALS/DATABASE_URL, this requires a migration |
 | Health | DONE | Live `/health` + `/ready` + persistence/LLM service map (this session) |
 | Settings | DONE (this session: About/brand section added) | API base URL + key (sessionStorage only), theme, About |

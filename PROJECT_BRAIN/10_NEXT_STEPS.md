@@ -21,7 +21,16 @@ below this point can be done by an agent. These specifically cannot:
    should go live — the code is ready, it just has nothing to point at.
 5. **Provide `GEMINI_API_KEY`** (and set `AGENT_OS_LLM_PROVIDER=gemini`)
    if real LLM reasoning is wanted instead of the deterministic mock.
-6. **Connect browser automation tooling** (e.g. Claude in Chrome) to this
+6. **Provide `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`** if verifying those
+   as alternate LLM providers is wanted (adapters are READY_FOR_AUTH).
+7. **Provide `CLOUDFLARE_API_TOKEN` / `RENDER_API_KEY`** if verifying
+   those platform accounts is wanted (adapters are READY_FOR_AUTH).
+8. **Register a GitHub OAuth app** (callback URL
+   `https://api.thynact.com/api/v1/integrations/oauth/github/callback`)
+   and provide `GITHUB_OAUTH_CLIENT_ID`/`GITHUB_OAUTH_CLIENT_SECRET` if
+   connecting a GitHub account is wanted — this is the only OAuth
+   connector implemented so far (READY_FOR_AUTH).
+9. **Connect browser automation tooling** (e.g. Claude in Chrome) to this
    session if interactive/visual QA is wanted — everything reachable
    without it (tests, typecheck, lint, build, curl-level API checks,
    static responsive review) has already been done.
@@ -52,20 +61,34 @@ below this point can be done by an agent. These specifically cannot:
 - Do not mark any page "browser-verified" without this step actually
   happening.
 
-## 4. Connectors/integrations — STATUS: code-complete, NEEDS CREDENTIAL to go live
-- DONE: full n8n completeness audit this session — registration, config
+## 4. Connectors/integrations — STATUS: code-complete, NEEDS CREDENTIALS to go live
+- DONE (this session): Integration Hub UX overhaul (neutral setup states,
+  unified catalog+MCP gallery, search/filters); real adapters for Gemini,
+  PostgreSQL, Redis, OpenAI, Anthropic, Cloudflare, Render (all
+  READY_FOR_AUTH); a full OAuth2 authorize/callback/disconnect flow, with
+  GitHub as the reference implementation (READY_FOR_AUTH). Fixed a real
+  404 bug where Gemini/PostgreSQL/Redis's "Test connection" button did
+  nothing but fail. See 02_CURRENT_STATE.md DONE section for the full
+  list.
+- DONE (prior session): n8n completeness audit — registration, config
   validation, test-connection endpoint, auth header handling, timeout,
   correlation-ID passthrough, network-failure handling, non-2xx handling,
-  and non-JSON response handling are all implemented and tested (see
-  02_CURRENT_STATE.md "PRODUCTION DEPENDENCY / CREDENTIAL AUDIT" and the
-  n8n audit bullet in DONE). n8n is genuinely production-ready code-wise.
-- NEEDS CREDENTIAL: `N8N_BASE_URL` (+ optionally
-  `N8N_WEBHOOK_AUTH_HEADER`/`N8N_WEBHOOK_AUTH_VALUE`) to move n8n from
-  "not configured" to a real, testable connection. Once set, run
-  "Test connection" from the Integrations page and confirm `connected:
-  true` with a real latency figure.
-- Do not add another connector adapter unless there's a concrete product
-  need (see 07_DEFERRED_GOALS.md).
+  and non-JSON response handling are all implemented and tested. n8n is
+  genuinely production-ready code-wise.
+- NEEDS CREDENTIALS (all optional, none blocking): `N8N_BASE_URL`,
+  `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`,
+  `CLOUDFLARE_API_TOKEN`, `RENDER_API_KEY`, and
+  `GITHUB_OAUTH_CLIENT_ID`/`_SECRET` — see 02_CURRENT_STATE.md's
+  "PRODUCTION DEPENDENCY / CREDENTIAL AUDIT" table for exactly what each
+  does and how to verify it once set. Once any is set, use "Test
+  connection" (or "Authorize" for GitHub) on the Integrations page and
+  confirm the catalog entry flips to `connected: true`.
+- NEXT (only when there's concrete product need, not speculatively): the
+  next OAuth provider following GitHub's pattern (see
+  07_DEFERRED_GOALS.md for exactly which file/fields to touch) — Slack or
+  Notion are the most likely candidates given they're both `popular:
+  true` in the catalog. Do not add another connector adapter or OAuth
+  provider without a real reason.
 
 ## 5. Persistence/runtime — STATUS: NEEDS CREDENTIALS
 - NEEDS CREDENTIAL: `DATABASE_URL` (Postgres) to move
@@ -115,17 +138,23 @@ section for the full list with implementation notes.
   degrade sensibly, charts resize, command palette usable on mobile.
 
 ## 8. Regression tests — STATUS: DONE as of this session, re-run before next push
-- Before the next commit, re-run: `uv run pytest tests/ -q` (backend, 137
-  tests), `pnpm typecheck && pnpm lint && pnpm test && pnpm build`
-  (frontend, 25 tests, run from `frontend/`). All were green as of commit
-  `87d32a1`.
+- Before the next commit, re-run: `python -m pytest tests/ -q` (backend,
+  208 tests), `npm run typecheck && npm run lint && npm run test && npm
+  run build` (frontend, 29 tests, run from `frontend/`). All were green as
+  of commit `f7c7373`. Prefer `pnpm` over `npm` if available in a future
+  session, to match what Cloudflare's build actually uses (see
+  02_CURRENT_STATE.md's environment note).
 
 ## 9. Production verification — STATUS: VERIFIED as of this session
 - Re-verify after any new push: `curl https://api.thynact.com/health`,
   `curl https://api.thynact.com/ready`, and compare the frontend's served
-  asset hash against a fresh local `pnpm build` to confirm Cloudflare
-  actually deployed the latest commit (see 02_CURRENT_STATE.md
-  "PRODUCTION STATUS" for the exact method used this session).
+  asset hash against a fresh local `npm run build`/`pnpm build` to confirm
+  Cloudflare actually deployed the latest commit (see 02_CURRENT_STATE.md
+  "PRODUCTION STATUS" for the exact method used this session). This
+  session also confirmed `GET /api/v1/integrations` live reflects newly
+  pushed catalog changes within the same session — both Render and
+  Cloudflare auto-deploy `origin/main` fast (well under the time it takes
+  to finish a session).
 
 ## 10. Final docs update — STATUS: recurring
 - At the end of every session: update `02_CURRENT_STATE.md` with what's

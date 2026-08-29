@@ -16,7 +16,11 @@ task intake, three-role orchestration (researcher/builder/reviewer),
 autonomous multi-specialist runs, a tool registry with approval gates,
 semantic + lexical memory, a visual workflow builder/engine, a runtime
 layer (retries/circuit breaker/rate limiting), and an external integration
-adapter layer (currently n8n).
+adapter layer supporting webhook (n8n), API-key (Gemini, OpenAI,
+Anthropic, Cloudflare, Render, PostgreSQL, Redis), OAuth2 (GitHub, with
+the same pattern ready for more), and generic remote MCP server
+connectors — see 02_CURRENT_STATE.md's Integrations row for exactly which
+of these are READY_FOR_AUTH vs. still catalog-only.
 
 ## Canonical project knowledge — how these 4 files work together
 
@@ -69,7 +73,11 @@ app/                    FastAPI backend (Python 3.12)
                           phase8=workflows, phase9=integrations, phase10=runtime)
   core/                 config.py (Settings/env vars), auth.py (X-API-Key check),
                          correlation.py, readiness.py, orchestrator.py, lifecycle.py
-  integrations/         IntegrationAdapter base + factory + n8n.py + status_store.py
+  integrations/         IntegrationAdapter base + factory + status_store.py;
+                         n8n.py, gemini.py, postgresql.py, redis.py, openai.py,
+                         anthropic.py, cloudflare.py, render.py, github.py adapters;
+                         mcp/ (remote MCP client+store); oauth/ (generic OAuth2
+                         authorize/callback/state/connection-store framework)
   llm/                  mock.py, gemini.py, factory.py
   memory/, workflows/, runtime/, tools/, queue/, persistence/, services/, models/
   main.py               FastAPI app, CORS, exception handlers, /health, /ready, SPA fallback

@@ -38,15 +38,32 @@ parallelism badge + grid layout; Memory's relationship graph view.
 
 ## Integrations / connectors
 
-- Additional connector adapters beyond n8n (e.g. Slack, generic webhook,
-  email) — **do not add these speculatively**; only build a new adapter
-  when there's a concrete product need for it. The adapter architecture
-  (`IntegrationAdapter` base class + factory registry in
-  `app/integrations/`) is already designed to make this a clean addition
-  when the time comes.
-- Persisting integration status/history durably (currently in-memory/
-  process-local, reset on backend restart) — only worth doing once
-  Postgres is actually configured in production.
+- A session following CLAUDE.md's explicit "finish everything possible
+  without new credentials" directive added real read/verify adapters for
+  Gemini, PostgreSQL, Redis, OpenAI, Anthropic, Cloudflare, and Render,
+  plus a full OAuth2 authorize/callback/disconnect flow for GitHub — see
+  02_CURRENT_STATE.md. The remaining 11 OAuth catalog entries (Slack,
+  Notion, Gmail, Google Calendar, Google Drive, GitLab, Jira, HubSpot,
+  Salesforce, Dropbox, OneDrive) follow the exact same pattern as GitHub
+  (`app/integrations/oauth/config.py` + two Settings fields +
+  `implemented=True` on the CatalogSpec) — **still don't add these
+  speculatively**; do the next one only when there's a concrete product
+  need or the operator actually wants to connect that account. Google's
+  three entries (gmail/calendar/drive) can likely share one OAuth app/
+  client id with different `scope` strings — verify this before assuming
+  three separate client id/secret pairs are needed.
+- `execute()` is intentionally "not supported" on every non-webhook
+  adapter added this session (OpenAI, Anthropic, Cloudflare, Render,
+  GitHub, Gemini, Postgres, Redis) — they only verify identity/
+  reachability. Wiring real actions (e.g. GitHub "open an issue",
+  Cloudflare "deploy a Pages project") onto the generic `execute()`
+  interface is deferred until there's a concrete workflow that needs it;
+  don't build actions speculatively.
+- Persisting integration status/history and OAuth tokens durably
+  (currently in-memory/process-local, reset on backend restart) — only
+  worth doing once Postgres is actually configured in production. Note
+  for whoever does this: OAuth access tokens would need encryption at
+  rest, not just a plain column — don't persist them in cleartext.
 
 ## Persistence / infra
 
