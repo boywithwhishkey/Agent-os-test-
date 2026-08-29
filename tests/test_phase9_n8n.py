@@ -73,6 +73,19 @@ async def test_n8n_failure_is_structured():
 
 
 @pytest.mark.asyncio
+async def test_n8n_adapter_handles_non_json_response_body():
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(200, text="not json at all")
+    )
+    async with httpx.AsyncClient(transport=transport) as client:
+        adapter = N8NWebhookAdapter(base_url="https://n8n.example", client=client)
+        result = await adapter.execute(IntegrationRequest(workflow="plain-text-reply"))
+
+    assert result.success is True
+    assert result.data == "not json at all"
+
+
+@pytest.mark.asyncio
 async def test_n8n_test_connection_reports_reachable_host():
     transport = httpx.MockTransport(lambda request: httpx.Response(404))
     async with httpx.AsyncClient(transport=transport) as client:
