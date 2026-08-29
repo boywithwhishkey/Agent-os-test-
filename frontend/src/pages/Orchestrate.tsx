@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/Badge";
 import { ErrorState, LoadingState, EmptyState } from "@/components/ui/States";
 import { JSONViewer } from "@/components/ui/JSONViewer";
 import { AgentCard } from "@/components/agents/AgentCard";
+import { OrchestrationPipeline } from "@/components/agents/OrchestrationPipeline";
+import type { AgentCardStatus } from "@/components/agents/AgentCard";
 import { useOrchestrate } from "@/lib/api/queries";
 import { useToast } from "@/components/ui/Toast";
 
@@ -32,6 +34,9 @@ export default function Orchestrate() {
         result: result.results.find((r) => r.job_id === job.id),
       }))
     : [];
+  const pipelineStatuses: Record<string, AgentCardStatus> = Object.fromEntries(
+    combined.map(({ job, result: r }) => [job.role, r ? (r.success ? "success" : "failed") : "pending"])
+  );
 
   return (
     <div className="space-y-6">
@@ -100,7 +105,8 @@ export default function Orchestrate() {
                 {result.verification.passed ? "Verified" : "Verification failed"}
               </Badge>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
+              <OrchestrationPipeline statuses={pipelineStatuses} />
               {combined.map(({ job, result: r }) => (
                 <AgentCard
                   key={job.id}
