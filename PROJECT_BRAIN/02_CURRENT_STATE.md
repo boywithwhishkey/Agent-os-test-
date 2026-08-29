@@ -9,10 +9,11 @@ contradicting note elsewhere.
 
 - **Live frontend:** https://app.thynact.com — HTTP 200. Verified this
   session that the served `/assets/index-*.js` hash
-  (`index-CB2y6IpY.js`) matches a fresh local `pnpm build` byte-for-byte —
-  Cloudflare Pages auto-deployed `origin/main` (commit `3a6b1b8`, the
-  glass/motion design-system push) correctly, live within ~40s of the
-  push. Re-verify the same way after any future push.
+  (`index-C669a234.js`) matches a fresh local `pnpm build` byte-for-byte —
+  Cloudflare Pages auto-deployed `origin/main` (commit `4eb018a`, the
+  account-popover-fix/heartbeat-line/ambient-background push) correctly,
+  live within ~40s of the push. Re-verify the same way after any future
+  push.
 - **Live API:** https://api.thynact.com — `/health` returns
   `{"status":"ok","service":"THYNACT","environment":"development","llm_provider":"mock",...}`
   (HTTP 200). `/ready` returns `{"status":"ready","checks":{}}` (HTTP 200).
