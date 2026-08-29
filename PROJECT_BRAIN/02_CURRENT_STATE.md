@@ -7,13 +7,14 @@ contradicting note elsewhere.
 
 ## PRODUCTION STATUS
 
-- **Live frontend:** https://app.thynact.com — HTTP 200 confirmed this
-  session, before and after pushing `776dd63` + `8cae377`. Re-verify the
-  asset hash against a fresh local `pnpm build` after this push
-  completes and Cloudflare Pages picks it up (~60s historically) — not
-  done yet as of writing this entry, see the note at the end of this
-  session's work in 10_NEXT_STEPS.md for whether that follow-up
-  happened.
+- **Live frontend:** https://app.thynact.com — HTTP 200. Verified this
+  session that the served `/assets/index-*.js` hash (`index-CHqTiOts.js`)
+  matches a fresh local `pnpm build` byte-for-byte — Cloudflare Pages
+  auto-deployed `origin/main` (commit `8cae377`, the glass-translucency
+  retune) correctly. Re-verify the same way after any future push.
+- **Live API:** `https://api.thynact.com/health` still returns `200`
+  with `"status":"ok"` — reconfirmed this session; unaffected since no
+  backend code changed.
 - **Live API:** https://api.thynact.com — `/health` returns
   `{"status":"ok","service":"THYNACT","environment":"development","llm_provider":"mock",...}`
   (HTTP 200). `/ready` returns `{"status":"ready","checks":{}}` (HTTP 200).

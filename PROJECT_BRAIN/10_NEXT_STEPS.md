@@ -33,7 +33,12 @@ below this point can be done by an agent. These specifically cannot:
 9. **Connect browser automation tooling** (e.g. Claude in Chrome) to this
    session if interactive/visual QA is wanted — everything reachable
    without it (tests, typecheck, lint, build, curl-level API checks,
-   static responsive review) has already been done.
+   static responsive review) has already been done. **This is now the
+   top priority of this entire list** — see item 3 below. Two sessions
+   in a row have made real visual changes (`776dd63`'s invisible-
+   background root-cause fix, this session's `8cae377` glass-alpha
+   retune down to ~0.04-0.16) and only the first one was ever actually
+   seen rendered.
 
 ## 1. Production backend/API — STATUS: VERIFIED, monitor only
 - `/health` and `/ready` are live and correct. CORS preflight for
@@ -60,30 +65,32 @@ below this point can be done by an agent. These specifically cannot:
   clean browser console (no errors from our own code).
 - Do not mark any page "browser-verified" without this step actually
   happening.
-- **New this session, specifically needs eyes-on**: glass-surface text
-  contrast/legibility in both themes (the glass system trades opacity for
-  depth — WCAG contrast was reasoned about, not measured), the
-  `AmbientBackground` parallax/particle layer's actual look and paint cost
-  (especially Safari/iPad, which stacks several `backdrop-filter: blur()`
-  layers — Sidebar + Topbar + every Card on a page simultaneously), and
-  Dashboard's scroll-reveal timing actually feeling smooth rather than
-  janky.
-- **Highest-priority single check, still true across three sessions now**:
-  confirm the `AccountPopover` fix (introduced HEAD `4eb018a`) actually
-  opens correctly and stays on-screen in a real browser — it was
-  `right-0`-anchored near the toolbar's left edge (a real,
-  code-verifiable bug matching "the login/account option is not opening
-  properly"), now `left-0`-anchored with a viewport-capped width. Also
-  confirm the `HeartbeatLine` ECG waveform
-  (`components/ui/HeartbeatLine.tsx`) actually renders and loops smoothly
-  — it uses SVG SMIL `animateTransform`, which vitest/jsdom does not
-  meaningfully execute, so passing tests only prove it doesn't crash. And
-  now also: does the cream/bronze/deep-navy background (HEAD `8a9dd81`)
-  actually read as premium/elegant rather than muddy against near-black —
-  this has been retuned twice by reasoning alone, never seen rendered.
-  **If browser tooling becomes available, this is the very first thing to
-  spend it on** — every session since HEAD `70cf378` has added more
-  code-reasoned-but-unseen visual changes on top of the last.
+- **Highest-priority single check now (HEAD `8cae377`)**: the glass-alpha
+  retune that cut `.glass-panel` to ~0.15/0.16 alpha and `.glass-focus`
+  (dialogs/drawers/popovers/dropdowns) to ~0.4/0.55 — chosen entirely by
+  reasoning about contrast, never rendered. Specifically check: text
+  legibility on `Card`/`MetricCard` at the new low alpha over the busiest
+  parts of `AmbientBackground` (where the bronze/navy glow blobs
+  overlap), whether `.glass-focus` modals/drawers are still comfortably
+  readable over real page content at the new lower opacity (this is the
+  main legibility risk — it dropped the most, dark 0.88->0.4), and the
+  new `.glass-field` `Input`/`Textarea`/`Select` tier reading as a
+  distinct clickable target nested inside an already-translucent `Card`.
+  Also confirm the light-mode gradient (new this session, reusing the
+  cream/bronze/navy tokens at 7-55% color-mix vs dark's 16-48%) actually
+  looks like a deliberate soft wash and not a washed-out accident.
+- **Still true, one layer down**: `776dd63`'s invisible-background
+  root-cause fix (removing `bg-surface-canvas` from `AppShell`'s root),
+  portal `AccountPopover`, and multi-cycle `HeartbeatLine` were reported
+  as actually rendered and visually confirmed in that session's own
+  headless-Chromium sandbox — but this session found no repo-committed
+  record of how that tooling was set up, so treat it as re-confirmed only
+  once real browser tooling is connected again in a persistent way (see
+  manual-action item 9 above), not as a standing capability.
+  **If browser tooling becomes available, spend it here first** — every
+  session since HEAD `70cf378` has added more code-reasoned-but-unseen
+  visual changes on top of the last, and this session added the biggest
+  opacity change yet.
 
 ## 4. Connectors/integrations — STATUS: code-complete, NEEDS CREDENTIALS to go live
 - DONE (this session): Integration Hub UX overhaul (neutral setup states,
@@ -135,19 +142,22 @@ below this point can be done by an agent. These specifically cannot:
 - Do not provision Postgres/Redis infrastructure without the user's
   explicit approval — this is a paid-infrastructure decision.
 
-## 6. Premium UI completion — STATUS: foundation + Dashboard DONE, bespoke follow-ups remain
-This session (HEAD `70cf378`) built the shared glass/motion design system
-the brief asked for systemically (`GlassSurface`, `AmbientBackground`,
-`lib/motion.ts`, `ScrollReveal`/`StaggerGroup`, `AccountPopover`) and
-applied it: to `Card`/`MetricCard` (cascades to 14+ pages), to the app
-shell (`AppShell`/`Sidebar`/`Topbar`/`Drawer`/`Dialog`/`CommandPalette`),
-and as a full bespoke pass on Dashboard (heading/hero removal — the two
-things the brief named explicitly). See 00_START_HERE.md's "Frontend
-design system" section and 02_CURRENT_STATE.md's DONE entry for this
-session.
-- **Highest priority next**: actual interactive/visual QA of this pass —
-  see item 3 below. Nothing in this pass has been seen rendered in a real
-  browser; it has only been verified via typecheck/lint/test/build.
+## 6. Premium UI completion — STATUS: foundation DONE + retuned twice since, bespoke follow-ups remain
+Built originally at HEAD `70cf378` (`GlassSurface`, `AmbientBackground`,
+`lib/motion.ts`, `ScrollReveal`/`StaggerGroup`, `AccountPopover`,
+`Card`/`MetricCard` cascading to 14+ pages, app shell). Fixed at HEAD
+`776dd63` (the gradient was rendering behind a hidden opaque layer the
+whole time). Retuned at HEAD `8cae377` (this session): alpha cut further
+toward ~0.04-0.16 for cards/sections per an updated brief, new
+`.glass-field` tier for forms/inputs, light-mode gradient added. See
+00_START_HERE.md's "Frontend design system" section and
+02_CURRENT_STATE.md's DONE entries for detail on each.
+- **Highest priority next**: actual interactive/visual QA — see item 3
+  above. Nothing since `70cf378` has been seen rendered in a real browser
+  except `776dd63`'s one-time headless-Chromium sandbox session (not
+  reproducibly available). Everything else, including this session's
+  biggest-yet opacity change, has only been verified via
+  typecheck/lint/test/build.
 - Remaining bespoke follow-ups (see 07_DEFERRED_GOALS.md's new "glass/
   motion design-system — bespoke follow-ups" section for the full,
   prioritized list): Orchestration data-flow particles, Autonomous
@@ -176,9 +186,10 @@ session.
 
 ## 8. Regression tests — STATUS: DONE as of this session, re-run before next push
 - Before the next commit, re-run: `python -m pytest tests/ -q` (backend,
-  208 tests — not re-run this session since no backend code changed),
-  `pnpm typecheck && pnpm lint && pnpm test && pnpm build` (frontend, 43
-  tests, run from `frontend/`). All were green as of commit `8a9dd81`.
+  208 tests — not re-run this session since no backend code changed, same
+  as last session), `pnpm typecheck && pnpm lint && pnpm test && pnpm
+  build` (frontend, 48 tests, run from `frontend/`). All were green as of
+  commit `8cae377`.
 
 ## 9. Production verification — STATUS: VERIFIED as of this session
 - Re-verify after any new push: `curl https://api.thynact.com/health`,
@@ -186,10 +197,15 @@ session.
   asset hash against a fresh local `pnpm build` to confirm Cloudflare
   actually deployed the latest commit (see 02_CURRENT_STATE.md
   "PRODUCTION STATUS" for the exact method used this session). Reconfirmed
-  this session (HEAD `3a6b1b8`): Cloudflare deployed within ~40s of the
-  push (`index-CB2y6IpY.js` matched a fresh local build byte-for-byte);
-  `/health`/`/ready` unaffected since no backend code changed this
-  session.
+  this session (HEAD `8cae377`): Cloudflare deployed correctly
+  (`index-CHqTiOts.js` matched a fresh local build byte-for-byte);
+  `/health` unaffected since no backend code changed this session.
+- **Environment note reconfirmed this session**: `git push origin main`
+  failed once at the very start with the same "Invalid username or
+  token" error documented below — `gh auth setup-git` fixed it
+  immediately, and the fix held for a second push later in the same
+  session without needing to be repeated. Still expect to need it once
+  per fresh session.
 
 ## 10. Final docs update — STATUS: recurring
 - At the end of every session: update `02_CURRENT_STATE.md` with what's
