@@ -1,12 +1,71 @@
-import type { ReactNode } from "react";
-import { HeartPulse, RefreshCw } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  HeartPulse,
+  RefreshCw,
+  Database,
+  Layers,
+  Brain,
+  ListChecks,
+  Workflow,
+  Wrench,
+  GitBranch,
+} from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ErrorState } from "@/components/ui/States";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useHealth, useReadiness } from "@/lib/api/queries";
+import { cn } from "@/lib/utils";
+
+const backendIcon: Record<string, typeof Database> = {
+  memory: Database,
+  task: ListChecks,
+  workflow: Workflow,
+  workflow_definition: GitBranch,
+  runtime: Layers,
+  tool: Wrench,
+  queue: Layers,
+};
+
+const backendLabel: Record<string, string> = {
+  memory: "Memory store",
+  task: "Task store",
+  workflow: "Workflow store",
+  workflow_definition: "Workflow definitions",
+  runtime: "Runtime store",
+  tool: "Tool store",
+  queue: "Job queue",
+};
+
+function BackendNode({ name, backend, index }: { name: string; backend: string; index: number }) {
+  const Icon = backendIcon[name] ?? Database;
+  const durable = backend !== "memory";
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04, duration: 0.25 }}
+      className="flex items-center gap-3 rounded-lg border border-surface bg-surface-canvas px-3 py-2.5"
+    >
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+          durable ? "bg-accent-green/10 text-accent-green" : "bg-surface-hover text-content-muted"
+        )}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-content-primary">{backendLabel[name] ?? name}</p>
+        <p className="text-xs capitalize text-content-muted">{backend}</p>
+      </div>
+      <Badge tone={durable ? "green" : "amber"}>{durable ? "Durable" : "Ephemeral"}</Badge>
+    </motion.div>
+  );
+}
 
 export default function SystemHealth() {
   const health = useHealth();
@@ -50,6 +109,11 @@ export default function SystemHealth() {
                 </Row>
                 <Row label="Service">{health.data?.service}</Row>
                 <Row label="Environment">{health.data?.environment}</Row>
+                <Row label="LLM provider">
+                  <Badge tone={health.data?.llm_provider === "mock" ? "amber" : "violet"} className="capitalize">
+                    <Brain className="h-3 w-3" /> {health.data?.llm_provider}
+                  </Badge>
+                </Row>
               </dl>
             )}
           </CardContent>
@@ -87,11 +151,32 @@ export default function SystemHealth() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Layers className="h-4 w-4 text-accent-violet" /> Persistence map
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {health.isLoading ? (
+            <SkeletonCard />
+          ) : health.isError || !health.data ? (
+            <p className="text-sm text-content-muted">Unavailable — the API is unreachable.</p>
+          ) : (
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              {Object.entries(health.data.backends).map(([name, backend], i) => (
+                <BackendNode key={name} name={name} backend={backend} index={i} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-surface py-2 text-sm last:border-0">
       <dt className="capitalize text-content-muted">{label}</dt>

@@ -103,11 +103,21 @@ app.include_router(phase10_router)
 # ---------------------------------------------------------
 
 @app.get("/health", tags=["system"])
-def health() -> dict[str, str]:
+def health() -> dict:
     return {
         "status": "ok",
         "service": settings.app_name,
         "environment": settings.app_env,
+        "llm_provider": settings.llm_provider,
+        "backends": {
+            "memory": settings.memory_backend,
+            "task": settings.task_backend,
+            "workflow": settings.workflow_backend,
+            "workflow_definition": settings.workflow_definition_backend,
+            "runtime": settings.runtime_backend,
+            "tool": settings.tool_backend,
+            "queue": settings.queue_backend,
+        },
     }
 
 

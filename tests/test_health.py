@@ -12,6 +12,9 @@ def test_health() -> None:
     body = response.json()
     assert body["status"] == "ok"
     assert body["service"] == "THYNACT"
+    assert body["llm_provider"] == "mock"
+    assert body["backends"]["memory"] == "memory"
+    assert body["backends"]["queue"] == "memory"
 
 
 def test_cors_preflight_allows_api_key_and_correlation_headers() -> None:

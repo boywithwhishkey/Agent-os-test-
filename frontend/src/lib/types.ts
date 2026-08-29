@@ -308,6 +308,8 @@ export interface HealthResponse {
   status: string;
   service: string;
   environment: string;
+  llm_provider: string;
+  backends: Record<string, string>;
 }
 
 export interface ReadinessResponse {
