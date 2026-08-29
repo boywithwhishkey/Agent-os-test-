@@ -234,7 +234,7 @@ function WorkflowEditor() {
           <CardTitle className="flex items-center gap-2">
             <GitBranch className="h-4 w-4 text-accent-violet" /> Step graph
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={addStep}>
               <Plus className="h-3.5 w-3.5" /> Add step
             </Button>

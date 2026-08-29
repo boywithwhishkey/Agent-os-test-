@@ -58,7 +58,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center pt-24">
+        <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-24">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

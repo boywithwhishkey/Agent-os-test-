@@ -32,12 +32,12 @@ export function HealthIndicator() {
     <Tooltip content={tooltip}>
       <span
         className={cn(
-          "inline-flex items-center gap-2 rounded-full border pl-2 pr-2.5 py-1 text-xs font-medium",
+          "inline-flex items-center gap-1.5 rounded-full border px-1.5 py-1 text-xs font-medium sm:gap-2 sm:pl-2 sm:pr-2.5",
           toneClass[state]
         )}
       >
-        <HeartbeatLine state={state} width={36} height={14} />
-        {label[state]}
+        <HeartbeatLine state={state} width={30} height={14} />
+        <span className="hidden sm:inline">{label[state]}</span>
       </span>
     </Tooltip>
   );

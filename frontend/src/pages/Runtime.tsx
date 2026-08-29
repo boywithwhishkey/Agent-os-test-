@@ -68,7 +68,7 @@ export default function Runtime() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="provider">Provider</Label>
                 <Input id="provider" value={provider} onChange={(e) => setProvider(e.target.value)} />
@@ -161,7 +161,7 @@ function ExecutionLookup({ executionId }: { executionId: string | undefined }) {
         <StatusBadge status={data.status} />
         <span className="text-xs text-content-muted">{data.attempts} attempts</span>
       </div>
-      <dl className="grid grid-cols-2 gap-2 text-xs text-content-muted">
+      <dl className="grid grid-cols-1 gap-2 text-xs text-content-muted sm:grid-cols-2">
         <div>
           <dt className="font-medium">Correlation ID</dt>
           <dd className="truncate font-mono">{data.correlation_id ?? "—"}</dd>

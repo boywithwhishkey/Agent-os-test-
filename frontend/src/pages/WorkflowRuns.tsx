@@ -144,8 +144,8 @@ function RunDetail({ runId }: { runId: string | undefined }) {
         <div className="space-y-3 rounded-lg border border-accent-amber/25 bg-accent-amber/5 p-3">
           <p className="text-sm font-medium text-content-primary">Resume paused steps</p>
           {waiting.map((step) => (
-            <div key={step.step_id} className="flex items-center gap-2">
-              <Label className="mb-0 w-32 shrink-0">{step.step_id}</Label>
+            <div key={step.step_id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+              <Label className="mb-0 sm:w-32 sm:shrink-0">{step.step_id}</Label>
               <Input
                 placeholder="Approval ID"
                 value={approvalInputs[step.step_id] ?? ""}

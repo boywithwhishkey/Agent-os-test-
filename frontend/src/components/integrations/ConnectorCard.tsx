@@ -80,7 +80,7 @@ export function ConnectorCard({
           </div>
 
           {connector.last_check && (
-            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-hairline pt-2.5 text-xs text-content-muted">
+            <dl className="grid grid-cols-1 gap-x-3 gap-y-1 border-t border-hairline pt-2.5 text-xs text-content-muted sm:grid-cols-2">
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {formatRelativeTime(connector.last_check)}
               </div>

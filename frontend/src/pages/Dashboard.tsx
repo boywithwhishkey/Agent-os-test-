@@ -31,7 +31,7 @@ export default function Dashboard() {
     <div className="space-y-10">
       {/* System identity — deliberately not a bordered card. It emerges
           straight out of the ambient canvas behind the app shell. */}
-      <div className="relative -mx-4 overflow-hidden px-4 py-10 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div className="relative -mx-4 overflow-hidden px-4 py-7 sm:-mx-6 sm:px-6 sm:py-10 lg:-mx-8 lg:px-8">
         <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-ambient-bronze/[0.1] blur-[100px] animate-float" aria-hidden />
         <div className="relative overflow-hidden">
           <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-ambient-cream/60 to-transparent" aria-hidden />
@@ -52,7 +52,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <StaggerGroup className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <StaggerGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StaggerItem>
           <MetricCard
             label="API status"
@@ -92,7 +92,7 @@ export default function Dashboard() {
         </StaggerItem>
       </StaggerGroup>
 
-      <ScrollReveal className="grid gap-4 lg:grid-cols-3">
+      <ScrollReveal className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Recent audit activity</CardTitle>
@@ -146,7 +146,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle>Session activity</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
+          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <SessionList title="Tasks" entries={tasks} to="/tasks" />
             <SessionList title="Workflow runs" entries={workflowRuns} to="/workflows/runs" />
             <SessionList title="Runtime executions" entries={executions} to="/runtime" />

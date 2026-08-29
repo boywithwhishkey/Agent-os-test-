@@ -78,7 +78,7 @@ export function StepEditorDialog({ open, onClose, onSave, initial, existingIds }
       }
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="step-id">Step ID</Label>
             <Input id="step-id" value={id} onChange={(e) => setId(e.target.value)} disabled={Boolean(initial)} />
@@ -93,7 +93,7 @@ export function StepEditorDialog({ open, onClose, onSave, initial, existingIds }
             </Select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="max-retries">Max retries</Label>
             <Input

@@ -86,7 +86,7 @@ export default function Tasks() {
                 <Input id="objective" {...register("objective")} placeholder="Build the onboarding flow" />
                 <FieldError>{errors.objective?.message}</FieldError>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="priority">Priority</Label>
                   <Select id="priority" {...register("priority")}>
@@ -182,7 +182,7 @@ function TaskLookupResult({ taskId }: { taskId: string | undefined }) {
         </Badge>
       </div>
       <p className="text-sm text-content-primary">{data.objective}</p>
-      <dl className="grid grid-cols-2 gap-2 text-xs text-content-muted">
+      <dl className="grid grid-cols-1 gap-2 text-xs text-content-muted sm:grid-cols-2">
         <div>
           <dt className="font-medium">Project</dt>
           <dd>{data.project_id ?? "—"}</dd>
