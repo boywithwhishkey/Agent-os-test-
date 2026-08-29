@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { AlertTriangle, Inbox, Loader2, WifiOff, Clock, ShieldAlert, SearchX } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, Inbox, Loader2, WifiOff, Clock, KeyRound, SearchX } from "lucide-react";
 import { Button } from "./Button";
 import { ApiError } from "@/lib/api/client";
 
@@ -49,13 +50,6 @@ function describeError(error: unknown): { title: string; description: string; ic
         icon: <WifiOff className="h-5 w-5" />,
       };
     }
-    if (error.status === 401 || error.status === 503) {
-      return {
-        title: "Authentication required",
-        description: error.detail,
-        icon: <ShieldAlert className="h-5 w-5" />,
-      };
-    }
     if (error.status === 404) {
       return { title: "Not found", description: error.detail, icon: <SearchX className="h-5 w-5" /> };
     }
@@ -72,7 +66,32 @@ function describeError(error: unknown): { title: string; description: string; ic
   };
 }
 
+// A missing/invalid operator API key is a setup state, not a failure of the
+// app or the API — it gets a compact, neutral banner instead of the same
+// alarm-red panel a genuine error gets (see CLAUDE.md's Integration Hub UX
+// rules, applied app-wide here rather than only on the Integrations page).
+function AuthRequiredState({ description }: { description: string }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-surface bg-surface-canvas px-4 py-3.5 text-sm text-content-secondary">
+      <span className="flex items-center gap-2">
+        <KeyRound className="h-4 w-4 shrink-0 text-accent-amber" />
+        {description}
+      </span>
+      <Link
+        to="/settings"
+        className="focus-ring shrink-0 rounded-lg border border-surface px-3 py-1.5 text-xs font-medium text-content-primary hover:bg-surface-hover"
+      >
+        Configure API key
+      </Link>
+    </div>
+  );
+}
+
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+  if (error instanceof ApiError && error.isUnauthorized) {
+    return <AuthRequiredState description={error.detail} />;
+  }
+
   const { title, description, icon } = describeError(error);
   const correlationId = error instanceof ApiError ? error.correlationId : null;
   return (
