@@ -72,18 +72,23 @@ function describeError(error: unknown): { title: string; description: string; ic
 // rules, applied app-wide here rather than only on the Integrations page).
 function AuthRequiredState({ description }: { description: string }) {
   return (
-    <div className="glass-soft flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline px-4 py-3.5 text-sm text-content-secondary">
+    <div className="glass-soft flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline px-4 py-3.5 text-sm">
       <span className="flex items-center gap-2.5">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-gold/10 text-accent-gold">
           <Lock className="h-3.5 w-3.5" />
         </span>
-        {description}
+        <span>
+          <span className="block font-medium text-content-primary">Operator authentication required</span>
+          <span className="block text-xs text-content-muted">
+            This view becomes available after authentication — <span>{description}</span>
+          </span>
+        </span>
       </span>
       <Link
         to="/settings"
         className="focus-ring shrink-0 rounded-lg border border-hairline px-3 py-1.5 text-xs font-medium text-content-primary hover:bg-surface-hover"
       >
-        Configure API key
+        Authenticate
       </Link>
     </div>
   );

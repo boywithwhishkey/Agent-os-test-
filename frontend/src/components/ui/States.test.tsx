@@ -9,7 +9,7 @@ describe("global UX states", () => {
     const error = new ApiError({ status: 401, detail: "Unauthorized", correlationId: "corr-1" });
     render(<ErrorState error={error} />, { wrapper: MemoryRouter });
     expect(screen.getByText("Unauthorized")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /configure api key/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /authenticate/i })).toBeInTheDocument();
     // Must not use the alarm-red genuine-error treatment for a setup state.
     expect(screen.queryByText("Authentication required")).not.toBeInTheDocument();
   });

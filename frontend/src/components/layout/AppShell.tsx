@@ -25,7 +25,11 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen overflow-x-hidden bg-surface-canvas">
+    // No opaque background here — body's gradient (index.css) must show
+    // through. An earlier version had bg-surface-canvas on this element,
+    // which is fully opaque and was silently hiding the entire ambient
+    // background system behind it; caught by actually rendering the app.
+    <div className="relative flex min-h-screen overflow-x-hidden">
       <AmbientBackground />
       <Sidebar
         collapsed={collapsed}

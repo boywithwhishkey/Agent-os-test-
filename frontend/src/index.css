@@ -98,16 +98,19 @@ body {
   font-family: var(--font-sans);
 }
 .dark body {
-  background-color: #07080d;
-  /* Premium cream/bronze/deep-navy gradient base over a near-black
-     foundation — deliberately faint (5-9% peak opacity) so it reads as
-     elegant ambient depth, not a loud glow. Fixed so it doesn't
-     reflow/tile while the page scrolls. */
+  background-color: #05060a;
+  /* Premium cream/bronze/deep-navy gradient over the near-black
+     foundation (that solid background-color IS layer 1 — no separate
+     vignette layer here: an earlier version added one and it visually
+     cancelled out most of the color underneath it, which is why this is
+     three layers, not four). Intensities are tuned to be clearly visible
+     against near-black while staying dark and atmospheric, not a bright
+     wash — verified by rendering the app and looking, not guessed.
+     Fixed so it doesn't reflow/tile while the page scrolls. */
   background-image:
-    radial-gradient(ellipse 50rem 38rem at 20% -6%, color-mix(in srgb, var(--color-ambient-cream) 6%, transparent), transparent 55%),
-    radial-gradient(ellipse 60rem 44rem at 8% 10%, color-mix(in srgb, var(--color-ambient-bronze) 9%, transparent), transparent 60%),
-    radial-gradient(ellipse 65rem 55rem at 95% 105%, color-mix(in srgb, var(--color-ambient-navy) 22%, transparent), transparent 62%),
-    radial-gradient(ellipse 70rem 70rem at 50% 40%, transparent 0%, #05060a 100%);
+    radial-gradient(ellipse 56rem 42rem at 18% -8%, color-mix(in srgb, var(--color-ambient-cream) 16%, transparent), transparent 68%),
+    radial-gradient(ellipse 66rem 50rem at 4% 14%, color-mix(in srgb, var(--color-ambient-bronze) 26%, transparent), transparent 72%),
+    radial-gradient(ellipse 74rem 62rem at 88% 82%, color-mix(in srgb, var(--color-ambient-navy) 48%, transparent), transparent 75%);
   background-attachment: fixed;
   color: #f7f6f2;
 }
@@ -184,7 +187,7 @@ body {
   -webkit-backdrop-filter: blur(6px) saturate(120%);
 }
 .dark .glass-ambient {
-  background-color: rgba(16, 19, 28, 0.28);
+  background-color: rgba(16, 19, 28, 0.2);
   backdrop-filter: blur(6px) saturate(140%);
   -webkit-backdrop-filter: blur(6px) saturate(140%);
 }
@@ -196,7 +199,7 @@ body {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(20, 22, 28, 0.04);
 }
 .dark .glass-soft {
-  background-color: rgba(16, 19, 28, 0.46);
+  background-color: rgba(16, 19, 28, 0.34);
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -209,7 +212,7 @@ body {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 8px 24px -12px rgba(20, 22, 28, 0.12);
 }
 .dark .glass-panel {
-  background-color: rgba(16, 19, 28, 0.62);
+  background-color: rgba(16, 19, 28, 0.5);
   backdrop-filter: blur(20px) saturate(170%);
   -webkit-backdrop-filter: blur(20px) saturate(170%);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
