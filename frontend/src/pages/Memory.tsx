@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Trash2, Search as SearchIcon, PenLine } from "lucide-react";
+import { Brain, Trash2, Search as SearchIcon, PenLine, List, Share2 } from "lucide-react";
+import { MemoryGraph } from "@/components/memory/MemoryGraph";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -64,6 +65,7 @@ function MemorySearchPanel() {
   const [scope, setScope] = useState<MemoryScope | "">("");
   const [projectId, setProjectId] = useState("");
   const [limit, setLimit] = useState(20);
+  const [view, setView] = useState<"list" | "graph">("list");
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const { push } = useToast();
   const deleteMemory = useDeleteMemory();
@@ -117,13 +119,31 @@ function MemorySearchPanel() {
           <CardTitle className="flex items-center gap-2">
             <Brain className="h-4 w-4 text-accent-violet" /> Results
           </CardTitle>
-          <Select value={String(limit)} onChange={(e) => setLimit(Number(e.target.value))} className="w-28">
-            {[10, 20, 50, 100].map((n) => (
-              <option key={n} value={n}>
-                {n} results
-              </option>
-            ))}
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={String(limit)} onChange={(e) => setLimit(Number(e.target.value))} className="w-28">
+              {[10, 20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n} results
+                </option>
+              ))}
+            </Select>
+            <div className="flex rounded-lg border border-surface p-0.5">
+              <button
+                onClick={() => setView("list")}
+                aria-label="List view"
+                className={`rounded-md p-1.5 transition-colors ${view === "list" ? "bg-accent-violet/10 text-accent-violet" : "text-content-muted hover:text-content-primary"}`}
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setView("graph")}
+                aria-label="Graph view"
+                className={`rounded-md p-1.5 transition-colors ${view === "graph" ? "bg-accent-violet/10 text-accent-violet" : "text-content-muted hover:text-content-primary"}`}
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {results.isLoading ? (
@@ -132,6 +152,8 @@ function MemorySearchPanel() {
             <ErrorState error={results.error} onRetry={() => results.refetch()} />
           ) : !results.data?.length ? (
             <EmptyState icon={<Brain className="h-5 w-5" />} title="No memories found" description="Try a different query or scope." />
+          ) : view === "graph" ? (
+            <MemoryGraph records={results.data} />
           ) : (
             <ul className="divide-y divide-surface">
               <AnimatePresence initial={false}>
