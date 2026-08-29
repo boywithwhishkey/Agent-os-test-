@@ -1,0 +1,377 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from app.integrations.models import ConnectorAuthType, ConnectorCategory, ConnectorType
+
+
+@dataclass(frozen=True, slots=True)
+class CatalogSpec:
+    """Static metadata for one catalog entry. Live status is computed
+    separately at request time — see build_catalog() in phase9.py."""
+
+    id: str
+    name: str
+    description: str
+    category: ConnectorCategory
+    connector_type: ConnectorType
+    icon: str
+    auth_type: ConnectorAuthType
+    capabilities: list[str] = field(default_factory=list)
+    popular: bool = False
+    documentation_url: str | None = None
+    implemented: bool = False
+    requires: list[str] = field(default_factory=list)
+
+
+# Only n8n has a real adapter behind it (app/integrations/n8n.py). Every other
+# entry here is catalog metadata only — `implemented=False` — and must never
+# be presented as connected/configured. See ConnectorEntry's docstring.
+CATALOG: list[CatalogSpec] = [
+    # --- Automation ---
+    CatalogSpec(
+        id="n8n",
+        name="n8n",
+        description="Trigger self-hosted or cloud n8n workflows over webhooks.",
+        category=ConnectorCategory.AUTOMATION,
+        connector_type=ConnectorType.WEBHOOK,
+        icon="Zap",
+        auth_type=ConnectorAuthType.WEBHOOK_SECRET,
+        capabilities=["Trigger workflow", "Pass payload", "Read execution result"],
+        popular=True,
+        documentation_url="https://n8n.io",
+        implemented=True,
+        requires=["N8N_BASE_URL"],
+    ),
+    CatalogSpec(
+        id="zapier",
+        name="Zapier",
+        description="Trigger Zaps from THYNACT workflows and tasks.",
+        category=ConnectorCategory.AUTOMATION,
+        connector_type=ConnectorType.WEBHOOK,
+        icon="Workflow",
+        auth_type=ConnectorAuthType.WEBHOOK_SECRET,
+        capabilities=["Trigger zap", "Pass payload"],
+        documentation_url="https://zapier.com",
+    ),
+    CatalogSpec(
+        id="make",
+        name="Make",
+        description="Trigger Make (formerly Integromat) scenarios.",
+        category=ConnectorCategory.AUTOMATION,
+        connector_type=ConnectorType.WEBHOOK,
+        icon="GitMerge",
+        auth_type=ConnectorAuthType.WEBHOOK_SECRET,
+        capabilities=["Trigger scenario", "Pass payload"],
+        documentation_url="https://www.make.com",
+    ),
+    # --- AI ---
+    CatalogSpec(
+        id="openai",
+        name="OpenAI",
+        description="Use GPT models as an alternate LLM provider.",
+        category=ConnectorCategory.AI,
+        connector_type=ConnectorType.API,
+        icon="Bot",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Chat completion", "Embeddings"],
+        popular=True,
+        documentation_url="https://openai.com",
+    ),
+    CatalogSpec(
+        id="anthropic",
+        name="Anthropic",
+        description="Use Claude models as an alternate LLM provider.",
+        category=ConnectorCategory.AI,
+        connector_type=ConnectorType.API,
+        icon="Sparkles",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Chat completion", "Tool use"],
+        popular=True,
+        documentation_url="https://www.anthropic.com",
+    ),
+    CatalogSpec(
+        id="gemini",
+        name="Google Gemini",
+        description="THYNACT's built-in LLM provider option for orchestration and autonomous runs.",
+        category=ConnectorCategory.AI,
+        connector_type=ConnectorType.API,
+        icon="Gem",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Chat completion", "Multi-agent reasoning"],
+        popular=True,
+        documentation_url="https://ai.google.dev",
+        implemented=True,
+        requires=["GEMINI_API_KEY"],
+    ),
+    # --- Developer / infra ---
+    CatalogSpec(
+        id="github",
+        name="GitHub",
+        description="Read repos, open issues/PRs, and react to events.",
+        category=ConnectorCategory.DEVELOPER,
+        connector_type=ConnectorType.OAUTH,
+        icon="Github",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Repo access", "Issues/PRs", "Webhooks"],
+        popular=True,
+        documentation_url="https://github.com",
+    ),
+    CatalogSpec(
+        id="gitlab",
+        name="GitLab",
+        description="Read repos, open issues/MRs, and react to pipeline events.",
+        category=ConnectorCategory.DEVELOPER,
+        connector_type=ConnectorType.OAUTH,
+        icon="GitBranch",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Repo access", "Issues/MRs", "Pipelines"],
+        documentation_url="https://gitlab.com",
+    ),
+    CatalogSpec(
+        id="cloudflare",
+        name="Cloudflare",
+        description="Manage DNS, Pages deployments, and edge config.",
+        category=ConnectorCategory.DEVELOPER,
+        connector_type=ConnectorType.API,
+        icon="Cloud",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["DNS management", "Pages deploys"],
+        documentation_url="https://www.cloudflare.com",
+    ),
+    CatalogSpec(
+        id="render",
+        name="Render",
+        description="Trigger deploys and read service status.",
+        category=ConnectorCategory.DEVELOPER,
+        connector_type=ConnectorType.API,
+        icon="Server",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Deploy trigger", "Service status"],
+        documentation_url="https://render.com",
+    ),
+    CatalogSpec(
+        id="vercel",
+        name="Vercel",
+        description="Trigger deploys and read project status.",
+        category=ConnectorCategory.DEVELOPER,
+        connector_type=ConnectorType.API,
+        icon="Triangle",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Deploy trigger", "Project status"],
+        documentation_url="https://vercel.com",
+    ),
+    # --- Productivity ---
+    CatalogSpec(
+        id="slack",
+        name="Slack",
+        description="Post messages and react to events in Slack channels.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.OAUTH,
+        icon="MessageSquare",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Post message", "Channel events"],
+        popular=True,
+        documentation_url="https://slack.com",
+    ),
+    CatalogSpec(
+        id="discord",
+        name="Discord",
+        description="Post messages and react to events in Discord servers.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.WEBHOOK,
+        icon="MessagesSquare",
+        auth_type=ConnectorAuthType.WEBHOOK_SECRET,
+        capabilities=["Post message"],
+        documentation_url="https://discord.com",
+    ),
+    CatalogSpec(
+        id="notion",
+        name="Notion",
+        description="Read and write Notion pages and databases.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.OAUTH,
+        icon="FileText",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Read pages", "Write pages", "Query databases"],
+        popular=True,
+        documentation_url="https://www.notion.so",
+    ),
+    CatalogSpec(
+        id="linear",
+        name="Linear",
+        description="Create and update issues in Linear.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.API,
+        icon="ListTodo",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Create issue", "Update issue"],
+        popular=True,
+        documentation_url="https://linear.app",
+    ),
+    CatalogSpec(
+        id="jira",
+        name="Jira",
+        description="Create and update issues in Jira projects.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.OAUTH,
+        icon="Bug",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Create issue", "Update issue"],
+        documentation_url="https://www.atlassian.com/software/jira",
+    ),
+    CatalogSpec(
+        id="teams",
+        name="Microsoft Teams",
+        description="Post messages to Microsoft Teams channels.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.WEBHOOK,
+        icon="Users",
+        auth_type=ConnectorAuthType.WEBHOOK_SECRET,
+        capabilities=["Post message"],
+        documentation_url="https://www.microsoft.com/microsoft-teams",
+    ),
+    # --- Google ---
+    CatalogSpec(
+        id="gmail",
+        name="Gmail",
+        description="Read and send email through a Gmail account.",
+        category=ConnectorCategory.GOOGLE,
+        connector_type=ConnectorType.OAUTH,
+        icon="Mail",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Read email", "Send email"],
+        popular=True,
+        documentation_url="https://mail.google.com",
+    ),
+    CatalogSpec(
+        id="google_calendar",
+        name="Google Calendar",
+        description="Read and create Google Calendar events.",
+        category=ConnectorCategory.GOOGLE,
+        connector_type=ConnectorType.OAUTH,
+        icon="Calendar",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Read events", "Create events"],
+        popular=True,
+        documentation_url="https://calendar.google.com",
+    ),
+    CatalogSpec(
+        id="google_drive",
+        name="Google Drive",
+        description="Read and write files in Google Drive.",
+        category=ConnectorCategory.GOOGLE,
+        connector_type=ConnectorType.OAUTH,
+        icon="HardDrive",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Read files", "Write files"],
+        popular=True,
+        documentation_url="https://drive.google.com",
+    ),
+    # --- Data ---
+    CatalogSpec(
+        id="postgresql",
+        name="PostgreSQL",
+        description="THYNACT's own durable persistence backend for tasks, memory, workflows, and more.",
+        category=ConnectorCategory.DATA,
+        connector_type=ConnectorType.API,
+        icon="Database",
+        auth_type=ConnectorAuthType.NONE,
+        capabilities=["Durable storage", "Full-text + pgvector search"],
+        popular=True,
+        documentation_url="https://www.postgresql.org",
+        implemented=True,
+        requires=["DATABASE_URL"],
+    ),
+    CatalogSpec(
+        id="redis",
+        name="Redis",
+        description="THYNACT's own durable job queue backend.",
+        category=ConnectorCategory.DATA,
+        connector_type=ConnectorType.API,
+        icon="Layers",
+        auth_type=ConnectorAuthType.NONE,
+        capabilities=["Job queue"],
+        documentation_url="https://redis.io",
+        implemented=True,
+        requires=["REDIS_URL"],
+    ),
+    CatalogSpec(
+        id="supabase",
+        name="Supabase",
+        description="Use Supabase Postgres/Auth/Storage from THYNACT workflows.",
+        category=ConnectorCategory.DATA,
+        connector_type=ConnectorType.API,
+        icon="Flame",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Database access", "Auth", "Storage"],
+        documentation_url="https://supabase.com",
+    ),
+    # --- Other useful ---
+    CatalogSpec(
+        id="dropbox",
+        name="Dropbox",
+        description="Read and write files in Dropbox.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.OAUTH,
+        icon="Box",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Read files", "Write files"],
+        documentation_url="https://www.dropbox.com",
+    ),
+    CatalogSpec(
+        id="onedrive",
+        name="OneDrive",
+        description="Read and write files in Microsoft OneDrive.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.OAUTH,
+        icon="CloudCog",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Read files", "Write files"],
+        documentation_url="https://onedrive.live.com",
+    ),
+    CatalogSpec(
+        id="hubspot",
+        name="HubSpot",
+        description="Read and update CRM contacts, deals, and tickets.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.OAUTH,
+        icon="Magnet",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["CRM contacts", "Deals", "Tickets"],
+        documentation_url="https://www.hubspot.com",
+    ),
+    CatalogSpec(
+        id="salesforce",
+        name="Salesforce",
+        description="Read and update Salesforce CRM records.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.OAUTH,
+        icon="CloudSun",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["CRM records"],
+        documentation_url="https://www.salesforce.com",
+    ),
+    CatalogSpec(
+        id="stripe",
+        name="Stripe",
+        description="Read payments/subscriptions and react to billing events.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.API,
+        icon="CreditCard",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Payments", "Subscriptions", "Webhooks"],
+        documentation_url="https://stripe.com",
+    ),
+]
+
+
+def list_catalog() -> list[CatalogSpec]:
+    return list(CATALOG)
+
+
+def get_catalog_spec(connector_id: str) -> CatalogSpec | None:
+    for spec in CATALOG:
+        if spec.id == connector_id:
+            return spec
+    return None

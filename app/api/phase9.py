@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.auth import require_api_key
+from app.core.config import settings
 from app.core.correlation import get_or_create_correlation_id
+from app.integrations.catalog import CatalogSpec, get_catalog_spec, list_catalog
 from app.integrations.factory import (
     build_integration_adapter,
     is_provider_configured,
@@ -10,15 +12,26 @@ from app.integrations.factory import (
     provider_display_name,
     provider_requirements,
 )
-from app.integrations.models import IntegrationRequest, IntegrationResult, IntegrationStatus
+from app.integrations.mcp.client import MCPHttpClient
+from app.integrations.mcp.models import MCPServerCreate, MCPServerPublic
+from app.integrations.mcp.store import MCPServerStore
+from app.integrations.models import (
+    ConnectorEntry,
+    ConnectorStatusValue,
+    IntegrationRequest,
+    IntegrationResult,
+    IntegrationStatus,
+)
 from app.integrations.status_store import IntegrationStatusStore
 
+public_router = APIRouter(prefix="/api/v1/integrations", tags=["integrations"])
 router = APIRouter(
     prefix="/api/v1/integrations",
     tags=["integrations"],
     dependencies=[Depends(require_api_key)],
 )
 status_store = IntegrationStatusStore()
+mcp_store = MCPServerStore()
 
 
 class IntegrationExecutePayload(BaseModel):
@@ -26,26 +39,159 @@ class IntegrationExecutePayload(BaseModel):
     request: IntegrationRequest
 
 
-@router.get("", response_model=list[IntegrationStatus])
-async def list_integrations() -> list[IntegrationStatus]:
-    statuses: list[IntegrationStatus] = []
-    for provider in list_providers():
-        record = status_store.get(provider.value)
-        statuses.append(
-            IntegrationStatus(
-                provider=provider,
-                name=provider_display_name(provider),
-                configured=is_provider_configured(provider),
-                requires=provider_requirements(provider),
-                connected=record.connected,
-                last_check=record.last_check,
-                last_check_latency_ms=record.last_check_latency_ms,
-                last_check_error=record.last_check_error,
-                last_execution=record.last_execution,
-                last_execution_success=record.last_execution_success,
-            )
-        )
-    return statuses
+# ---------------------------------------------------------------------------
+# Live status resolution for the static catalog. Only entries with
+# implemented=True get anything other than AVAILABLE/configured=False —
+# see CatalogSpec's module docstring in app/integrations/catalog.py.
+# ---------------------------------------------------------------------------
+
+
+def _n8n_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "n8n")
+    record = status_store.get("n8n")
+    configured = is_provider_configured(provider)
+    if not configured:
+        status = ConnectorStatusValue.NEEDS_SETUP
+    elif record.connected is True:
+        status = ConnectorStatusValue.CONNECTED
+    elif record.connected is False:
+        status = ConnectorStatusValue.ERROR
+    else:
+        status = ConnectorStatusValue.CONFIGURED
+    return {
+        "status": status,
+        "configured": configured,
+        "connected": record.connected,
+        "last_check": record.last_check,
+        "last_check_latency_ms": record.last_check_latency_ms,
+        "last_check_error": record.last_check_error,
+        "last_execution": record.last_execution,
+        "last_execution_success": record.last_execution_success,
+    }
+
+
+def _gemini_live_status() -> dict:
+    active = settings.llm_provider.lower().strip() == "gemini"
+    has_key = bool(settings.gemini_api_key)
+    if active:
+        status = ConnectorStatusValue.CONNECTED
+    elif has_key:
+        status = ConnectorStatusValue.CONFIGURED
+    else:
+        status = ConnectorStatusValue.NEEDS_SETUP
+    return {"status": status, "configured": has_key, "connected": active if has_key else None}
+
+
+def _postgresql_live_status() -> dict:
+    backends = {
+        settings.memory_backend,
+        settings.task_backend,
+        settings.workflow_backend,
+        settings.runtime_backend,
+        settings.tool_backend,
+        settings.workflow_definition_backend,
+    }
+    in_use = "postgres" in backends
+    has_url = bool(settings.database_url)
+    if in_use:
+        status = ConnectorStatusValue.CONNECTED
+    elif has_url:
+        status = ConnectorStatusValue.CONFIGURED
+    else:
+        status = ConnectorStatusValue.NEEDS_SETUP
+    return {"status": status, "configured": has_url, "connected": in_use if has_url else None}
+
+
+def _redis_live_status() -> dict:
+    in_use = settings.queue_backend.lower().strip() == "redis"
+    has_url = bool(settings.redis_url)
+    if in_use:
+        status = ConnectorStatusValue.CONNECTED
+    elif has_url:
+        status = ConnectorStatusValue.CONFIGURED
+    else:
+        status = ConnectorStatusValue.NEEDS_SETUP
+    return {"status": status, "configured": has_url, "connected": in_use if has_url else None}
+
+
+_LIVE_STATUS_RESOLVERS = {
+    "n8n": _n8n_live_status,
+    "gemini": _gemini_live_status,
+    "postgresql": _postgresql_live_status,
+    "redis": _redis_live_status,
+}
+
+
+def _resolve_entry(spec: CatalogSpec) -> ConnectorEntry:
+    live = _LIVE_STATUS_RESOLVERS.get(spec.id, lambda: {})() if spec.implemented else {}
+    return ConnectorEntry(
+        id=spec.id,
+        name=spec.name,
+        description=spec.description,
+        category=spec.category,
+        connector_type=spec.connector_type,
+        icon=spec.icon,
+        auth_type=spec.auth_type,
+        capabilities=spec.capabilities,
+        provider=spec.id,
+        popular=spec.popular,
+        documentation_url=spec.documentation_url,
+        implemented=spec.implemented,
+        requires=spec.requires,
+        status=live.get("status", ConnectorStatusValue.AVAILABLE),
+        configured=live.get("configured", False),
+        connected=live.get("connected"),
+        last_check=live.get("last_check"),
+        last_check_latency_ms=live.get("last_check_latency_ms"),
+        last_check_error=live.get("last_check_error"),
+        last_execution=live.get("last_execution"),
+        last_execution_success=live.get("last_execution_success"),
+    )
+
+
+@public_router.get("", response_model=list[ConnectorEntry])
+async def list_catalog_route() -> list[ConnectorEntry]:
+    """The full connector catalog with live status. Public — no secrets are
+    ever included here, only whether something is configured/connected, so
+    the Integration Hub can render for any visitor regardless of whether an
+    operator API key is set in this browser."""
+    return [_resolve_entry(spec) for spec in list_catalog()]
+
+
+@public_router.get("/mcp/servers", response_model=list[MCPServerPublic])
+async def list_mcp_servers_route() -> list[MCPServerPublic]:
+    """Redacted MCP server list — never includes secret_value."""
+    return [record.to_public() for record in mcp_store.list()]
+
+
+@router.post("/mcp/servers", response_model=MCPServerPublic, status_code=201)
+async def create_mcp_server_route(payload: MCPServerCreate) -> MCPServerPublic:
+    record = mcp_store.create(payload)
+    return record.to_public()
+
+
+@router.post("/mcp/servers/{server_id}/test", response_model=MCPServerPublic)
+async def test_mcp_server_route(server_id: str) -> MCPServerPublic:
+    record = mcp_store.get(server_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="MCP server not found")
+
+    client = MCPHttpClient(
+        endpoint=record.endpoint,
+        auth_type=record.auth_type,
+        header_name=record.header_name,
+        secret_value=record.secret_value,
+        timeout_seconds=record.timeout_seconds,
+    )
+    connected, latency_ms, error, capabilities = await client.discover()
+    mcp_store.record_check(server_id, connected=connected, latency_ms=latency_ms, error=error, capabilities=capabilities)
+    return mcp_store.get(server_id).to_public()
+
+
+@router.delete("/mcp/servers/{server_id}", status_code=204)
+async def delete_mcp_server_route(server_id: str) -> None:
+    if not mcp_store.delete(server_id):
+        raise HTTPException(status_code=404, detail="MCP server not found")
 
 
 @router.post("/{provider}/test", response_model=IntegrationStatus)
