@@ -8,10 +8,10 @@ export function AuthRequiredBanner({ className }: { className?: string }) {
     >
       <span className="flex items-center gap-2">
         <KeyRound className="h-4 w-4 shrink-0 text-accent-amber" />
-        Operator authentication required for connector actions.
+        Sign in as operator to connect, configure, or test integrations.
       </span>
       <Link to="/settings" className="shrink-0 font-medium text-accent-violet hover:underline">
-        Configure API key
+        Sign in
       </Link>
     </div>
   );

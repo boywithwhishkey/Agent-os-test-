@@ -114,6 +114,21 @@ describe("Integrations page", () => {
     expect(screen.queryByText(/not configured/i)).not.toBeInTheDocument();
   });
 
+  it("treats a configured-but-unverified connector as Ready to connect, not Currently integrated", async () => {
+    // Regression test: setting credentials (configured: true) is not the
+    // same as a real, verified connection. Only a connector whose status is
+    // literally "connected" (a successful test/OAuth round trip) may appear
+    // under "Currently integrated" — see CLAUDE.md's Integration Hub rule.
+    const configured = { ...n8nNeedsSetup, status: "configured", configured: true };
+    stubFetch({ catalog: [configured] });
+
+    renderWithProviders(<Integrations />);
+
+    expect(await screen.findByText("No integrations connected yet.")).toBeInTheDocument();
+    const readySection = (await screen.findByRole("heading", { name: "Ready to connect" })).closest("section")!;
+    expect(within(readySection).getAllByText("n8n").length).toBeGreaterThan(0);
+  });
+
   it("runs a connection test for a configured connector and reflects the result live", async () => {
     const configured = { ...n8nNeedsSetup, status: "configured", configured: true };
     const tested = { ...configured, status: "connected", connected: true, last_check: new Date().toISOString(), last_check_latency_ms: 12.3 };
@@ -125,8 +140,8 @@ describe("Integrations page", () => {
 
     renderWithProviders(<Integrations />);
 
-    const integratedSection = (await screen.findByText("Currently integrated")).closest("section")!;
-    const testButton = await within(integratedSection).findByRole("button", { name: /^test$/i });
+    const readySection = (await screen.findByRole("heading", { name: "Ready to connect" })).closest("section")!;
+    const testButton = await within(readySection).findByRole("button", { name: /^test$/i });
     fireEvent.click(testButton);
 
     await waitFor(() => expect(screen.getAllByText(/connected/i).length).toBeGreaterThan(0));
@@ -175,7 +190,7 @@ describe("Integrations page", () => {
     const cards = await screen.findAllByText("GitHub");
     fireEvent.click(cards[0].closest(".group") ?? cards[0]);
 
-    const authorizeButton = await screen.findByRole("button", { name: /^authorize$/i });
+    const authorizeButton = await screen.findByRole("button", { name: /connect github/i });
     fireEvent.click(authorizeButton);
 
     await waitFor(() => expect(window.location.href).toBe("https://github.com/login/oauth/authorize?state=abc"));

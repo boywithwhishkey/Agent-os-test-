@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { Plug, Sparkles, Plus } from "lucide-react";
+import { Plug, Sparkles, Plus, Clock3 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState, ErrorState } from "@/components/ui/States";
@@ -18,7 +18,9 @@ import {
   matchesFilter,
   matchesSearch,
   mcpServerToConnector,
-  isCurrentlyIntegrated,
+  isConnected,
+  isReadyToConnect,
+  isComingSoon,
   type FilterChip,
   type UnifiedConnector,
 } from "@/lib/integration-hub";
@@ -27,12 +29,16 @@ import { cn } from "@/lib/utils";
 const FILTERS: { value: FilterChip; label: string }[] = [
   { value: "all", label: "All" },
   { value: "connected", label: "Connected" },
+  { value: "ready", label: "Ready to connect" },
+  { value: "coming_soon", label: "Coming soon" },
   { value: "mcp", label: "MCP" },
   { value: "api", label: "API" },
-  { value: "automation", label: "Automation" },
+  { value: "oauth", label: "OAuth" },
+  { value: "webhook", label: "Webhook" },
   { value: "ai", label: "AI" },
-  { value: "productivity", label: "Productivity" },
+  { value: "automation", label: "Automation" },
   { value: "developer", label: "Developer" },
+  { value: "productivity", label: "Productivity" },
   { value: "data", label: "Data" },
 ];
 
@@ -75,12 +81,21 @@ export default function Integrations() {
     return [...catalogItems, ...mcpItems];
   }, [catalog.data, mcpServers.data]);
 
-  const integrated = useMemo(() => allConnectors.filter(isCurrentlyIntegrated), [allConnectors]);
-  const popular = useMemo(() => allConnectors.filter((c) => c.popular), [allConnectors]);
+  // A connector is always exactly one of these three states — never a mix
+  // (see CLAUDE.md's Integration Hub product rule).
+  const connected = useMemo(() => allConnectors.filter(isConnected), [allConnectors]);
+  const readyToConnect = useMemo(() => allConnectors.filter(isReadyToConnect), [allConnectors]);
+  const popular = useMemo(
+    () => allConnectors.filter((c) => c.popular && (isConnected(c) || isReadyToConnect(c))),
+    [allConnectors]
+  );
+
   const filtered = useMemo(
     () => allConnectors.filter((c) => matchesSearch(c, search) && matchesFilter(c, filter)),
     [allConnectors, search, filter]
   );
+  const filteredWorking = useMemo(() => filtered.filter((c) => !isComingSoon(c)), [filtered]);
+  const filteredComingSoon = useMemo(() => filtered.filter(isComingSoon), [filtered]);
 
   const isLoading = catalog.isLoading || mcpServers.isLoading;
   const isError = catalog.isError;
@@ -111,23 +126,23 @@ export default function Integrations() {
         <ErrorState error={catalog.error} onRetry={() => catalog.refetch()} />
       ) : (
         <>
-          {/* Currently integrated */}
+          {/* Currently integrated — only real, verified connections. */}
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">Currently integrated</h2>
             {isLoading ? (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <SkeletonCard />
               </div>
-            ) : integrated.length === 0 ? (
+            ) : connected.length === 0 ? (
               <EmptyState
                 icon={<Plug className="h-5 w-5" />}
                 title="No integrations connected yet."
-                description="Configure a connector below or add an MCP server to get started."
+                description="Connect one below, or add an MCP server to get started."
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <AnimatePresence>
-                  {integrated.map((connector) => (
+                  {connected.map((connector) => (
                     <ConnectorCard
                       key={connector.id}
                       connector={connector}
@@ -141,6 +156,32 @@ export default function Integrations() {
               </div>
             )}
           </section>
+
+          {/* Ready to connect — implementation-complete, only credentials/OAuth are missing. */}
+          {!isLoading && readyToConnect.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-content-muted">
+                <Clock3 className="h-3.5 w-3.5 text-accent-amber" /> Ready to connect
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <AnimatePresence>
+                  {readyToConnect.map((connector) => (
+                    <ConnectorCard
+                      key={connector.id}
+                      connector={connector}
+                      onSelect={() => setSelected(connector)}
+                      onTest={
+                        connector.status === "configured" || connector.status === "error"
+                          ? () => handleTest(connector)
+                          : undefined
+                      }
+                      testing={testing(connector)}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </section>
+          )}
 
           {/* Popular */}
           {!isLoading && popular.length > 0 && (
@@ -192,13 +233,32 @@ export default function Integrations() {
                 description="Try a different term or clear the filters."
               />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                <AnimatePresence>
-                  {filtered.map((connector) => (
-                    <ConnectorCard key={connector.id} connector={connector} onSelect={() => setSelected(connector)} />
-                  ))}
-                </AnimatePresence>
-              </div>
+              <>
+                {filteredWorking.length > 0 && (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <AnimatePresence>
+                      {filteredWorking.map((connector) => (
+                        <ConnectorCard key={connector.id} connector={connector} onSelect={() => setSelected(connector)} />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+
+                {filteredComingSoon.length > 0 && (
+                  <div className="space-y-3 border-t border-surface pt-4">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-content-muted">
+                      Coming soon — no adapter built yet
+                    </h3>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      <AnimatePresence>
+                        {filteredComingSoon.map((connector) => (
+                          <ConnectorCard key={connector.id} connector={connector} onSelect={() => setSelected(connector)} />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             <p className="text-xs text-content-muted">
               Showing {filtered.length} of {allConnectors.length} integrations

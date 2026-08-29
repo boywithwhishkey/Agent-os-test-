@@ -45,8 +45,51 @@ export function mcpServerToConnector(server: MCPServer): UnifiedConnector {
   };
 }
 
-export function isCurrentlyIntegrated(connector: UnifiedConnector): boolean {
-  return connector.implemented && connector.configured;
+/**
+ * A connector shown in the Integration Hub is always exactly one of three
+ * states — never a blend of them (see CLAUDE.md's Integration Hub product
+ * rule): CONNECTED (a real, verified connection), READY TO CONNECT
+ * (implementation-complete, only credentials/OAuth are missing), or COMING
+ * SOON (no adapter exists yet — catalog metadata only).
+ */
+export function isConnected(connector: UnifiedConnector): boolean {
+  return connector.implemented && connector.status === "connected";
+}
+
+export function isReadyToConnect(connector: UnifiedConnector): boolean {
+  return connector.implemented && connector.status !== "connected";
+}
+
+export function isComingSoon(connector: UnifiedConnector): boolean {
+  return !connector.implemented;
+}
+
+export type PrimaryAction =
+  | { kind: "manage" }
+  | { kind: "connect"; label: string }
+  | { kind: "configure"; label: string }
+  | { kind: "test" }
+  | { kind: "coming_soon" };
+
+/** The one primary call-to-action for a connector card/drawer, driven by
+ * its real connector_type and live status — never generic "Configure"
+ * wording for an OAuth connector, and never a working-looking CTA for a
+ * Coming Soon one. */
+export function primaryAction(connector: UnifiedConnector): PrimaryAction {
+  if (isComingSoon(connector)) return { kind: "coming_soon" };
+  if (connector.status === "connected") return { kind: "manage" };
+  if (connector.mcpServer) return { kind: "test" };
+  if (connector.status === "configured" || connector.status === "error") return { kind: "test" };
+
+  // needs_setup: the connector has no credentials/authorization yet.
+  switch (connector.connector_type) {
+    case "oauth":
+      return { kind: "connect", label: `Connect ${connector.name}` };
+    case "webhook":
+      return { kind: "configure", label: "Configure webhook" };
+    default:
+      return { kind: "configure", label: "Configure" };
+  }
 }
 
 export function matchesSearch(connector: UnifiedConnector, query: string): boolean {
@@ -63,16 +106,35 @@ export function matchesSearch(connector: UnifiedConnector, query: string): boole
   return haystack.includes(query.trim().toLowerCase());
 }
 
-export type FilterChip = "all" | "connected" | "mcp" | "api" | "automation" | "ai" | "productivity" | "developer" | "data";
+export type FilterChip =
+  | "all"
+  | "connected"
+  | "ready"
+  | "coming_soon"
+  | "mcp"
+  | "api"
+  | "oauth"
+  | "webhook"
+  | "automation"
+  | "ai"
+  | "productivity"
+  | "developer"
+  | "data";
 
 export function matchesFilter(connector: UnifiedConnector, filter: FilterChip): boolean {
   switch (filter) {
     case "all":
       return true;
     case "connected":
-      return isCurrentlyIntegrated(connector);
+      return isConnected(connector);
+    case "ready":
+      return isReadyToConnect(connector);
+    case "coming_soon":
+      return isComingSoon(connector);
     case "mcp":
     case "api":
+    case "oauth":
+    case "webhook":
       return connector.connector_type === filter;
     default:
       return connector.category === filter;

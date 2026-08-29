@@ -288,7 +288,7 @@ export function ConnectorDrawer({
                 loading={oauthAuthorize.isPending}
                 disabled={!authed || connector.status === "needs_setup"}
               >
-                <LogIn className="h-3.5 w-3.5" /> Authorize
+                <LogIn className="h-3.5 w-3.5" /> Connect {connector.name}
               </Button>
             ) : (
               <Button size="sm" onClick={runTest} loading={testing} disabled={!authed || connector.status === "needs_setup"}>

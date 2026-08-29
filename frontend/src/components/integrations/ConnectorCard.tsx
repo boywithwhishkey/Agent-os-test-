@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
-import { Clock, Gauge, Settings2, PlayCircle } from "lucide-react";
+import { Clock, Gauge, Settings2, PlayCircle, LogIn, Sparkles as SparklesIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { getConnectorIcon } from "./connectorIcons";
 import { cn, formatRelativeTime } from "@/lib/utils";
-import type { UnifiedConnector } from "@/lib/integration-hub";
+import { isComingSoon, primaryAction, type UnifiedConnector } from "@/lib/integration-hub";
 
 const typeBadgeTone: Record<string, "violet" | "blue" | "green" | "amber"> = {
   mcp: "violet",
@@ -30,6 +30,9 @@ export function ConnectorCard({
 }) {
   const Icon = getConnectorIcon(connector.icon);
   const isIntegrated = variant === "integrated";
+  const comingSoon = isComingSoon(connector);
+  const action = primaryAction(connector);
+  const showTestButton = Boolean(onTest) && connector.implemented && connector.status !== "needs_setup";
 
   return (
     <motion.div
@@ -40,7 +43,10 @@ export function ConnectorCard({
     >
       <Card
         className={cn(
-          "group relative flex h-full cursor-pointer flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:border-accent-violet/40 hover:shadow-lg",
+          "group relative flex h-full flex-col overflow-hidden transition-all",
+          comingSoon
+            ? "cursor-default opacity-70 saturate-[0.4] hover:opacity-90"
+            : "cursor-pointer hover:-translate-y-0.5 hover:border-accent-violet/40 hover:shadow-lg",
           connector.status === "connected" && "border-accent-green/25"
         )}
         onClick={onSelect}
@@ -50,7 +56,7 @@ export function ConnectorCard({
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-surface bg-surface-hover text-content-secondary transition-colors group-hover:border-accent-violet/30 group-hover:text-accent-violet">
               <Icon className="h-5 w-5" />
             </span>
-            <StatusBadge status={connector.status} />
+            {comingSoon ? <Badge tone="neutral">Coming soon</Badge> : <StatusBadge status={connector.status} />}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -62,17 +68,18 @@ export function ConnectorCard({
             <Badge tone={typeBadgeTone[connector.connector_type] ?? "violet"} className="uppercase tracking-wide">
               {connector.connector_type}
             </Badge>
-            {connector.capabilities.slice(0, isIntegrated ? 1 : 2).map((cap) => (
-              <Badge key={cap} tone="neutral">
-                {cap}
-              </Badge>
-            ))}
-            {connector.capabilities.length > (isIntegrated ? 1 : 2) && (
+            {!comingSoon &&
+              connector.capabilities.slice(0, isIntegrated ? 1 : 2).map((cap) => (
+                <Badge key={cap} tone="neutral">
+                  {cap}
+                </Badge>
+              ))}
+            {!comingSoon && connector.capabilities.length > (isIntegrated ? 1 : 2) && (
               <Badge tone="neutral">+{connector.capabilities.length - (isIntegrated ? 1 : 2)}</Badge>
             )}
           </div>
 
-          {isIntegrated && (
+          {connector.last_check && (
             <dl className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-surface pt-2.5 text-xs text-content-muted">
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {formatRelativeTime(connector.last_check)}
@@ -85,16 +92,32 @@ export function ConnectorCard({
             </dl>
           )}
 
-          <div className="mt-auto flex gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-            {isIntegrated && onTest && (
+          <div className="mt-auto flex flex-wrap gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+            {showTestButton && (
               <Button variant="outline" size="sm" onClick={onTest} loading={testing}>
                 <PlayCircle className="h-3.5 w-3.5" /> Test
               </Button>
             )}
-            <Button variant={isIntegrated ? "ghost" : "secondary"} size="sm" onClick={onSelect}>
-              <Settings2 className="h-3.5 w-3.5" />
-              {isIntegrated ? "Manage" : connector.status === "available" ? "View" : "Configure"}
-            </Button>
+            {action.kind === "manage" && (
+              <Button variant="ghost" size="sm" onClick={onSelect}>
+                <Settings2 className="h-3.5 w-3.5" /> Manage
+              </Button>
+            )}
+            {action.kind === "connect" && (
+              <Button variant="secondary" size="sm" onClick={onSelect}>
+                <LogIn className="h-3.5 w-3.5" /> {action.label}
+              </Button>
+            )}
+            {action.kind === "configure" && (
+              <Button variant="secondary" size="sm" onClick={onSelect}>
+                <Settings2 className="h-3.5 w-3.5" /> {action.label}
+              </Button>
+            )}
+            {action.kind === "coming_soon" && (
+              <Button variant="ghost" size="sm" onClick={onSelect}>
+                <SparklesIcon className="h-3.5 w-3.5" /> Learn more
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
