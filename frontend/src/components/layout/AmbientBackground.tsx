@@ -18,11 +18,13 @@ const DATA_POINTS = [
 ];
 
 /**
- * Layer 2–4 of THYNACT's ambient technical background: a faint grid, two
- * slow-drifting mesh-gradient glows, and sparse floating data points. Fixed
- * behind the whole app shell so every page shares one continuous canvas
- * instead of feeling like stacked, disconnected sections. Layer 1 (the deep
- * near-black/near-white base) is `body`'s own background-color in index.css.
+ * Layer 2+ of THYNACT's ambient technical background: a faint grid, two
+ * slow-drifting mesh-gradient glows, two diagonal light streaks/arcs (a
+ * warm cream one and a cool steel-blue one) for cinematic depth, and sparse
+ * floating data points. Fixed behind the whole app shell so every page
+ * shares one continuous canvas instead of feeling like stacked, disconnected
+ * sections. Layer 1 (the deep near-black/near-white base) is `body`'s own
+ * background-color in index.css.
  */
 export function AmbientBackground() {
   const reduceMotion = useReducedMotion();
@@ -41,6 +43,26 @@ export function AmbientBackground() {
       <motion.div className="absolute inset-0" style={{ y: meshY }}>
         <div className="absolute left-[-10%] top-[-15%] h-[60vh] w-[60vh] rounded-full bg-ambient-bronze/[0.16] blur-[110px] animate-drift" />
         <div className="absolute bottom-[-12%] right-[-8%] h-[65vh] w-[65vh] rounded-full bg-ambient-navy/[0.26] blur-[120px] animate-drift-slow" />
+
+        {/* Cinematic light streaks/arcs: a soft blurred halo plus a thin
+            brighter core, rotated diagonally so each reads as a beam of
+            light rather than a blob. The two children share one rotated
+            coordinate space so the core stays centered in its halo. Each
+            pairs a slow position drift (inner div) with a slower, gentle
+            opacity breathe (outer wrapper) so the motion never reads as
+            more than one thing happening at once. */}
+        <div className="absolute inset-0 animate-breathe-slow">
+          <div className="absolute left-[-20%] top-[2%] h-[34vh] w-[160vh] -rotate-[14deg] animate-drift-slow">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-ambient-cream/[0.22] to-transparent blur-[90px]" />
+            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-ambient-cream/60 to-transparent blur-[3px]" />
+          </div>
+        </div>
+        <div className="absolute inset-0 animate-breathe-slow [animation-delay:-4s]">
+          <div className="absolute bottom-[-4%] right-[-24%] h-[30vh] w-[150vh] rotate-[13deg] animate-drift">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-ambient-steel/[0.26] to-transparent blur-[95px]" />
+            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-ambient-steel/70 to-transparent blur-[3px]" />
+          </div>
+        </div>
       </motion.div>
 
       {!reduceMotion && (

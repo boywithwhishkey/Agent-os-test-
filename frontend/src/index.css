@@ -18,6 +18,9 @@
   --color-ambient-cream: #f5e9dd;
   --color-ambient-bronze: #a67c52;
   --color-ambient-navy: #122d70;
+  /* Cooler, greyer blue than --color-ambient-navy — the "steel" counterpoint
+     to the gold/amber glow in the cinematic background arcs/streaks below. */
+  --color-ambient-steel: #33506e;
   --color-accent-violet: #8574ff;
   --color-accent-violet-soft: #aa9fff;
   --color-accent-blue: #5bc7ff;
@@ -30,6 +33,10 @@
   --animate-heartbeat: heartbeat 1.8s ease-in-out infinite;
   --animate-heartbeat-ring: heartbeat-ring 1.8s ease-in-out infinite;
   --animate-breathe: breathe 2.2s ease-in-out infinite;
+  /* Slower, gentler opacity cycle for the ambient light streaks/arcs — the
+     2.2s --animate-breathe rate reads as a pulse (right for ECG/status
+     dots) but is too fast for a calm cinematic glow. */
+  --animate-breathe-slow: breathe-slow 8s ease-in-out infinite;
   --animate-drift: drift 22s ease-in-out infinite;
   --animate-drift-slow: drift 34s ease-in-out infinite reverse;
   --animate-grid-pan: grid-pan 60s linear infinite;
@@ -59,6 +66,10 @@
   @keyframes breathe {
     0%, 100% { opacity: 0.5; transform: scale(0.92); }
     50% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes breathe-slow {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
   }
   @keyframes drift {
     0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
@@ -113,22 +124,26 @@ body {
   background-image:
     radial-gradient(ellipse 56rem 42rem at 18% -8%, color-mix(in srgb, var(--color-ambient-cream) 55%, transparent), transparent 68%),
     radial-gradient(ellipse 66rem 50rem at 4% 14%, color-mix(in srgb, var(--color-ambient-bronze) 10%, transparent), transparent 72%),
+    radial-gradient(ellipse 70rem 56rem at 96% 6%, color-mix(in srgb, var(--color-ambient-steel) 6%, transparent), transparent 72%),
     radial-gradient(ellipse 74rem 62rem at 88% 82%, color-mix(in srgb, var(--color-ambient-navy) 7%, transparent), transparent 75%);
   background-attachment: fixed;
 }
 .dark body {
   background-color: #05060a;
-  /* Premium cream/bronze/deep-navy gradient over the near-black
-     foundation (that solid background-color IS layer 1 — no separate
-     vignette layer here: an earlier version added one and it visually
-     cancelled out most of the color underneath it, which is why this is
-     three layers, not four). Intensities are tuned to be clearly visible
-     against near-black while staying dark and atmospheric, not a bright
-     wash — verified by rendering the app and looking, not guessed.
+  /* Cinematic gold/amber + blue-steel gradient over the near-black
+     foundation (that solid background-color IS layer 1). An earlier
+     version added a separate solid vignette layer on top of this and it
+     visually cancelled out most of the color underneath — the lesson
+     carried forward here is "no opaque overlay layer", not "no more than
+     three color layers"; this is four color radial-gradients, all
+     low-alpha so they still read as glow, not a flat wash. Intensities
+     tuned to be clearly visible against near-black without going bright
+     or muddy — verified by rendering the app and looking, not guessed.
      Fixed so it doesn't reflow/tile while the page scrolls. */
   background-image:
     radial-gradient(ellipse 56rem 42rem at 18% -8%, color-mix(in srgb, var(--color-ambient-cream) 16%, transparent), transparent 68%),
     radial-gradient(ellipse 66rem 50rem at 4% 14%, color-mix(in srgb, var(--color-ambient-bronze) 26%, transparent), transparent 72%),
+    radial-gradient(ellipse 70rem 56rem at 96% 4%, color-mix(in srgb, var(--color-ambient-steel) 22%, transparent), transparent 70%),
     radial-gradient(ellipse 74rem 62rem at 88% 82%, color-mix(in srgb, var(--color-ambient-navy) 48%, transparent), transparent 75%);
   background-attachment: fixed;
   color: #f7f6f2;
