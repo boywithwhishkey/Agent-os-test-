@@ -278,6 +278,26 @@ export function useTestMCPServer() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Integrations: OAuth2 authorize/callback flow
+// ---------------------------------------------------------------------------
+export function useOAuthAuthorize() {
+  return useMutation({
+    mutationFn: (provider: string) =>
+      api.get<{ authorize_url: string }>(`/api/v1/integrations/oauth/${provider}/authorize`),
+  });
+}
+
+export function useOAuthDisconnect() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (provider: string) => api.delete<void>(`/api/v1/integrations/oauth/${provider}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["connector-catalog"] });
+    },
+  });
+}
+
 export function useDeleteMCPServer() {
   const queryClient = useQueryClient();
   return useMutation({

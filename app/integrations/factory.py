@@ -37,6 +37,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Render",
         "requires": ["RENDER_API_KEY"],
     },
+    IntegrationProvider.GITHUB: {
+        "name": "GitHub",
+        "requires": ["GITHUB_OAUTH_CLIENT_ID", "GITHUB_OAUTH_CLIENT_SECRET"],
+    },
 }
 
 
@@ -75,6 +79,11 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.render import RenderAdapter
 
         return RenderAdapter()
+    if normalized == "github":
+        from app.integrations.github import GitHubOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return GitHubOAuthAdapter(connection_store=oauth_connection_store)
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -108,4 +117,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.cloudflare_api_token)
     if provider == IntegrationProvider.RENDER:
         return bool(settings.render_api_key)
+    if provider == IntegrationProvider.GITHUB:
+        return bool(settings.github_oauth_client_id) and bool(settings.github_oauth_client_secret)
     return False

@@ -35,9 +35,41 @@ const n8nNeedsSetup = {
   last_execution_success: null,
 };
 
-function stubFetch(routes: { catalog: unknown[]; mcpServers?: unknown[]; onTest?: (url: string) => Response }) {
+const githubConfigured = {
+  id: "github",
+  name: "GitHub",
+  description: "Read repos, open issues/PRs, and react to events.",
+  category: "developer",
+  connector_type: "oauth",
+  icon: "Github",
+  auth_type: "oauth2",
+  capabilities: ["Authorize account", "Verify identity"],
+  provider: "github",
+  popular: true,
+  documentation_url: "https://github.com",
+  implemented: true,
+  requires: ["GITHUB_OAUTH_CLIENT_ID", "GITHUB_OAUTH_CLIENT_SECRET"],
+  status: "configured",
+  configured: true,
+  connected: null,
+  last_check: null,
+  last_check_latency_ms: null,
+  last_check_error: null,
+  last_execution: null,
+  last_execution_success: null,
+};
+
+function stubFetch(routes: {
+  catalog: unknown[];
+  mcpServers?: unknown[];
+  onTest?: (url: string) => Response;
+  onOAuthAuthorize?: (url: string) => Response;
+}) {
   const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
     const href = String(url);
+    if (href.includes("/oauth/") && href.includes("/authorize") && routes.onOAuthAuthorize) {
+      return routes.onOAuthAuthorize(href);
+    }
     if (init?.method === "POST" && href.includes("/test") && routes.onTest) {
       return routes.onTest(href);
     }
@@ -126,5 +158,36 @@ describe("Integrations page", () => {
     renderWithProviders(<Integrations />);
 
     expect((await screen.findAllByText("My MCP Server")).length).toBeGreaterThan(0);
+  });
+
+  it("authorizes an OAuth connector by redirecting to the provider's authorize URL", async () => {
+    stubFetch({
+      catalog: [githubConfigured],
+      onOAuthAuthorize: () => jsonResponse({ authorize_url: "https://github.com/login/oauth/authorize?state=abc" }),
+    });
+    const originalLocation = window.location;
+    // @ts-expect-error -- jsdom's location isn't assignable; delete+redefine to spy on navigation.
+    delete window.location;
+    window.location = { ...originalLocation, href: "" } as unknown as (string & Location);
+
+    renderWithProviders(<Integrations />);
+
+    const cards = await screen.findAllByText("GitHub");
+    fireEvent.click(cards[0].closest(".group") ?? cards[0]);
+
+    const authorizeButton = await screen.findByRole("button", { name: /^authorize$/i });
+    fireEvent.click(authorizeButton);
+
+    await waitFor(() => expect(window.location.href).toBe("https://github.com/login/oauth/authorize?state=abc"));
+
+    window.location = originalLocation as unknown as (string & Location);
+  });
+
+  it("shows a toast and clears the query string when returning from a successful OAuth callback", async () => {
+    stubFetch({ catalog: [githubConfigured] });
+
+    renderWithProviders(<Integrations />, { route: "/integrations?oauth=connected&provider=github" });
+
+    expect(await screen.findByText(/connected to github/i)).toBeInTheDocument();
   });
 });

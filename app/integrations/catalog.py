@@ -117,9 +117,11 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.OAUTH,
         icon="Github",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Repo access", "Issues/PRs", "Webhooks"],
+        capabilities=["Authorize account", "Verify identity"],
         popular=True,
         documentation_url="https://github.com",
+        implemented=True,
+        requires=["GITHUB_OAUTH_CLIENT_ID", "GITHUB_OAUTH_CLIENT_SECRET"],
     ),
     CatalogSpec(
         id="gitlab",

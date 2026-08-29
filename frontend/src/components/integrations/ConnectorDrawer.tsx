@@ -10,6 +10,7 @@ import {
   Wrench,
   FileText as FileTextIcon,
   MessageCircle,
+  LogIn,
 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
@@ -20,7 +21,14 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { JSONViewer } from "@/components/ui/JSONViewer";
 import { getConnectorIcon } from "./connectorIcons";
 import { AuthRequiredBanner } from "./AuthRequiredBanner";
-import { useExecuteIntegration, useTestIntegration, useTestMCPServer, useDeleteMCPServer } from "@/lib/api/queries";
+import {
+  useExecuteIntegration,
+  useTestIntegration,
+  useTestMCPServer,
+  useDeleteMCPServer,
+  useOAuthAuthorize,
+  useOAuthDisconnect,
+} from "@/lib/api/queries";
 import { useToast } from "@/components/ui/Toast";
 import { isApiConfigured } from "@/lib/api/config";
 import { ApiError } from "@/lib/api/client";
@@ -73,12 +81,15 @@ export function ConnectorDrawer({
   const testMcp = useTestMCPServer();
   const deleteMcp = useDeleteMCPServer();
   const execute = useExecuteIntegration();
+  const oauthAuthorize = useOAuthAuthorize();
+  const oauthDisconnect = useOAuthDisconnect();
   const { push } = useToast();
   const authed = isApiConfigured();
 
   if (!connector) return null;
   const Icon = getConnectorIcon(connector.icon);
   const isMcp = Boolean(connector.mcpServer);
+  const isOAuth = connector.connector_type === "oauth" && connector.implemented;
 
   const runTest = () => {
     if (isMcp && connector.mcpServer) {
@@ -113,6 +124,26 @@ export function ConnectorDrawer({
         onClose();
       },
       onError: (error) => push({ tone: "error", title: "Remove failed", description: (error as Error).message }),
+    });
+  };
+
+  const runAuthorize = () => {
+    oauthAuthorize.mutate(connector.id, {
+      onSuccess: (data) => {
+        window.location.href = data.authorize_url;
+      },
+      onError: (error) => push({ tone: "error", title: "Authorize failed", description: (error as Error).message }),
+    });
+  };
+
+  const confirmDisconnectOAuth = () => {
+    oauthDisconnect.mutate(connector.id, {
+      onSuccess: () => {
+        push({ tone: "success", title: `${connector.name} disconnected` });
+        setConfirmDelete(false);
+        onClose();
+      },
+      onError: (error) => push({ tone: "error", title: "Disconnect failed", description: (error as Error).message }),
     });
   };
 
@@ -250,10 +281,21 @@ export function ConnectorDrawer({
 
         {connector.implemented && (
           <div className="flex flex-wrap gap-2 border-t border-surface pt-4">
-            <Button size="sm" onClick={runTest} loading={testing} disabled={!authed || connector.status === "needs_setup"}>
-              <PlayCircle className="h-3.5 w-3.5" /> Test connection
-            </Button>
-            {isMcp && (
+            {isOAuth && connector.status !== "connected" ? (
+              <Button
+                size="sm"
+                onClick={runAuthorize}
+                loading={oauthAuthorize.isPending}
+                disabled={!authed || connector.status === "needs_setup"}
+              >
+                <LogIn className="h-3.5 w-3.5" /> Authorize
+              </Button>
+            ) : (
+              <Button size="sm" onClick={runTest} loading={testing} disabled={!authed || connector.status === "needs_setup"}>
+                <PlayCircle className="h-3.5 w-3.5" /> Test connection
+              </Button>
+            )}
+            {(isMcp || (isOAuth && connector.status === "connected")) && (
               <Button size="sm" variant="danger" onClick={() => setConfirmDelete(true)} disabled={!authed}>
                 <Trash2 className="h-3.5 w-3.5" /> Disconnect
               </Button>
@@ -303,12 +345,16 @@ export function ConnectorDrawer({
       <ConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
-        onConfirm={confirmRemoveMcp}
-        title="Disconnect this MCP server?"
-        description="This removes the server configuration. This cannot be undone."
+        onConfirm={isOAuth ? confirmDisconnectOAuth : confirmRemoveMcp}
+        title={isOAuth ? `Disconnect ${connector.name}?` : "Disconnect this MCP server?"}
+        description={
+          isOAuth
+            ? "This forgets the stored account connection. You can reauthorize at any time."
+            : "This removes the server configuration. This cannot be undone."
+        }
         confirmLabel="Disconnect"
         danger
-        loading={deleteMcp.isPending}
+        loading={isOAuth ? oauthDisconnect.isPending : deleteMcp.isPending}
       />
     </Drawer>
   );

@@ -1,4 +1,7 @@
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from app.core.auth import require_api_key
@@ -21,6 +24,15 @@ from app.integrations.models import (
     IntegrationRequest,
     IntegrationResult,
     IntegrationStatus,
+)
+from app.integrations.oauth.config import get_oauth_provider
+from app.integrations.oauth.models import OAuthAuthorizeResponse
+from app.integrations.oauth.registry import oauth_connection_store, oauth_state_store
+from app.integrations.oauth.service import (
+    OAuthExchangeError,
+    OAuthNotConfigured,
+    build_authorize_url,
+    exchange_code,
 )
 from app.integrations.status_store import IntegrationStatusStore
 
@@ -135,6 +147,14 @@ def _render_live_status() -> dict:
     return _status_store_backed_status("render", configured=is_provider_configured(provider))
 
 
+def _github_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "github")
+    connection = oauth_connection_store.get("github")
+    return _status_store_backed_status(
+        "github", configured=is_provider_configured(provider), force_connected=connection.connected
+    )
+
+
 _LIVE_STATUS_RESOLVERS = {
     "n8n": _n8n_live_status,
     "gemini": _gemini_live_status,
@@ -144,6 +164,7 @@ _LIVE_STATUS_RESOLVERS = {
     "anthropic": _anthropic_live_status,
     "cloudflare": _cloudflare_live_status,
     "render": _render_live_status,
+    "github": _github_live_status,
 }
 
 
@@ -269,3 +290,59 @@ async def execute_integration(payload: IntegrationExecutePayload) -> Integration
     result = await adapter.execute(request)
     status_store.record_execution(payload.provider.lower().strip(), success=result.success)
     return result
+
+
+# ---------------------------------------------------------------------------
+# OAuth2 authorization-code flow. `authorize` is operator-gated (only an
+# authenticated operator can kick off connecting an account); `callback` is
+# necessarily public — it's hit by the browser's redirect from the provider,
+# which can't attach an X-API-Key header — and is protected instead by the
+# single-use, short-lived state token minted in `authorize`.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/oauth/{provider}/authorize", response_model=OAuthAuthorizeResponse)
+async def oauth_authorize_route(provider: str) -> OAuthAuthorizeResponse:
+    config = get_oauth_provider(provider)
+    if config is None:
+        raise HTTPException(status_code=404, detail=f"Unknown OAuth provider: {provider}")
+    try:
+        url = build_authorize_url(config, oauth_state_store)
+    except OAuthNotConfigured as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return OAuthAuthorizeResponse(authorize_url=url)
+
+
+@public_router.get("/oauth/{provider}/callback", include_in_schema=False)
+async def oauth_callback_route(
+    provider: str, code: str | None = None, state: str | None = None, error: str | None = None
+) -> RedirectResponse:
+    frontend_target = f"{settings.frontend_base_url.rstrip('/')}/integrations"
+    config = get_oauth_provider(provider)
+    if config is None:
+        return RedirectResponse(f"{frontend_target}?oauth=error&provider={quote(provider)}&message=unknown_provider")
+
+    if error:
+        oauth_connection_store.record_failure(config.id, error=error)
+        return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message={quote(error)}")
+
+    if not state or oauth_state_store.consume(state) != config.id:
+        return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message=invalid_or_expired_state")
+
+    if not code:
+        return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message=missing_code")
+
+    try:
+        await exchange_code(config, code=code, connection_store=oauth_connection_store)
+    except (OAuthNotConfigured, OAuthExchangeError) as exc:
+        return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message={quote(str(exc))}")
+
+    return RedirectResponse(f"{frontend_target}?oauth=connected&provider={config.id}")
+
+
+@router.delete("/oauth/{provider}", status_code=204)
+async def oauth_disconnect_route(provider: str) -> None:
+    config = get_oauth_provider(provider)
+    if config is None:
+        raise HTTPException(status_code=404, detail=f"Unknown OAuth provider: {provider}")
+    oauth_connection_store.disconnect(config.id)

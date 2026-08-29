@@ -15,6 +15,7 @@ class IntegrationProvider(StrEnum):
     ANTHROPIC = "anthropic"
     CLOUDFLARE = "cloudflare"
     RENDER = "render"
+    GITHUB = "github"
 
 
 class IntegrationRequest(BaseModel):

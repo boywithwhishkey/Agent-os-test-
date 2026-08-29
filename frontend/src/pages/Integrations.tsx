@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Plug, Sparkles, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -10,6 +11,7 @@ import { ConnectorDrawer } from "@/components/integrations/ConnectorDrawer";
 import { AddMcpServerDialog } from "@/components/integrations/AddMcpServerDialog";
 import { AuthRequiredBanner } from "@/components/integrations/AuthRequiredBanner";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import { useConnectorCatalog, useMCPServers, useTestIntegration, useTestMCPServer } from "@/lib/api/queries";
 import { isApiConfigured } from "@/lib/api/config";
 import {
@@ -40,11 +42,32 @@ export default function Integrations() {
   const testIntegration = useTestIntegration();
   const testMcp = useTestMCPServer();
   const authed = isApiConfigured();
+  const { push } = useToast();
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterChip>("all");
   const [selected, setSelected] = useState<UnifiedConnector | null>(null);
   const [addMcpOpen, setAddMcpOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const oauthResult = searchParams.get("oauth");
+    if (!oauthResult) return;
+    const provider = searchParams.get("provider") ?? "the provider";
+    if (oauthResult === "connected") {
+      push({ tone: "success", title: `Connected to ${provider}` });
+    } else {
+      const message = searchParams.get("message") ?? "The authorization did not complete.";
+      push({ tone: "error", title: `Could not connect to ${provider}`, description: message });
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete("oauth");
+    next.delete("provider");
+    next.delete("message");
+    setSearchParams(next, { replace: true });
+    // Only re-run when the oauth redirect params themselves change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get("oauth")]);
 
   const allConnectors: UnifiedConnector[] = useMemo(() => {
     const catalogItems: UnifiedConnector[] = catalog.data ?? [];

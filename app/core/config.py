@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
     cloudflare_api_token: str | None = Field(default=None, validation_alias="CLOUDFLARE_API_TOKEN")
     render_api_key: str | None = Field(default=None, validation_alias="RENDER_API_KEY")
+    github_oauth_client_id: str | None = Field(default=None, validation_alias="GITHUB_OAUTH_CLIENT_ID")
+    github_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="GITHUB_OAUTH_CLIENT_SECRET"
+    )
+    oauth_redirect_base_url: str = Field(
+        default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
+    )
+    frontend_base_url: str = Field(
+        default="https://app.thynact.com", validation_alias="AGENT_OS_FRONTEND_URL"
+    )
     max_parallel: int = Field(default=3, ge=1, validation_alias="AGENT_OS_MAX_PARALLEL")
     max_retries: int = Field(default=2, ge=0, validation_alias="AGENT_OS_MAX_RETRIES")
     max_jobs: int = Field(default=6, ge=1, validation_alias="AGENT_OS_MAX_JOBS")
