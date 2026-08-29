@@ -56,26 +56,19 @@ file at the end of every session so the next agent can start cold.
   `redis` on Render, then confirm `/ready` reports real `database`/`queue`
   checks (not an empty `checks: {}`).
 
-## 6. Premium UI completion — STATUS: PARTIAL, TODO
-- DONE: Orchestrate now has `OrchestrationPipeline` (connected-node
-  researcher/builder/reviewer visualization with status rings and a
-  filling progress line).
-- DONE: Memory now shows real match-percentage scores (backed by a real,
-  previously-discarded backend ranking score) with a staggered result
-  fade-in. Runtime now shows a live circuit-breaker badge + rate-limit
-  gauge (backed by new read-only status/usage getters + a new `GET
-  /api/v1/runtime/status` route). System Health now has a persistence/LLM
-  service map (backed by an enriched `/health` response).
-- DONE: Audit now has a Table/Timeline view toggle.
-- DONE: Workflows now has a node toolbar (Edit/Delete on selection),
-  per-node validation-error highlighting, and execution-pulse-along-edge
-  animation (3 of the 4 flagship features).
-- Remaining: Workflows' context side panel (still a modal dialog —
-  deliberately left as-is, see 07_DEFERRED_GOALS.md). Autonomous (existing
-  `Timeline` + `AgentCard` combo is functional, lower priority), Memory
-  graph/network view, Runtime execution-timeline/circuit-breaker-diagram
-  view, Audit correlation-ID quick-copy (needs a `DATABASE_URL`-backed
-  migration — see 07_DEFERRED_GOALS.md).
+## 6. Premium UI completion — STATUS: mostly DONE, small remainder
+Essentially every page in the product brief now has a dedicated
+motion/visualization pass: Dashboard, API heartbeat, Orchestrate,
+Autonomous, Memory (score bar + relationship graph), Runtime (breaker
+badge + rate gauge), System Health (persistence map), Audit (timeline
+view), Workflows (3/4 flagship features). See 02_CURRENT_STATE.md DONE
+section for the full list with implementation notes.
+- Remaining: Workflows' context side panel (deliberately deferred — see
+  07_DEFERRED_GOALS.md), Runtime's circuit-breaker *diagram* (richer than
+  the current badge, optional), Audit's correlation-ID quick-copy (needs
+  a `DATABASE_URL`-backed migration), Agents/Approvals/Tools haven't had
+  a dedicated additional pass (lower priority, already consistent with
+  the shared design system).
 - Keep using the existing design system (`frontend/src/components/ui/*`,
   the `@theme` tokens/keyframes in `index.css`, Framer Motion, React Flow)
   — do not introduce new UI libraries.

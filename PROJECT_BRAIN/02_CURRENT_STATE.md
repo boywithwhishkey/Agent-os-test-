@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `ec554d6`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `0ebb10e`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -161,8 +161,22 @@ directories.
   side panel (4th item) is intentionally not done — the existing modal
   step editor works well and replacing it is a bigger UX change than this
   pass warranted.
+- **Autonomous Runs: real parallelism badge + grid layout.** Exposed
+  `settings.max_parallel` (the real `asyncio.Semaphore` limit gating
+  concurrent specialist execution) on `/health`. Autonomous now shows a
+  "Up to N in parallel" badge and renders specialist jobs as a
+  staggered-entrance grid instead of a vertical stack.
+- **Memory relationship graph.** New List/Graph toggle on Memory search.
+  The graph is a circular node-link diagram (`MemoryGraph.tsx`) where
+  edges are drawn only from genuinely shared fields (tag/project_id/
+  task_id) between records in the current result set — there is no
+  memory-to-memory similarity score available from the API (only
+  query-to-record relevance), so this deliberately doesn't fabricate one.
 - **Backend test suite: 136/136 passing** (`uv run pytest tests/ -q`).
-- **Frontend: 25/25 tests passing** (`pnpm test`), **typecheck clean**
+- **Frontend: 25/25 tests passing** (`pnpm test`) — test count unchanged
+  since the last update because MemoryGraph has no dedicated test file
+  yet (rendered/exercised indirectly through Memory page usage only).
+  **Typecheck clean**
   (`pnpm typecheck`), **lint clean** — 0 errors, 2 pre-existing warnings
   unrelated to this session's changes (`Toast.tsx`, `theme.tsx`,
   `react-refresh/only-export-components`), **production build clean**
@@ -176,12 +190,12 @@ directories.
   deliberately) is not done.
 - **Premium motion pass** has been done this session for: Dashboard (brand
   moment), API heartbeat, Workflows canvas, Orchestrate (pipeline
-  visualization), Memory (match-score bar), Runtime (circuit-breaker/
-  rate-limit gauges), System Health (persistence map), Audit (timeline
-  view). Remaining: Autonomous (existing `Timeline`+`AgentCard` combo is
-  functional, lower priority), Agents (static/informational by design —
-  see per-subsystem table), Approvals, Tools. These still use the
-  pre-existing (already reasonably polished) design system from prior
+  visualization), Memory (match-score bar + relationship graph), Runtime
+  (circuit-breaker/rate-limit gauges), System Health (persistence map),
+  Audit (timeline view), Autonomous (parallelism badge + grid). Remaining:
+  Agents (static/informational by design — see per-subsystem table),
+  Approvals, Tools. These still use the pre-existing (already reasonably
+  polished) design system from prior
   sessions without a dedicated additional pass.
 - **Connector registry test coverage** is now complete: route-level
   coverage via mocked adapters, plus direct `httpx.MockTransport` tests
@@ -224,12 +238,12 @@ Report only variable **names** — no secret values known or requested.
 | Dashboard | DONE (this session: brand moment added) | Metrics, recent audit, quick actions, session activity — all backed by real queries |
 | Tasks | DONE (prior session) | Create/retrieve, validation, error states — covered by `Tasks.test.tsx` + backend tests |
 | Orchestration | DONE, motion pass DONE | researcher/builder/reviewer roles + `OrchestrationPipeline` connected-node visualization (this session) |
-| Autonomous | DONE (prior session), motion pass PARTIAL | planner/specialists/verifier/synthesis; no dedicated live-job-card visualization yet |
+| Autonomous | DONE, motion pass DONE | planner/specialists/verifier/synthesis, real "Up to N in parallel" badge + staggered grid layout (this session) |
 | Agents | DONE, UI-only by design | Static/informational cards — there is no backend agent registry endpoint; agents are roles invoked through orchestration/autonomous runs, not standalone listable entities |
 | Workflows | DONE, 3/4 flagship features done | Validation highlighting, node toolbar, edge pulse (this session); context side panel still deferred |
 | Workflow Runs | DONE (prior session) | Run details, resume, persistence via workflow backend |
 | Approvals | DONE (prior session) | Single-use pre-authorized grants (not a pending-request queue by design) |
-| Memory | DONE, motion pass PARTIAL | Semantic + lexical search, context, filters, delete, real match-score bar + staggered result animation (this session); no graph/network view yet |
+| Memory | DONE, motion pass DONE | Semantic + lexical search, context, filters, delete, real match-score bar, staggered result animation, and a shared-field relationship graph view (this session) |
 | Runtime | DONE, motion pass PARTIAL | Execute/retries/rate-limit/circuit-breaker/idempotency, live circuit-breaker badge + rate-limit gauge (this session); no execution timeline view yet |
 | Tools | DONE (prior session) | List/execute/risk levels/approval-required/audit |
 | Integrations | DONE (this session) | Connector registry + test-connection, n8n only, extensible adapter architecture |

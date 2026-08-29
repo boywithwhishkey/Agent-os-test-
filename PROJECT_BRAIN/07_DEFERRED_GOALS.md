@@ -15,26 +15,26 @@ don't leave completed work listed here.
 
 ## Broader premium motion pass
 
-A dedicated animation/visual-direction pass (beyond what already exists)
-for what's left:
-- Autonomous runs: parallel-specialist visualization, planner/verifier/
-  synthesis state animation, live job cards (existing `Timeline` +
-  `AgentCard` combo is functional but not a dedicated visual pass).
-- Memory: graph/network-style view of related memories (similarity-score
-  visual ranking is DONE — see 02_CURRENT_STATE.md).
-- Runtime: a circuit-breaker state diagram / execution timeline view
-  (live badge + rate-limit gauge are DONE — see 02_CURRENT_STATE.md).
+Only two items remain from the original animation/visual-direction list:
+- Runtime: a circuit-breaker state *diagram* / execution timeline view as
+  a richer alternative to the current live badge + rate-limit gauge
+  (which ARE done — see 02_CURRENT_STATE.md).
 - Audit: correlation-ID quick-copy — needs a Postgres migration to add a
   `correlation_id` column to `tool_audit_events` plus threading a
   correlation id through `ToolExecutor`/`ToolExecuteRequest`; do this once
   `DATABASE_URL` exists and can be tested against for real (timeline view
   mode itself is DONE — see 02_CURRENT_STATE.md).
+- Agents, Approvals, Tools have not had a dedicated additional animation
+  pass beyond the pre-existing design system — lower priority since they
+  already use the shared Card/Badge/StatusBadge/skeleton components
+  consistently.
 
 Done this session (removed from this list): Orchestration's researcher →
 builder → reviewer connected-node visualization
 (`OrchestrationPipeline.tsx`); System Health's persistence/LLM service
 map; Audit's table/timeline view toggle; Workflows' node toolbar,
-execution-pulse edges, and validation highlighting.
+execution-pulse edges, and validation highlighting; Autonomous's real
+parallelism badge + grid layout; Memory's relationship graph view.
 
 ## Integrations / connectors
 
