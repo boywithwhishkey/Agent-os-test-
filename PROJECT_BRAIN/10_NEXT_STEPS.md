@@ -65,10 +65,18 @@ below this point can be done by an agent. These specifically cannot:
   depth — WCAG contrast was reasoned about, not measured), the
   `AmbientBackground` parallax/particle layer's actual look and paint cost
   (especially Safari/iPad, which stacks several `backdrop-filter: blur()`
-  layers — Sidebar + Topbar + every Card on a page simultaneously), the
-  `AccountPopover` on touch (tap target size, popover position not
-  clipping off-screen near the edge), and Dashboard's scroll-reveal timing
-  actually feeling smooth rather than janky.
+  layers — Sidebar + Topbar + every Card on a page simultaneously), and
+  Dashboard's scroll-reveal timing actually feeling smooth rather than
+  janky.
+- **Highest-priority single check, next session**: confirm the
+  `AccountPopover` fix (HEAD `4eb018a`) actually opens correctly and stays
+  on-screen in a real browser — it was `right-0`-anchored near the
+  toolbar's left edge (a real, code-verifiable bug matching "the login/
+  account option is not opening properly"), now `left-0`-anchored with a
+  viewport-capped width. Also confirm the `HeartbeatLine` ECG waveform
+  (`components/ui/HeartbeatLine.tsx`) actually renders and loops smoothly
+  — it uses SVG SMIL `animateTransform`, which vitest/jsdom does not
+  meaningfully execute, so passing tests only prove it doesn't crash.
 
 ## 4. Connectors/integrations — STATUS: code-complete, NEEDS CREDENTIALS to go live
 - DONE (this session): Integration Hub UX overhaul (neutral setup states,
@@ -163,8 +171,7 @@ session.
 - Before the next commit, re-run: `python -m pytest tests/ -q` (backend,
   208 tests — not re-run this session since no backend code changed),
   `pnpm typecheck && pnpm lint && pnpm test && pnpm build` (frontend, 43
-  tests, run from `frontend/`; `pnpm` was used and confirmed available
-  this session). All were green as of commit `70cf378`.
+  tests, run from `frontend/`). All were green as of commit `4eb018a`.
 
 ## 9. Production verification — STATUS: VERIFIED as of this session
 - Re-verify after any new push: `curl https://api.thynact.com/health`,

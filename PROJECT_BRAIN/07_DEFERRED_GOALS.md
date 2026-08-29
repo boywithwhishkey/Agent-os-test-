@@ -69,6 +69,25 @@ focused follow-up, not speculatively):
 - All of the above are optional visual depth, not correctness work — never
   let them block or complicate a real feature/bugfix.
 
+## Gold/red ambient background — optional extensions
+
+This session (see 02_CURRENT_STATE.md) scoped the black/gold/deep-red
+gradient direction to the ambient/background system only (`body`
+background-image, `AmbientBackground`'s glows/grid/data points, Dashboard's
+hero glow/scan-line) — interactive accents (buttons, links, nav active
+state, the BrandMark wordmark gradient) stayed violet/blue deliberately,
+since the brief's background section didn't ask for a full brand recolor
+and that's a bigger identity decision than this pass warranted. If a
+future session is explicitly asked to extend the gold/red direction
+further (e.g. into BrandMark or primary buttons), do it as its own
+deliberate scoped task, not as a side effect of an unrelated change — and
+keep `--color-ambient-wine` (decorative) and `--color-accent-red`
+(status: error/offline) separate regardless.
+- `ScrollReveal` was only added to the Integrations page's "All
+  integrations" section (the largest block) — Currently
+  integrated/Ready to connect/Popular don't have it yet. Low priority:
+  the page already gets a page-level enter animation from `AppShell`.
+
 ## Integrations / connectors
 
 - A session following CLAUDE.md's explicit "finish everything possible

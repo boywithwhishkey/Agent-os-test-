@@ -185,6 +185,25 @@ primitives rather than reinventing bordered cards:
 - Drawers/dialogs/the command palette use `glass-focus` + spring-based
   entrance (`drawerMotion`/`modalMotion`) instead of opaque rectangles +
   linear tweens.
+- **API heartbeat line** (`components/ui/HeartbeatLine.tsx`) — replaces a
+  blinking dot with an ECG-style trace: online is a seamlessly looping
+  waveform via SVG SMIL `<animateTransform>` (not CSS — SMIL translate
+  values stay correct in the SVG's own coordinate system regardless of
+  how the element is scaled, unlike `transform: translateX()` in px),
+  connecting is the same waveform static + breathing opacity, offline is
+  a calm straight line with no motion implied. Used in `HealthIndicator`
+  (top-right pill) and Dashboard's API status `MetricCard` (via its
+  optional `graphic` slot). Checks Framer Motion's `useReducedMotion`
+  itself, since SMIL animation isn't touched by the global CSS
+  `prefers-reduced-motion` override that neutralizes everything else.
+- **Ambient background color direction**: `--color-ambient-wine` (a deep
+  muted red, `index.css`) plus the existing `--color-accent-gold` drive a
+  faint black/gold/deep-red radial-gradient `body` background and
+  `AmbientBackground`'s mesh glows/grid/data points in dark mode.
+  `--color-ambient-wine` is deliberately a separate token from
+  `--color-accent-red` — the latter stays reserved for real error/offline
+  status everywhere else in the UI; never repurpose it for decoration, and
+  never use `--color-ambient-wine` for a status color.
 
 ## Coding & deployment safety conventions (from CLAUDE.md, still binding)
 

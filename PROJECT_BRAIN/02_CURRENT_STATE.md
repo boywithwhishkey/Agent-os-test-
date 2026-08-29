@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `70cf378`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `4eb018a`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -321,6 +321,64 @@ directories.
   including a new IntersectionObserver-dependent path) / `pnpm build` —
   all clean.
 
+- **Account popover bug fix + heartbeat line + gold/red ambient background
+  (this session, HEAD `4eb018a`).** A follow-up premium-UI pass on top of
+  the prior session's glass/motion foundation (HEAD `70cf378`):
+  - **Real bug fixed**: `AccountPopover` (the circular profile control
+    beside the sidebar hamburger, added last session) was positioned
+    `absolute right-0` — correct for a control near the *right* edge of a
+    toolbar, but this control sits near the *left* edge, so its 256px-wide
+    panel expanded off-screen to the left and effectively nothing usable
+    appeared when clicked. This is almost certainly the "login/account
+    option is not opening properly" issue reported. Fixed to `left-0` with
+    a `max-w-[calc(100vw-2rem)]` viewport safety net; also switched the
+    outside-click listener from `mousedown` to `pointerdown` for more
+    reliable touch behavior and added `aria-haspopup`/`type="button"`.
+  - **API heartbeat line**: `components/ui/HeartbeatLine.tsx` replaces the
+    blinking-dot status indicator with an ECG-style trace (online =
+    looping waveform via SVG SMIL `animateTransform`; connecting = same
+    waveform static + breathing opacity; offline = flat straight line, no
+    motion). Wired into `HealthIndicator` (top-right) and Dashboard's API
+    status metric (new optional `MetricCard` `graphic` slot). Explicitly
+    checks `useReducedMotion` since SMIL isn't covered by the CSS
+    `prefers-reduced-motion` override used everywhere else.
+  - **Black/gold/deep-red ambient background**: new `--color-ambient-wine`
+    token (index.css) kept deliberately separate from `--color-accent-red`
+    (status semantics untouched); a faint radial-gradient `body`
+    background in dark mode; `AmbientBackground`'s mesh glows/grid/data
+    points and the Dashboard hero's glow/scan-line retinted from
+    violet/blue to gold/wine. Interactive accents (buttons, links, nav
+    active state, the BrandMark wordmark gradient) were deliberately left
+    violet — this was scoped to the ambient/background system per the
+    brief's explicit "background" section, not a full brand recolor.
+  - **Locked-state polish**: Dashboard's audit `AuthRequiredState` and the
+    Integrations `AuthRequiredBanner` now use a `Lock` icon + `glass-soft`
+    surface instead of a flat `KeyRound` strip (copy also now says the
+    catalog stays browsable — it never did block the page, but said so
+    less clearly before); `ErrorState`/`EmptyState` softened from solid
+    borders to glass + hairline while staying visually distinct for
+    genuine errors.
+  - **Integrations honesty/polish**: added the real `google` catalog
+    category as a selectable filter chip (it existed in the `ConnectorCategory`
+    type and satisfies real connectors like Google Calendar/Drive, but had
+    no chip); did **not** add a fabricated "Storage/Infra" section since
+    no such backend category exists — see 00_START_HERE.md's category
+    list before inventing one. Filter chips/dividers softened to
+    hairline+glass; "All integrations" wrapped in `ScrollReveal`. The
+    Currently-integrated/Ready-to-connect/Popular/All structure and the
+    honest CONNECTED/READY TO CONNECT/COMING SOON state machine
+    (`lib/integration-hub.ts`) already existed from prior sessions and
+    were not changed.
+  - **Whole-app border pass**: `border-surface` → `border-hairline` (plus
+    `glass-ambient` on nested sub-panels) across Audit, Runtime,
+    SystemHealth, Memory, Tasks, WorkflowRuns, Settings, and
+    `ConnectorDrawer`. Remaining `border-surface` usages are legitimate
+    interactive-affordance chrome (`Button`/`Input`/`Badge`/`Tabs`/
+    `Toast`/`Skeleton`) — intentionally left alone, see
+    00_START_HERE.md's design-system note.
+  - Verified via `pnpm typecheck`/`pnpm lint`/`pnpm test` (43/43)/`pnpm
+    build` — all clean. No backend code touched this session.
+
 ## PARTIAL
 
 - **Workflow builder** is functional and has 3/4 flagship features (node
@@ -374,7 +432,15 @@ directories.
   touch/iPad, backdrop-blur performance on Safari) has only been reasoned
   about from code, never actually seen rendered. Treat this as the single
   highest-priority follow-up before calling the visual upgrade "done" —
-  see 10_NEXT_STEPS.md.
+  see 10_NEXT_STEPS.md. **Reconfirmed again this session** (still no
+  browser tooling): the `AccountPopover` positioning bug fix was
+  diagnosed and fixed by reasoning through the CSS layout (an `absolute
+  right-0` panel near the toolbar's *left* edge places most of its width
+  off-screen) — a genuine, verifiable-from-code defect and fix, but it
+  has still not actually been seen opening correctly in a browser. Same
+  for the new `HeartbeatLine` SMIL animation (vitest/jsdom passing only
+  proves it doesn't crash, not that the waveform visibly loops/scales
+  correctly) and the gold/red background gradient's real visual balance.
 - **No production API key available to this session.** Confirmed one is
   configured on Render (`401` not `503` on protected routes), but its value
   isn't available here, so authenticated production flows (create task,
