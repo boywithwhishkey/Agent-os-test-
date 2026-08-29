@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Bot, PlayCircle, CheckCircle2, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { Bot, PlayCircle, CheckCircle2, XCircle, Zap } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +10,7 @@ import { ErrorState, LoadingState, EmptyState } from "@/components/ui/States";
 import { JSONViewer } from "@/components/ui/JSONViewer";
 import { AgentCard } from "@/components/agents/AgentCard";
 import { Timeline, type TimelineStep } from "@/components/ui/Timeline";
-import { useAutonomousRun } from "@/lib/api/queries";
+import { useAutonomousRun, useHealth } from "@/lib/api/queries";
 import { useToast } from "@/components/ui/Toast";
 
 export default function Autonomous() {
@@ -17,6 +18,7 @@ export default function Autonomous() {
   const [context, setContext] = useState("");
   const [projectId, setProjectId] = useState("");
   const run = useAutonomousRun();
+  const health = useHealth();
   const { push } = useToast();
 
   const submit = () => {
@@ -105,28 +107,41 @@ export default function Autonomous() {
 
           <div className="space-y-4 lg:col-span-2">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <CardTitle className="flex items-center gap-2">
                   <Bot className="h-4 w-4 text-accent-violet" /> Specialist jobs
                 </CardTitle>
-                <Badge tone={result.verification.approved ? "green" : "red"}>
-                  {result.verification.approved ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                  {result.verification.approved ? "Approved" : "Not approved"}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                  {health.data && (
+                    <Badge tone="violet">
+                      <Zap className="h-3 w-3" /> Up to {health.data.max_parallel} in parallel
+                    </Badge>
+                  )}
+                  <Badge tone={result.verification.approved ? "green" : "red"}>
+                    {result.verification.approved ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                    {result.verification.approved ? "Approved" : "Not approved"}
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {result.plan.jobs.map((job) => {
+              <CardContent className="grid gap-2 sm:grid-cols-2">
+                {result.plan.jobs.map((job, i) => {
                   const r = result.results.find((res) => res.name === job.name);
                   return (
-                    <AgentCard
+                    <motion.div
                       key={job.name}
-                      name={job.name}
-                      instruction={job.task}
-                      status={r ? (r.error ? "failed" : "success") : "pending"}
-                      output={r?.output}
-                      error={r?.error}
-                      attempts={r?.attempts}
-                    />
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i, 8) * 0.05, duration: 0.25 }}
+                    >
+                      <AgentCard
+                        name={job.name}
+                        instruction={job.task}
+                        status={r ? (r.error ? "failed" : "success") : "pending"}
+                        output={r?.output}
+                        error={r?.error}
+                        attempts={r?.attempts}
+                      />
+                    </motion.div>
                   );
                 })}
               </CardContent>

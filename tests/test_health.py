@@ -13,6 +13,7 @@ def test_health() -> None:
     assert body["status"] == "ok"
     assert body["service"] == "THYNACT"
     assert body["llm_provider"] == "mock"
+    assert body["max_parallel"] >= 1
     assert body["backends"]["memory"] == "memory"
     assert body["backends"]["queue"] == "memory"
 

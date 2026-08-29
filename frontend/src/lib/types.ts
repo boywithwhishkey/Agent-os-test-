@@ -309,6 +309,7 @@ export interface HealthResponse {
   service: string;
   environment: string;
   llm_provider: string;
+  max_parallel: number;
   backends: Record<string, string>;
 }
 

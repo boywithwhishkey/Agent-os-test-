@@ -109,6 +109,7 @@ def health() -> dict:
         "service": settings.app_name,
         "environment": settings.app_env,
         "llm_provider": settings.llm_provider,
+        "max_parallel": settings.max_parallel,
         "backends": {
             "memory": settings.memory_backend,
             "task": settings.task_backend,
