@@ -133,6 +133,59 @@ PROJECT_BRAIN/          This canonical knowledge base
   fake DB) but the actual `.sql` files have not been executed against a
   real Postgres instance in any session with access to this repo.
 
+## Frontend design system — "infinite canvas" glass/motion upgrade
+
+THYNACT's frontend runs on a shared glass-material + motion system, not
+page-by-page bespoke styling. A new agent touching UI should build on these
+primitives rather than reinventing bordered cards:
+
+- **Glass depth hierarchy** (`frontend/src/index.css` — `.glass-ambient`,
+  `.glass-soft`, `.glass-panel`, `.glass-focus`): increasing opacity/blur/
+  shadow, used instead of opaque `bg-surface-raised` + bright borders.
+  `border-hairline` (very low-opacity tonal edge) replaces `border-surface`
+  wherever a surface only needs a whisper of separation rather than a
+  visible outline; `border-surface` itself is untouched and still used for
+  genuinely interactive chrome (buttons, inputs, tabs) where a visible edge
+  is the correct affordance, not "boxiness".
+- **`GlassSurface`** (`components/ui/GlassSurface.tsx`) — the base
+  translucent-pane primitive (`level: ambient|soft|panel|focus`).
+- **`Card`/`MetricCard`** (`components/ui/Card.tsx`, `MetricCard.tsx`) were
+  converted to `glass-panel`/`glass-soft` — since `Card` alone is used
+  across 14+ pages, this is the main lever that removed "page → bordered
+  card → bordered card" boxiness app-wide without a bespoke pass on every
+  page.
+- **`AmbientBackground`** (`components/layout/AmbientBackground.tsx`) —
+  mounted once in `AppShell`; a fixed, `pointer-events-none` layer behind
+  the whole app shell: a faint technical grid + two slow-drifting mesh
+  gradient glows + ~10 sparse floating data points, with a scroll-driven
+  parallax (background moves slower than foreground) via Framer Motion's
+  `useScroll`/`useTransform`/`useSpring`. Respects `useReducedMotion`
+  (disables parallax and the floating points, not just CSS animation-
+  duration).
+- **Motion tokens** (`lib/motion.ts`) — the single reusable motion
+  language: `pageEnter`, `sectionReveal`, `staggerContainer`/`staggerItem`,
+  `glassAppear`, `drawerMotion`/`sheetMotion`/`modalMotion`, `hoverFloat`,
+  `fadeThrough`, `metricReveal`. Springs are tuned high-damping (precise,
+  not bouncy) per the brief's "expensive, technical, fluid — not
+  cartoonish" direction.
+- **`ScrollReveal`/`StaggerGroup`/`StaggerItem`**
+  (`components/ui/ScrollReveal.tsx`) — `whileInView`-based section/stagger
+  entrances, fire once, no scroll-jacking, native scrolling preserved.
+  Requires an `IntersectionObserver` — jsdom has none, so
+  `frontend/src/test/setup.ts` installs a no-op mock; a future agent
+  hitting `"IntersectionObserver is not defined"` in a frontend test should
+  look there first, not assume a real regression.
+- **`AccountPopover`** (`components/layout/AccountPopover.tsx`) — the
+  circular profile control beside the sidebar hamburger. THYNACT has no
+  backend user-account system, only the operator's local API-key session
+  (`lib/api/config.ts`, sessionStorage-only) — the popover surfaces exactly
+  that (configured/not, base URL, "Clear session") plus links to
+  Settings/Integrations. Don't add fields here that don't map to a real
+  backend concept.
+- Drawers/dialogs/the command palette use `glass-focus` + spring-based
+  entrance (`drawerMotion`/`modalMotion`) instead of opaque rectangles +
+  linear tweens.
+
 ## Coding & deployment safety conventions (from CLAUDE.md, still binding)
 
 - GitHub is the source of truth; treat any local/Replit environment as

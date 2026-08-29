@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `f7c7373`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `70cf378`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -280,21 +280,72 @@ directories.
   available, to stay consistent with what production actually builds
   with.
 
+- **THYNACT glass/motion design system (this session, HEAD `70cf378`).**
+  Built the systemic foundation requested by the "premium UI/motion
+  upgrade" brief instead of redesigning every page by hand — see
+  00_START_HERE.md's new "Frontend design system" section for the full
+  primitive list (`GlassSurface`, glass-ambient/soft/panel/focus + border-
+  hairline CSS, `AmbientBackground`, `lib/motion.ts`, `ScrollReveal`/
+  `StaggerGroup`/`StaggerItem`, `AccountPopover`). Because `Card`/
+  `MetricCard` alone are used across 14+ pages, converting those two
+  components to the glass system cascaded the "no more page → bordered-
+  card → bordered-card" fix app-wide without touching every page
+  individually; `Drawer`/`Dialog`/`CommandPalette`/`AppShell`/`Sidebar`/
+  `Topbar` and the `AgentCard`/`ConnectorCard`/`StepNode` flagship
+  components were each additionally updated by hand. Dashboard got the
+  full bespoke pass the brief called out specifically: the "Dashboard /
+  Live status of..." heading block is gone, the bordered hero rectangle is
+  gone (replaced by a borderless ambient hero — staggered text entrance,
+  a soft floating glow, a one-shot animated scan line), and every section
+  below it now enters via `ScrollReveal`/`StaggerGroup` (`whileInView`,
+  fires once, no scroll-jacking — native scroll untouched). New circular
+  `AccountPopover` beside the sidebar hamburger surfaces the one real
+  identity concept THYNACT has (the operator's local API-key session) —
+  configured/not-configured state, API base URL, a "Clear session" action
+  wired to the existing `resetApiConfig()`; deliberately does not invent
+  account fields the backend doesn't have. Sidebar's active-nav highlight
+  is now an animated `layoutId` pill. All motion respects
+  `prefers-reduced-motion` (`AmbientBackground`'s parallax/particles check
+  `useReducedMotion` explicitly since they're JS-driven, not CSS
+  animations that the existing global reduced-motion override would
+  catch). Added a no-op `IntersectionObserver` mock to
+  `frontend/src/test/setup.ts` (jsdom has none; Framer Motion's
+  `whileInView` throws without one — this was a real crash caught by
+  `App.test.tsx`, not a pre-existing gap). **Not done in this pass** (see
+  PARTIAL below and 07_DEFERRED_GOALS.md): bespoke cinematic treatments
+  for Orchestration/Autonomous/Memory/Workflows beyond what the shared
+  glass/motion cascade already gives them, and all interactive/visual QA
+  (browser tooling still unavailable to this session — see BLOCKED).
+  Verified via `pnpm typecheck` / `pnpm lint` / `pnpm test` (43/43,
+  including a new IntersectionObserver-dependent path) / `pnpm build` —
+  all clean.
+
 ## PARTIAL
 
 - **Workflow builder** is functional and has 3/4 flagship features (node
   toolbar, validation highlighting, execution-pulse edges — see DONE
   above); only the context side panel (editing is still a modal dialog,
   deliberately) is not done.
-- **Premium motion pass** has been done this session for: Dashboard (brand
-  moment), API heartbeat, Workflows canvas, Orchestrate (pipeline
-  visualization), Memory (match-score bar + relationship graph), Runtime
-  (circuit-breaker/rate-limit gauges), System Health (persistence map),
-  Audit (timeline view), Autonomous (parallelism badge + grid). Remaining:
-  Agents (static/informational by design — see per-subsystem table),
-  Approvals, Tools. These still use the pre-existing (already reasonably
-  polished) design system from prior
-  sessions without a dedicated additional pass.
+- **Premium motion pass**, prior sessions: Dashboard (brand moment), API
+  heartbeat, Workflows canvas, Orchestrate (pipeline visualization), Memory
+  (match-score bar + relationship graph), Runtime (circuit-breaker/rate-
+  limit gauges), System Health (persistence map), Audit (timeline view),
+  Autonomous (parallelism badge + grid).
+- **Glass/motion design-system pass (this session)**: every page that uses
+  `Card`/`MetricCard` (14+ pages, effectively the whole product) inherited
+  the glass-panel/glass-soft treatment and border-hairline separators for
+  free; `Dashboard` additionally got the full bespoke pass the brief
+  required by name (hero/heading rework — see DONE above).
+  `AgentCard`/`ConnectorCard`/`StepNode` were hand-touched too. **What
+  this pass deliberately did NOT do**: bespoke cinematic upgrades beyond
+  the shared cascade for Orchestration (animated data-flow/execution
+  particles), Autonomous (evolving computation-graph visualization),
+  Memory (spatial/semantic-similarity graph movement), Workflows (edge
+  pulse/glow refinement, minimap polish, floating config drawer instead of
+  the modal editor), Agents (computational-entity treatment beyond the
+  glass card), Approvals, Tools, Runtime (execution timeline), Audit
+  (correlation-ID copy). These remain fair game for a focused follow-up
+  session — see 07_DEFERRED_GOALS.md and 10_NEXT_STEPS.md.
 - **n8n connector completeness audit (this session):** verified
   registration, config validation (`is_provider_configured`), the
   test-connection endpoint, auth header handling, timeout handling,
@@ -315,7 +366,14 @@ directories.
   (index.html + asset fetch, `/health`, `/ready`, CORS preflight headers).
   Full interactive QA (click-through every page, browser console errors,
   live network tab, actual responsive rendering at 375/430/768/820/1024/
-  1180/1440px) has **not** been performed.
+  1180/1440px) has **not** been performed. **Reconfirmed this session**
+  (still no browser tooling) for the glass/motion design-system pass —
+  the visual result (glass legibility/contrast, ambient-background
+  parallax feel, scroll-reveal timing, the new AccountPopover on
+  touch/iPad, backdrop-blur performance on Safari) has only been reasoned
+  about from code, never actually seen rendered. Treat this as the single
+  highest-priority follow-up before calling the visual upgrade "done" —
+  see 10_NEXT_STEPS.md.
 - **No production API key available to this session.** Confirmed one is
   configured on Render (`401` not `503` on protected routes), but its value
   isn't available here, so authenticated production flows (create task,
@@ -416,7 +474,7 @@ code-level review, not a rendered/visual one. Findings:
 
 | Subsystem | Status | Notes |
 |---|---|---|
-| Dashboard | DONE (this session: brand moment added) | Metrics, recent audit, quick actions, session activity — all backed by real queries |
+| Dashboard | DONE (this session: heading/hero rework — see DONE above) | Metrics, recent audit, quick actions, session activity — all backed by real queries; borderless ambient hero replaces the old bordered brand card, "Dashboard / Live status..." heading removed |
 | Tasks | DONE (prior session) | Create/retrieve, validation, error states — covered by `Tasks.test.tsx` + backend tests |
 | Orchestration | DONE, motion pass DONE | researcher/builder/reviewer roles + `OrchestrationPipeline` connected-node visualization (this session) |
 | Autonomous | DONE, motion pass DONE | planner/specialists/verifier/synthesis, real "Up to N in parallel" badge + staggered grid layout (this session) |
@@ -432,4 +490,4 @@ code-level review, not a rendered/visual one. Findings:
 | Health | DONE | Live `/health` + `/ready` + persistence/LLM service map (this session) |
 | Settings | DONE (this session: About/brand section added) | API base URL + key (sessionStorage only), theme, About |
 | Persistence | PARTIAL — production is memory-only | Code supports Postgres/Redis backends (`app/persistence/`, `app/queue/redis_queue.py`) but production has none configured (see NEEDS CREDENTIALS) |
-| Responsive UI | UNVERIFIED at real breakpoints | Codebase has solid responsive primitives (`overflow-x-hidden`, `min-w-0`, mobile sidebar drawer, responsive grids) but has not been checked in an actual browser at the 7 target breakpoints this session |
+| Responsive UI | UNVERIFIED at real breakpoints | Codebase has solid responsive primitives (`overflow-x-hidden`, `min-w-0`, mobile sidebar drawer, responsive grids) but has not been checked in an actual browser at the 7 target breakpoints this session. The new `AmbientBackground`/glass layers reuse the same responsive containers and add no new fixed widths, but their actual iPad/mobile appearance (blur cost, particle placement, AccountPopover touch sizing) is likewise unverified in a real browser |

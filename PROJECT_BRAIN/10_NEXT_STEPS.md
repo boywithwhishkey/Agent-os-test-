@@ -60,6 +60,15 @@ below this point can be done by an agent. These specifically cannot:
   clean browser console (no errors from our own code).
 - Do not mark any page "browser-verified" without this step actually
   happening.
+- **New this session, specifically needs eyes-on**: glass-surface text
+  contrast/legibility in both themes (the glass system trades opacity for
+  depth — WCAG contrast was reasoned about, not measured), the
+  `AmbientBackground` parallax/particle layer's actual look and paint cost
+  (especially Safari/iPad, which stacks several `backdrop-filter: blur()`
+  layers — Sidebar + Topbar + every Card on a page simultaneously), the
+  `AccountPopover` on touch (tap target size, popover position not
+  clipping off-screen near the edge), and Dashboard's scroll-reveal timing
+  actually feeling smooth rather than janky.
 
 ## 4. Connectors/integrations — STATUS: code-complete, NEEDS CREDENTIALS to go live
 - DONE (this session): Integration Hub UX overhaul (neutral setup states,
@@ -111,22 +120,31 @@ below this point can be done by an agent. These specifically cannot:
 - Do not provision Postgres/Redis infrastructure without the user's
   explicit approval — this is a paid-infrastructure decision.
 
-## 6. Premium UI completion — STATUS: mostly DONE, small remainder
-Essentially every page in the product brief now has a dedicated
-motion/visualization pass: Dashboard, API heartbeat, Orchestrate,
-Autonomous, Memory (score bar + relationship graph), Runtime (breaker
-badge + rate gauge), System Health (persistence map), Audit (timeline
-view), Workflows (3/4 flagship features). See 02_CURRENT_STATE.md DONE
-section for the full list with implementation notes.
-- Remaining: Workflows' context side panel (deliberately deferred — see
-  07_DEFERRED_GOALS.md), Runtime's circuit-breaker *diagram* (richer than
-  the current badge, optional), Audit's correlation-ID quick-copy (needs
-  a `DATABASE_URL`-backed migration), Agents/Approvals/Tools haven't had
-  a dedicated additional pass (lower priority, already consistent with
-  the shared design system).
+## 6. Premium UI completion — STATUS: foundation + Dashboard DONE, bespoke follow-ups remain
+This session (HEAD `70cf378`) built the shared glass/motion design system
+the brief asked for systemically (`GlassSurface`, `AmbientBackground`,
+`lib/motion.ts`, `ScrollReveal`/`StaggerGroup`, `AccountPopover`) and
+applied it: to `Card`/`MetricCard` (cascades to 14+ pages), to the app
+shell (`AppShell`/`Sidebar`/`Topbar`/`Drawer`/`Dialog`/`CommandPalette`),
+and as a full bespoke pass on Dashboard (heading/hero removal — the two
+things the brief named explicitly). See 00_START_HERE.md's "Frontend
+design system" section and 02_CURRENT_STATE.md's DONE entry for this
+session.
+- **Highest priority next**: actual interactive/visual QA of this pass —
+  see item 3 below. Nothing in this pass has been seen rendered in a real
+  browser; it has only been verified via typecheck/lint/test/build.
+- Remaining bespoke follow-ups (see 07_DEFERRED_GOALS.md's new "glass/
+  motion design-system — bespoke follow-ups" section for the full,
+  prioritized list): Orchestration data-flow particles, Autonomous
+  computation-graph layout, Memory spatial graph movement, Workflows edge/
+  minimap polish + the still-deferred context side panel, Runtime's
+  circuit-breaker diagram, Audit's correlation-ID quick-copy (needs a
+  `DATABASE_URL`-backed migration).
 - Keep using the existing design system (`frontend/src/components/ui/*`,
-  the `@theme` tokens/keyframes in `index.css`, Framer Motion, React Flow)
-  — do not introduce new UI libraries.
+  the `@theme` tokens/keyframes + glass utilities in `index.css`,
+  `lib/motion.ts`, Framer Motion, React Flow) — do not introduce new UI
+  libraries, and do not re-introduce opaque bordered cards where a
+  `Card`/`GlassSurface` already exists.
 
 ## 7. Responsive/browser QA — STATUS: TODO (needs browser tooling)
 - BLOCKED on the same browser tooling as step 3. Once available, check
@@ -136,14 +154,17 @@ section for the full list with implementation notes.
 - Requirements to verify: no horizontal overflow, no clipped modals/
   drawers, touch-friendly tap targets, mobile nav works, tables/cards
   degrade sensibly, charts resize, command palette usable on mobile.
+- New this session: the `AccountPopover` sheet/popover on narrow
+  viewports, and whether stacking multiple `backdrop-filter: blur()`
+  glass layers causes any visible jank while scrolling on real iPad
+  hardware (code-level review can't assess GPU compositing cost).
 
 ## 8. Regression tests — STATUS: DONE as of this session, re-run before next push
 - Before the next commit, re-run: `python -m pytest tests/ -q` (backend,
-  208 tests), `npm run typecheck && npm run lint && npm run test && npm
-  run build` (frontend, 29 tests, run from `frontend/`). All were green as
-  of commit `f7c7373`. Prefer `pnpm` over `npm` if available in a future
-  session, to match what Cloudflare's build actually uses (see
-  02_CURRENT_STATE.md's environment note).
+  208 tests — not re-run this session since no backend code changed),
+  `pnpm typecheck && pnpm lint && pnpm test && pnpm build` (frontend, 43
+  tests, run from `frontend/`; `pnpm` was used and confirmed available
+  this session). All were green as of commit `70cf378`.
 
 ## 9. Production verification — STATUS: VERIFIED as of this session
 - Re-verify after any new push: `curl https://api.thynact.com/health`,
@@ -175,3 +196,12 @@ section for the full list with implementation notes.
 - Overall frontend direction: premium, futuristic AI operating system feel;
   rich but performant (`transform`/`opacity` only) animation; strong
   responsiveness across desktop, tablet/iPad, and mobile.
+- Design system (this session on): no new opaque bordered cards — use
+  `Card`/`GlassSurface` (glass-panel/soft/ambient/focus) and
+  `border-hairline`, not `bg-surface-raised` + `border-surface`, for
+  page-level content surfaces. New section entrances use
+  `ScrollReveal`/`StaggerGroup` from `components/ui/ScrollReveal.tsx`, new
+  drawers/dialogs use `drawerMotion`/`modalMotion` from `lib/motion.ts` —
+  don't hand-roll new ad hoc Framer Motion variants for these. The
+  `AccountPopover` only surfaces real operator-session state; never add a
+  field there that isn't backed by an actual backend/local concept.
