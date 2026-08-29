@@ -25,3 +25,16 @@ class IntegrationResult(BaseModel):
     data: Any = None
     error: str | None = None
     correlation_id: str | None = None
+
+
+class IntegrationStatus(BaseModel):
+    provider: IntegrationProvider
+    name: str
+    configured: bool
+    requires: list[str] = Field(default_factory=list)
+    connected: bool | None = None
+    last_check: str | None = None
+    last_check_latency_ms: float | None = None
+    last_check_error: str | None = None
+    last_execution: str | None = None
+    last_execution_success: bool | None = None

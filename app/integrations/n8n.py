@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from urllib.parse import urljoin
 
 import httpx
@@ -99,6 +100,28 @@ class N8NWebhookAdapter(IntegrationAdapter):
                 error=f"{type(exc).__name__}: {exc}",
                 correlation_id=request.correlation_id,
             )
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def test_connection(self) -> tuple[bool, float | None, str | None]:
+        """Probe reachability of the configured n8n host.
+
+        n8n exposes no generic health route on arbitrary instances, so this
+        checks that the base host responds at all (any HTTP status counts as
+        reachable) rather than pretending a specific workflow succeeded.
+        """
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        started = time.perf_counter()
+        try:
+            await client.get(self.base_url, timeout=10.0)
+            latency_ms = (time.perf_counter() - started) * 1000
+            return True, latency_ms, None
+        except httpx.TimeoutException:
+            return False, None, "Connection to n8n timed out"
+        except httpx.HTTPError as exc:
+            return False, None, f"{type(exc).__name__}: {exc}"
         finally:
             if own_client:
                 await client.aclose()

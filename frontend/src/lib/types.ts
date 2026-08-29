@@ -268,6 +268,19 @@ export interface IntegrationResult {
   correlation_id: string | null;
 }
 
+export interface IntegrationStatus {
+  provider: string;
+  name: string;
+  configured: boolean;
+  requires: string[];
+  connected: boolean | null;
+  last_check: string | null;
+  last_check_latency_ms: number | null;
+  last_check_error: string | null;
+  last_execution: string | null;
+  last_execution_success: boolean | null;
+}
+
 // --- System ---
 export interface HealthResponse {
   status: string;

@@ -7,6 +7,7 @@ import type {
   HealthResponse,
   IntegrationRequest,
   IntegrationResult,
+  IntegrationStatus,
   MemoryContext,
   MemoryQuery,
   MemoryRecord,
@@ -200,9 +201,34 @@ export function useRuntimeExecution(executionId: string | undefined) {
 }
 
 // ---------- Integrations ----------
+export function useIntegrations() {
+  return useQuery({
+    queryKey: ["integrations"],
+    queryFn: () => api.get<IntegrationStatus[]>("/api/v1/integrations"),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useTestIntegration() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (provider: string) =>
+      api.post<IntegrationStatus>(`/api/v1/integrations/${provider}/test`, undefined, { timeoutMs: 15_000 }),
+    onSuccess: (status) => {
+      queryClient.setQueryData<IntegrationStatus[]>(["integrations"], (current) =>
+        current?.map((item) => (item.provider === status.provider ? status : item))
+      );
+    },
+  });
+}
+
 export function useExecuteIntegration() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: { provider: string; request: IntegrationRequest }) =>
       api.post<IntegrationResult>("/api/v1/integrations/execute", payload, { timeoutMs: 60_000 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+    },
   });
 }
