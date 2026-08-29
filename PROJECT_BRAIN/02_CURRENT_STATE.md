@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `aad329e`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `52c78e1`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -8,13 +8,21 @@ contradicting note elsewhere.
 ## PRODUCTION STATUS
 
 - **Live frontend:** https://app.thynact.com — HTTP 200. Verified this
-  session that the served `/assets/index-*.js` hash (`index-CwgnVrCF.js`)
-  matches a fresh local `pnpm build` byte-for-byte — Cloudflare Pages
-  auto-deployed `origin/main` (commit `1f9ffdc`, the mobile-responsive
-  fix) correctly. **This confirms the code deployed; it does not confirm
-  it renders correctly on mobile** — no browser tooling was used to check
-  that, see BLOCKED. Re-verify the asset-hash match the same way after
-  any future push.
+  session (after pushing `aad329e`) that Cloudflare Pages auto-deployed
+  `origin/main` within ~20s: the served `/assets/index-*.js` hash changed
+  from the prior session's `index-CwgnVrCF.js` to `index-Dssa6dw8.js`,
+  matching a fresh local `pnpm build` byte-for-byte. Went further than
+  the asset-hash check alone this time — fetched the live served CSS
+  bundle (`assets/index-Di_zWwI1.css`) directly and grepped it, confirming
+  both `Space Grotesk Variable` (the new font) and `accent-violet:#5b4fd6`
+  (the new light-theme contrast override, alongside the untouched
+  `#8574ff` dark-theme value) are actually present in what's served to
+  real users, not just in the local build. The rendering verification
+  itself (screenshots, overflow checks) was done against the local dev
+  server before pushing — see this session's DONE entry — not re-done
+  against the live URL, but the byte-identical asset hash plus this CSS
+  spot-check make that a very safe inference. Re-verify the asset-hash
+  match the same way after any future push.
 - **Live API:** `https://api.thynact.com/health` still returns `200`
   with `"status":"ok"` — reconfirmed this session; unaffected since no
   backend code changed.
