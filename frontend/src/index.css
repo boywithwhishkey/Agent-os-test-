@@ -8,10 +8,14 @@
 
   --color-accent-gold: #c8ad6d;
   --color-accent-gold-light: #ead9a6;
-  /* Ambient-only deep wine red for the background gradient/glow system —
-     deliberately distinct from --color-accent-red, which stays reserved
-     for real offline/error/failure status so the two are never confused. */
-  --color-ambient-wine: #7a2430;
+  /* Ambient-only palette for the background gradient/glow system — the
+     product's cream/bronze/deep-navy reference direction. Deliberately
+     separate from the semantic accent tokens above (--color-accent-gold
+     included) so decoration never gets confused with status/interactive
+     color, and can be retuned without touching UI chrome. */
+  --color-ambient-cream: #f5e9dd;
+  --color-ambient-bronze: #a67c52;
+  --color-ambient-navy: #122d70;
   --color-accent-violet: #8574ff;
   --color-accent-violet-soft: #aa9fff;
   --color-accent-blue: #5bc7ff;
@@ -95,12 +99,14 @@ body {
 }
 .dark body {
   background-color: #07080d;
-  /* Premium black/gold/deep-red gradient base — deliberately faint (6-9%
-     peak opacity) so it reads as elegant ambient depth, not a loud/gamer
-     RGB glow. Fixed so it doesn't reflow/tile while the page scrolls. */
+  /* Premium cream/bronze/deep-navy gradient base over a near-black
+     foundation — deliberately faint (5-9% peak opacity) so it reads as
+     elegant ambient depth, not a loud glow. Fixed so it doesn't
+     reflow/tile while the page scrolls. */
   background-image:
-    radial-gradient(ellipse 60rem 44rem at 12% -8%, color-mix(in srgb, var(--color-accent-gold) 9%, transparent), transparent 60%),
-    radial-gradient(ellipse 60rem 50rem at 92% 108%, color-mix(in srgb, var(--color-ambient-wine) 10%, transparent), transparent 60%),
+    radial-gradient(ellipse 50rem 38rem at 20% -6%, color-mix(in srgb, var(--color-ambient-cream) 6%, transparent), transparent 55%),
+    radial-gradient(ellipse 60rem 44rem at 8% 10%, color-mix(in srgb, var(--color-ambient-bronze) 9%, transparent), transparent 60%),
+    radial-gradient(ellipse 65rem 55rem at 95% 105%, color-mix(in srgb, var(--color-ambient-navy) 22%, transparent), transparent 62%),
     radial-gradient(ellipse 70rem 70rem at 50% 40%, transparent 0%, #05060a 100%);
   background-attachment: fixed;
   color: #f7f6f2;

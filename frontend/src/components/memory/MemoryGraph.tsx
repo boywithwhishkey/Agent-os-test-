@@ -130,7 +130,7 @@ export function MemoryGraph({ records }: { records: MemoryRecord[] }) {
         </svg>
       </div>
       {hovered != null && (
-        <div className="rounded-lg border border-surface bg-surface-canvas p-3 text-sm">
+        <div className="glass-ambient rounded-lg border border-hairline p-3 text-sm">
           <p className="font-medium text-content-primary">{shown[hovered].key}</p>
           <p className="mt-1 text-content-secondary">{truncate(shown[hovered].content, 200)}</p>
         </div>

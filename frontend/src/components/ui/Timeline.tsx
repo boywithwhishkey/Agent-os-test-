@@ -12,7 +12,7 @@ export interface TimelineStep {
 const dotStyles: Record<TimelineStep["status"], string> = {
   complete: "bg-accent-green border-accent-green",
   active: "bg-accent-blue border-accent-blue animate-pulse-slow",
-  pending: "bg-transparent border-surface",
+  pending: "bg-transparent border-hairline",
   error: "bg-accent-red border-accent-red",
 };
 

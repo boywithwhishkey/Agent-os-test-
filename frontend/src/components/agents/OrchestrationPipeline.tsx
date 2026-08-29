@@ -10,7 +10,7 @@ const STEPS: { role: string; label: string; icon: typeof Search }[] = [
 ];
 
 const ringClass: Record<AgentCardStatus, string> = {
-  pending: "border-surface text-content-muted",
+  pending: "border-hairline text-content-muted",
   running: "border-accent-blue text-accent-blue shadow-[0_0_18px_-3px_var(--color-accent-blue)] animate-pulse-slow",
   success: "border-accent-green text-accent-green bg-accent-green/10",
   failed: "border-accent-red text-accent-red bg-accent-red/10",

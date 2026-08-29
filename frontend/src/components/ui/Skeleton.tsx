@@ -21,7 +21,7 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
 
 export function SkeletonCard() {
   return (
-    <div className="space-y-3 rounded-xl border border-surface bg-surface-raised p-5" role="status" aria-label="Loading">
+    <div className="glass-panel space-y-3 rounded-2xl border border-hairline p-5" role="status" aria-label="Loading">
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-8 w-1/2" />
       <Skeleton className="h-3 w-2/3" />

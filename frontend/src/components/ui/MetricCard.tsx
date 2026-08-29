@@ -38,11 +38,11 @@ export function MetricCard({
   return (
     <motion.div
       variants={metricReveal}
-      className="glass-soft relative overflow-hidden rounded-2xl border border-hairline p-4"
+      className="glass-soft relative overflow-hidden rounded-2xl border border-hairline p-5"
     >
-      <div className={cn("pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl", glowStyles[tone])} aria-hidden />
+      <div className={cn("pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl", glowStyles[tone])} aria-hidden />
       <div className="relative flex items-center justify-between">
-        <p className="text-xs font-medium text-content-muted">{label}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-content-muted">{label}</p>
         {icon && <span className={cn("text-content-muted", toneStyles[tone])}>{icon}</span>}
       </div>
       <motion.p
@@ -50,12 +50,12 @@ export function MetricCard({
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className={cn("relative mt-2 text-2xl font-semibold tabular-nums", toneStyles[tone])}
+        className={cn("relative mt-2.5 text-[1.75rem] font-semibold tracking-tight tabular-nums", toneStyles[tone])}
       >
         {value}
       </motion.p>
-      {hint && <p className="relative mt-1 text-xs text-content-muted">{hint}</p>}
-      {graphic && <div className="relative mt-2">{graphic}</div>}
+      {hint && <p className="relative mt-1.5 text-xs text-content-muted">{hint}</p>}
+      {graphic && <div className="relative mt-2.5">{graphic}</div>}
     </motion.div>
   );
 }

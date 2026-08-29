@@ -39,8 +39,8 @@ export function AmbientBackground() {
       <motion.div className="absolute inset-[-64px] bg-technical-grid opacity-60" style={{ y: gridY }} />
 
       <motion.div className="absolute inset-0" style={{ y: meshY }}>
-        <div className="absolute left-[-10%] top-[-15%] h-[55vh] w-[55vh] rounded-full bg-accent-gold/[0.08] blur-[120px] animate-drift" />
-        <div className="absolute bottom-[-15%] right-[-10%] h-[60vh] w-[60vh] rounded-full bg-ambient-wine/[0.09] blur-[130px] animate-drift-slow" />
+        <div className="absolute left-[-10%] top-[-15%] h-[55vh] w-[55vh] rounded-full bg-ambient-bronze/[0.09] blur-[120px] animate-drift" />
+        <div className="absolute bottom-[-15%] right-[-10%] h-[60vh] w-[60vh] rounded-full bg-ambient-navy/[0.16] blur-[130px] animate-drift-slow" />
       </motion.div>
 
       {!reduceMotion && (
@@ -48,7 +48,7 @@ export function AmbientBackground() {
           {points.map((p, i) => (
             <span
               key={i}
-              className="absolute h-1 w-1 rounded-full bg-accent-gold-light/30 animate-float"
+              className="absolute h-1 w-1 rounded-full bg-ambient-cream/30 animate-float"
               style={{ left: `${p.x}%`, top: `${p.y}%`, animationDelay: `${p.delay}s` }}
             />
           ))}

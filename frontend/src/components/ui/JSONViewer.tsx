@@ -11,8 +11,8 @@ export function CodeBlock({ code, language = "json" }: { code: string; language?
     setTimeout(() => setCopied(false), 1500);
   };
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-surface bg-surface-canvas">
-      <div className="flex items-center justify-between border-b border-surface px-3 py-1.5">
+    <div className="glass-ambient group relative overflow-hidden rounded-lg border border-hairline">
+      <div className="flex items-center justify-between border-b border-hairline px-3 py-1.5">
         <span className="font-mono text-[10px] uppercase tracking-wider text-content-muted">{language}</span>
         <Button variant="ghost" size="sm" onClick={onCopy} className="h-6 px-2 text-xs">
           {copied ? <Check className="h-3 w-3 text-accent-green" /> : <Copy className="h-3 w-3" />}
@@ -30,7 +30,7 @@ export function JSONViewer({ data, collapsedByDefault = true }: { data: unknown;
   const [open, setOpen] = useState(!collapsedByDefault);
   const json = JSON.stringify(data, null, 2);
   return (
-    <div className="rounded-lg border border-surface">
+    <div className="rounded-lg border border-hairline">
       <button
         onClick={() => setOpen((o) => !o)}
         className={cn(
