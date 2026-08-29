@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `6aae299`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `e02f3fb`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -27,6 +27,17 @@ contradicting note elsewhere.
   This session does not have that key's value and cannot exercise
   authenticated endpoints against production directly — see "NEEDS
   CREDENTIALS" and 10_NEXT_STEPS.md.
+
+## Environment note
+
+Mid-session, `git push origin main` failed once with "Invalid username or
+token" from the Replit-managed git askpass helper (`replit-git-askpass`),
+even though `gh auth status` showed a valid, active GitHub CLI login with
+`repo` scope. Fixed by running `gh auth setup-git` (routes git's credential
+resolution through the already-authenticated `gh` CLI) and retrying — no
+secrets were exposed, nothing destructive was done. If a future session
+hits the same "Invalid username or token" push error, try this first
+before assuming a deeper auth problem.
 
 ## DONE (verified this session)
 
@@ -84,7 +95,19 @@ contradicting note elsewhere.
   edge (not just freshly-drawn ones) a `smoothstep` curve + animated violet
   stroke. Status-aware node styling (icons/colors per `StepStatus`) already
   existed from a prior session and was preserved as-is.
-- **Backend test suite: 129/129 passing** (`uv run pytest tests/ -q`).
+- **n8n `test_connection()` test coverage.** Added
+  `httpx.MockTransport`-based tests in `tests/test_phase9_n8n.py` covering
+  reachable-host, timeout, and network-error outcomes — previously only
+  the route layer was covered (via a fake adapter).
+- **Orchestrate pipeline visualization.** New
+  `frontend/src/components/agents/OrchestrationPipeline.tsx`: a compact
+  connected-node view of the fixed researcher → builder → reviewer roles,
+  with a status ring per step (pending/running-glow/success/failed) and a
+  violet progress line that fills between completed steps. Deliberately
+  only renders from the final per-job result, not fabricated in-flight
+  step tracking — the backend orchestration call is a single synchronous
+  request with no incremental per-step status while pending.
+- **Backend test suite: 132/132 passing** (`uv run pytest tests/ -q`).
 - **Frontend: 23/23 tests passing** (`pnpm test`), **typecheck clean**
   (`pnpm typecheck`), **lint clean** — 0 errors, 2 pre-existing warnings
   unrelated to this session's changes (`Toast.tsx`, `theme.tsx`,

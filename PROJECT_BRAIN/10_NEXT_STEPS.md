@@ -36,9 +36,8 @@ file at the end of every session so the next agent can start cold.
   "not configured" to a real, testable connection. Once set, run
   "Test connection" from the Integrations page and confirm `connected:
   true` with a real latency figure.
-- TODO: add an `httpx.MockTransport`-based unit test for
-  `N8NWebhookAdapter.test_connection()` (currently only the route layer is
-  tested with a fake adapter).
+- DONE: `httpx.MockTransport`-based unit tests for
+  `N8NWebhookAdapter.test_connection()` added in `tests/test_phase9_n8n.py`.
 - Do not add another connector adapter unless there's a concrete product
   need (see 07_DEFERRED_GOALS.md).
 
@@ -58,9 +57,15 @@ file at the end of every session so the next agent can start cold.
   checks (not an empty `checks: {}`).
 
 ## 6. Premium UI completion — STATUS: PARTIAL, TODO
-- Continue the motion/visual pass on: Orchestrate, Autonomous, Memory,
-  Runtime, Audit, System Health (see 07_DEFERRED_GOALS.md for the specific
-  list of enhancements per page).
+- DONE: Orchestrate now has `OrchestrationPipeline` (connected-node
+  researcher/builder/reviewer visualization with status rings and a
+  filling progress line).
+- Continue the motion/visual pass on: Autonomous, Memory, Runtime, Audit,
+  System Health (see 07_DEFERRED_GOALS.md for the specific list of
+  enhancements per page). Note: Autonomous already has a working
+  `Timeline` component (planner/specialists/verifier/synthesis stages)
+  and `AgentCard` list from a prior session — reasonably solid as-is,
+  lower priority than the still-bare pages.
 - Continue the Workflows builder toward the flagship vision: node toolbar,
   context side panel, execution-pulse-along-edge animation, per-node
   validation highlighting.
