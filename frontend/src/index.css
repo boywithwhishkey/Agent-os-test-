@@ -20,6 +20,11 @@
   --animate-heartbeat: heartbeat 1.8s ease-in-out infinite;
   --animate-heartbeat-ring: heartbeat-ring 1.8s ease-in-out infinite;
   --animate-breathe: breathe 2.2s ease-in-out infinite;
+  --animate-drift: drift 22s ease-in-out infinite;
+  --animate-drift-slow: drift 34s ease-in-out infinite reverse;
+  --animate-grid-pan: grid-pan 60s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-scan: scan 5s ease-in-out infinite;
 
   @keyframes pulse-slow {
     0%, 100% { opacity: 1; }
@@ -43,6 +48,23 @@
   @keyframes breathe {
     0%, 100% { opacity: 0.5; transform: scale(0.92); }
     50% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(1.5%, -2%, 0) scale(1.04); }
+  }
+  @keyframes grid-pan {
+    0% { background-position: 0 0; }
+    100% { background-position: 64px 64px; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  @keyframes scan {
+    0% { transform: translateY(-100%); opacity: 0; }
+    10%, 90% { opacity: 0.5; }
+    100% { transform: translateY(100%); opacity: 0; }
   }
 }
 
@@ -112,6 +134,11 @@ body {
   .border-surface { border-color: rgba(0,0,0,0.08); }
   .dark .border-surface { border-color: rgba(255,255,255,0.09); }
 
+  /* Even fainter than .border-surface — for glass primitives that separate
+     through depth/opacity and only want a whisper of a tonal edge. */
+  .border-hairline { border-color: rgba(0,0,0,0.06); }
+  .dark .border-hairline { border-color: rgba(255,255,255,0.06); }
+
   .text-content-primary { color: #14161c; }
   .dark .text-content-primary { color: #f7f6f2; }
 
@@ -120,4 +147,76 @@ body {
 
   .text-content-muted { color: #767a86; }
   .dark .text-content-muted { color: #8d919d; }
+}
+
+/* ------------------------------------------------------------------ */
+/* THYNACT glass material system                                       */
+/* Depth hierarchy: ambient < glass-soft < glass-panel < glass-focus.   */
+/* Each level trades opacity/blur for legibility — dialogs/drawers get  */
+/* the strongest blur + highest opacity so text stays WCAG-readable.    */
+/* ------------------------------------------------------------------ */
+.glass-ambient {
+  background-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+}
+.dark .glass-ambient {
+  background-color: rgba(16, 19, 28, 0.28);
+  backdrop-filter: blur(6px) saturate(140%);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+}
+
+.glass-soft {
+  background-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(20, 22, 28, 0.04);
+}
+.dark .glass-soft {
+  background-color: rgba(16, 19, 28, 0.46);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.glass-panel {
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 8px 24px -12px rgba(20, 22, 28, 0.12);
+}
+.dark .glass-panel {
+  background-color: rgba(16, 19, 28, 0.62);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+}
+
+.glass-focus {
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.7), 0 24px 48px -16px rgba(20, 22, 28, 0.22);
+}
+.dark .glass-focus {
+  background-color: rgba(12, 14, 21, 0.88);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------------------------------------------ */
+/* Ambient technical background — fixed behind the app shell.          */
+/* ------------------------------------------------------------------ */
+.bg-technical-grid {
+  background-image:
+    linear-gradient(to right, rgba(133, 116, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(133, 116, 255, 0.06) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.dark .bg-technical-grid {
+  background-image:
+    linear-gradient(to right, rgba(133, 116, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(133, 116, 255, 0.07) 1px, transparent 1px);
+  background-size: 64px 64px;
 }

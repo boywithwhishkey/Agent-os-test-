@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Activity, Wrench, ScrollText, ListChecks, Workflow, Bot, ArrowUpRight } from "lucide-react";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { BrandMark } from "@/components/ui/BrandMark";
+import { BrandMark, BRAND_TAGLINE } from "@/components/ui/BrandMark";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState, LoadingState, ErrorState } from "@/components/ui/States";
+import { ScrollReveal, StaggerGroup, StaggerItem } from "@/components/ui/ScrollReveal";
+import { staggerContainer, staggerItem } from "@/lib/motion";
 import { useHealth, useReadiness, useTools, useToolAudit } from "@/lib/api/queries";
 import { useSessionHistory } from "@/lib/session-history";
 import { formatRelativeTime } from "@/lib/utils";
@@ -25,49 +27,68 @@ export default function Dashboard() {
   const recentAudit = [...(audit.data ?? [])].reverse().slice(0, 6);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        description="Live status of the THYNACT platform and this session's activity."
-      />
-
-      <div className="relative overflow-hidden rounded-2xl border border-surface bg-gradient-to-br from-accent-violet/10 via-surface-raised to-accent-blue/5 px-5 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <BrandMark variant="full" />
-          <p className="text-sm text-content-muted">From intelligence to execution.</p>
+    <div className="space-y-10">
+      {/* System identity — deliberately not a bordered card. It emerges
+          straight out of the ambient canvas behind the app shell. */}
+      <div className="relative -mx-4 overflow-hidden px-4 py-10 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-accent-violet/[0.08] blur-[100px] animate-float" aria-hidden />
+        <div className="relative overflow-hidden">
+          <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-accent-violet-soft/60 to-transparent" aria-hidden />
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+            className="relative flex flex-col gap-3"
+          >
+            <motion.div variants={staggerItem}>
+              <BrandMark variant="full" size="lg" />
+            </motion.div>
+            <motion.p variants={staggerItem} className="max-w-lg text-sm text-content-muted">
+              {BRAND_TAGLINE} From intelligence to execution — this is the live state of your platform
+              and this session's activity.
+            </motion.p>
+          </motion.div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricCard
-          label="API status"
-          value={health.isLoading ? "…" : health.data ? "Online" : "Offline"}
-          tone={health.data ? "green" : "red"}
-          icon={<Activity className="h-4 w-4" />}
-          hint={readiness.data ? `${readiness.data.status}` : undefined}
-        />
-        <MetricCard
-          label="Tools available"
-          value={tools.isLoading ? "…" : (tools.data?.length ?? "—")}
-          tone="violet"
-          icon={<Wrench className="h-4 w-4" />}
-        />
-        <MetricCard
-          label="Audit events"
-          value={audit.isLoading ? "…" : (audit.data?.length ?? "—")}
-          tone="blue"
-          icon={<ScrollText className="h-4 w-4" />}
-        />
-        <MetricCard
-          label="This session"
-          value={tasks.length + workflowRuns.length + executions.length}
-          tone="amber"
-          icon={<ListChecks className="h-4 w-4" />}
-          hint="Tasks, runs & executions started here"
-        />
-      </div>
+      <StaggerGroup className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StaggerItem>
+          <MetricCard
+            label="API status"
+            value={health.isLoading ? "…" : health.data ? "Online" : "Offline"}
+            tone={health.data ? "green" : "red"}
+            icon={<Activity className="h-4 w-4" />}
+            hint={readiness.data ? `${readiness.data.status}` : undefined}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <MetricCard
+            label="Tools available"
+            value={tools.isLoading ? "…" : (tools.data?.length ?? "—")}
+            tone="violet"
+            icon={<Wrench className="h-4 w-4" />}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <MetricCard
+            label="Audit events"
+            value={audit.isLoading ? "…" : (audit.data?.length ?? "—")}
+            tone="blue"
+            icon={<ScrollText className="h-4 w-4" />}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <MetricCard
+            label="This session"
+            value={tasks.length + workflowRuns.length + executions.length}
+            tone="amber"
+            icon={<ListChecks className="h-4 w-4" />}
+            hint="Tasks, runs & executions started here"
+          />
+        </StaggerItem>
+      </StaggerGroup>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <ScrollReveal className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Recent audit activity</CardTitle>
@@ -89,7 +110,7 @@ export default function Dashboard() {
                 description="Tool executions and approval checks will show up here."
               />
             ) : (
-              <ul className="divide-y divide-surface">
+              <ul className="divide-y divide-white/5">
                 {recentAudit.map((event, i) => (
                   <li key={i} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                     <div className="min-w-0">
@@ -114,18 +135,20 @@ export default function Dashboard() {
             <QuickAction to="/tasks" icon={<ListChecks className="h-4 w-4" />} label="Create a task" />
           </CardContent>
         </Card>
-      </div>
+      </ScrollReveal>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Session activity</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
-          <SessionList title="Tasks" entries={tasks} to="/tasks" />
-          <SessionList title="Workflow runs" entries={workflowRuns} to="/workflows/runs" />
-          <SessionList title="Runtime executions" entries={executions} to="/runtime" />
-        </CardContent>
-      </Card>
+      <ScrollReveal delay={0.05}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Session activity</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-3">
+            <SessionList title="Tasks" entries={tasks} to="/tasks" />
+            <SessionList title="Workflow runs" entries={workflowRuns} to="/workflows/runs" />
+            <SessionList title="Runtime executions" entries={executions} to="/runtime" />
+          </CardContent>
+        </Card>
+      </ScrollReveal>
     </div>
   );
 }
@@ -134,7 +157,7 @@ function QuickAction({ to, icon, label }: { to: string; icon: ReactNode; label: 
   return (
     <Link
       to={to}
-      className="focus-ring flex items-center gap-2.5 rounded-lg border border-surface px-3 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:border-accent-violet/30 hover:bg-accent-violet/5 hover:text-accent-violet"
+      className="focus-ring flex items-center gap-2.5 rounded-lg border border-hairline px-3 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:border-accent-violet/30 hover:bg-accent-violet/5 hover:text-accent-violet"
     >
       {icon}
       {label}

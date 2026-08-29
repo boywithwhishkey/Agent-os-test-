@@ -43,7 +43,7 @@ export function AgentCard({
   return (
     <motion.div
       layout
-      className="overflow-hidden rounded-xl border border-surface bg-surface-raised"
+      className="glass-soft overflow-hidden rounded-xl border border-hairline"
     >
       <button
         onClick={() => setOpen((o) => !o)}
@@ -65,7 +65,7 @@ export function AgentCard({
         {open ? <ChevronDown className="h-4 w-4 text-content-muted" /> : <ChevronRight className="h-4 w-4 text-content-muted" />}
       </button>
       {open && (
-        <div className="border-t border-surface bg-surface-canvas px-4 py-3">
+        <div className="border-t border-hairline px-4 py-3">
           {error ? (
             <p className="text-sm text-accent-red">{error}</p>
           ) : (

@@ -53,7 +53,7 @@ export function ConnectorCard({
       >
         <CardContent className="flex flex-1 flex-col gap-3 p-4">
           <div className="flex items-start justify-between gap-2">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-surface bg-surface-hover text-content-secondary transition-colors group-hover:border-accent-violet/30 group-hover:text-accent-violet">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-hairline bg-surface-hover text-content-secondary transition-colors group-hover:border-accent-violet/30 group-hover:text-accent-violet">
               <Icon className="h-5 w-5" />
             </span>
             {comingSoon ? <Badge tone="neutral">Coming soon</Badge> : <StatusBadge status={connector.status} />}
@@ -80,7 +80,7 @@ export function ConnectorCard({
           </div>
 
           {connector.last_check && (
-            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-surface pt-2.5 text-xs text-content-muted">
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 border-t border-hairline pt-2.5 text-xs text-content-muted">
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {formatRelativeTime(connector.last_check)}
               </div>

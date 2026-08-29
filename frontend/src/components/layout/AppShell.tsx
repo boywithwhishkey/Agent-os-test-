@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { CommandPalette } from "./CommandPalette";
+import { AmbientBackground } from "./AmbientBackground";
+import { pageEnter } from "@/lib/motion";
 
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -21,21 +25,32 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="flex min-h-screen overflow-x-hidden bg-surface-canvas">
+    <div className="relative flex min-h-screen overflow-x-hidden bg-surface-canvas">
+      <AmbientBackground />
       <Sidebar
         collapsed={collapsed}
         onToggle={() => setCollapsed((c) => !c)}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <Topbar onOpenMobileNav={() => setMobileOpen(true)} onOpenCommandPalette={() => setPaletteOpen(true)} />
         <main
           id="main-content"
           tabIndex={-1}
           className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8"
         >
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              variants={pageEnter}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { Button } from "./Button";
+import { drawerMotion } from "@/lib/motion";
 
 export function Drawer({
   open,
@@ -37,13 +38,13 @@ export function Drawer({
           <motion.div
             role="dialog"
             aria-modal="true"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "tween", duration: 0.2 }}
-            className="relative z-10 flex h-full w-full max-w-md flex-col border-l border-surface bg-surface-raised shadow-xl"
+            initial={drawerMotion.initial}
+            animate={drawerMotion.animate}
+            exit={drawerMotion.exit}
+            transition={drawerMotion.transition}
+            className="glass-focus relative z-10 flex h-full w-full max-w-md flex-col border-l border-hairline"
           >
-            <div className="flex items-center justify-between border-b border-surface px-5 py-4">
+            <div className="flex items-center justify-between border-b border-hairline px-5 py-4">
               <h2 className="text-sm font-semibold text-content-primary">{title}</h2>
               <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close panel">
                 <X className="h-4 w-4" />

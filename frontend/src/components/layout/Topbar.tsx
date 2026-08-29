@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, Search, Moon, Sun, Monitor, KeyRound, Settings as SettingsIcon } from "lucide-react";
 import { HealthIndicator } from "./HealthIndicator";
+import { AccountPopover } from "./AccountPopover";
 import { useTheme } from "@/lib/theme";
 import { isApiConfigured } from "@/lib/api/config";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +22,7 @@ export function Topbar({
   const themeIcon = theme === "dark" ? <Moon className="h-4 w-4" /> : theme === "light" ? <Sun className="h-4 w-4" /> : <Monitor className="h-4 w-4" />;
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-surface bg-surface-raised/90 px-4 backdrop-blur-md">
+    <header className="glass-ambient sticky top-0 z-30 flex h-14 items-center gap-3 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-gradient-to-b after:from-surface-canvas/60 after:to-transparent">
       <button
         onClick={onOpenMobileNav}
         className="focus-ring rounded-md p-1.5 text-content-secondary hover:bg-surface-hover lg:hidden"
@@ -30,13 +31,15 @@ export function Topbar({
         <Menu className="h-5 w-5" />
       </button>
 
+      <AccountPopover />
+
       <button
         onClick={onOpenCommandPalette}
-        className="focus-ring flex flex-1 max-w-md items-center gap-2 rounded-lg border border-surface bg-surface-canvas px-3 py-1.5 text-sm text-content-muted hover:border-accent-violet/30"
+        className="focus-ring flex flex-1 max-w-md items-center gap-2 rounded-lg border border-hairline bg-surface-hover/60 px-3 py-1.5 text-sm text-content-muted hover:border-accent-violet/30"
       >
         <Search className="h-3.5 w-3.5" />
         <span className="flex-1 text-left">Search or jump to…</span>
-        <kbd className="hidden rounded border border-surface bg-surface-hover px-1.5 py-0.5 font-mono text-[10px] sm:inline">
+        <kbd className="hidden rounded border border-hairline bg-surface-hover px-1.5 py-0.5 font-mono text-[10px] sm:inline">
           ⌘K
         </kbd>
       </button>
@@ -58,7 +61,7 @@ export function Topbar({
           </Button>
           {themeMenuOpen && (
             <div
-              className="absolute right-0 top-full z-40 mt-1.5 w-36 rounded-lg border border-surface bg-surface-raised p-1 shadow-lg"
+              className="glass-focus absolute right-0 top-full z-40 mt-1.5 w-36 rounded-lg border border-hairline p-1"
               onMouseLeave={() => setThemeMenuOpen(false)}
             >
               {(["dark", "light", "system"] as const).map((option) => (

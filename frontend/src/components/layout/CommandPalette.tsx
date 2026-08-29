@@ -75,9 +75,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-surface bg-surface-raised shadow-2xl"
+            className="glass-focus relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-hairline"
           >
-            <div className="relative border-b border-surface p-3">
+            <div className="relative border-b border-hairline p-3">
               <Search className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-content-muted" />
               <Input
                 autoFocus
@@ -111,9 +111,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 </li>
               ))}
             </ul>
-            <div className="flex items-center justify-between border-t border-surface px-3 py-2">
+            <div className="flex items-center justify-between border-t border-hairline px-3 py-2">
               <BrandMark variant="mark" size="sm" />
-              <kbd className="rounded border border-surface bg-surface-hover px-1.5 py-0.5 font-mono text-[10px] text-content-muted">
+              <kbd className="rounded border border-hairline bg-surface-hover px-1.5 py-0.5 font-mono text-[10px] text-content-muted">
                 Esc to close
               </kbd>
             </div>

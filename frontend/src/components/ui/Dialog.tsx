@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./Button";
+import { modalMotion } from "@/lib/motion";
 
 interface DialogProps {
   open: boolean;
@@ -48,16 +49,16 @@ export function Dialog({ open, onClose, title, description, children, footer, si
             role="dialog"
             aria-modal="true"
             aria-labelledby="dialog-title"
-            initial={{ opacity: 0, scale: 0.97, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 8 }}
-            transition={{ duration: 0.15 }}
+            initial={modalMotion.initial}
+            animate={modalMotion.animate}
+            exit={modalMotion.exit}
+            transition={modalMotion.transition}
             className={cn(
-              "relative z-10 w-full rounded-xl border border-surface bg-surface-raised shadow-xl focus:outline-none",
+              "glass-focus relative z-10 w-full rounded-2xl border border-hairline focus:outline-none",
               sizeStyles[size]
             )}
           >
-            <div className="flex items-start justify-between gap-3 border-b border-surface px-5 py-4">
+            <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-4">
               <div>
                 <h2 id="dialog-title" className="text-sm font-semibold text-content-primary">
                   {title}
@@ -69,7 +70,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
               </Button>
             </div>
             <div className="max-h-[70vh] overflow-y-auto px-5 py-4">{children}</div>
-            {footer && <div className="flex justify-end gap-2 border-t border-surface px-5 py-3">{footer}</div>}
+            {footer && <div className="flex justify-end gap-2 border-t border-hairline px-5 py-3">{footer}</div>}
           </motion.div>
         </div>
       )}

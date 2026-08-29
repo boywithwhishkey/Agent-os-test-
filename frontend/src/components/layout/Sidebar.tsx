@@ -1,5 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { ChevronsLeft } from "lucide-react";
+import { motion } from "framer-motion";
 import { navGroups } from "@/lib/nav";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,8 @@ export function Sidebar({
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }) {
+  const location = useLocation();
+
   return (
     <>
       {mobileOpen && (
@@ -26,12 +29,12 @@ export function Sidebar({
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-surface bg-surface-raised transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
+          "glass-soft fixed inset-y-0 left-0 z-50 flex flex-col border-r border-hairline transition-[width] duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
           collapsed ? "lg:w-[68px]" : "lg:w-64",
           mobileOpen ? "w-64 translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-surface px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-hairline px-4">
           <div className="overflow-hidden">
             <BrandMark variant={collapsed ? "mark" : "compact"} size="sm" />
           </div>
@@ -53,26 +56,34 @@ export function Sidebar({
                 </p>
               )}
               <div className="space-y-0.5">
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === "/"}
-                    onClick={onCloseMobile}
-                    className={({ isActive }) =>
-                      cn(
-                        "focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                {group.items.map((item) => {
+                  const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.to === "/"}
+                      onClick={onCloseMobile}
+                      className={cn(
+                        "focus-ring relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
                         isActive
-                          ? "bg-accent-violet/10 text-accent-violet"
+                          ? "text-accent-violet"
                           : "text-content-secondary hover:bg-surface-hover hover:text-content-primary"
-                      )
-                    }
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <item.icon className="h-4 w-4 shrink-0" />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                  </NavLink>
-                ))}
+                      )}
+                      title={collapsed ? item.label : undefined}
+                    >
+                      {isActive && (
+                        <motion.span
+                          layoutId="sidebar-active-pill"
+                          className="absolute inset-0 rounded-lg bg-accent-violet/10"
+                          transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                        />
+                      )}
+                      <item.icon className="relative z-10 h-4 w-4 shrink-0" />
+                      {!collapsed && <span className="relative z-10 truncate">{item.label}</span>}
+                    </NavLink>
+                  );
+                })}
               </div>
             </div>
           ))}

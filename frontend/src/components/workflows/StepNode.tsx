@@ -25,7 +25,7 @@ const statusStyles: Record<
   StepStatus,
   { border: string; icon: typeof CheckCircle2 | null; className: string; glow?: string }
 > = {
-  pending: { border: "border-surface", icon: null, className: "" },
+  pending: { border: "border-hairline", icon: null, className: "" },
   running: {
     border: "border-accent-blue",
     icon: Loader2,
@@ -34,7 +34,7 @@ const statusStyles: Record<
   },
   completed: { border: "border-accent-green", icon: CheckCircle2, className: "text-accent-green" },
   failed: { border: "border-accent-red", icon: XCircle, className: "text-accent-red" },
-  skipped: { border: "border-surface", icon: null, className: "text-content-muted" },
+  skipped: { border: "border-hairline", icon: null, className: "text-content-muted" },
   waiting_approval: {
     border: "border-accent-amber",
     icon: ShieldAlert,
@@ -53,13 +53,13 @@ export function StepNode({ data, selected }: NodeProps & { data: StepNodeData })
   return (
     <div
       className={cn(
-        "min-w-[180px] rounded-lg border-2 bg-surface-raised px-3 py-2.5 shadow-sm transition-colors",
-        invalid ? "border-accent-red border-dashed" : statusStyle?.border ?? "border-surface",
+        "glass-soft min-w-[180px] rounded-lg border-2 px-3 py-2.5 transition-colors",
+        invalid ? "border-accent-red border-dashed" : statusStyle?.border ?? "border-hairline",
         !invalid && statusStyle?.glow,
         selected && "ring-2 ring-accent-violet/50"
       )}
     >
-      <NodeToolbar isVisible={selected} position={Position.Top} className="flex gap-1 rounded-lg border border-surface bg-surface-raised p-1 shadow-lg">
+      <NodeToolbar isVisible={selected} position={Position.Top} className="glass-focus flex gap-1 rounded-lg border border-hairline p-1">
         <button
           onClick={data.onEdit}
           className="focus-ring flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-content-secondary hover:bg-surface-hover hover:text-content-primary"
