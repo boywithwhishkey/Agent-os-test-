@@ -69,19 +69,22 @@ focused follow-up, not speculatively):
 - All of the above are optional visual depth, not correctness work — never
   let them block or complicate a real feature/bugfix.
 
-## Gold/red ambient background — optional extensions
+## Ambient background palette — optional extensions
 
-This session (see 02_CURRENT_STATE.md) scoped the black/gold/deep-red
-gradient direction to the ambient/background system only (`body`
-background-image, `AmbientBackground`'s glows/grid/data points, Dashboard's
-hero glow/scan-line) — interactive accents (buttons, links, nav active
-state, the BrandMark wordmark gradient) stayed violet/blue deliberately,
-since the brief's background section didn't ask for a full brand recolor
-and that's a bigger identity decision than this pass warranted. If a
-future session is explicitly asked to extend the gold/red direction
+Two sessions ago the ambient/background system (only — not interactive
+accents) was retinted to a gold/deep-red direction; the next session
+replaced that with a more specific cream/bronze/deep-navy reference
+palette (`--color-ambient-cream`/`-bronze`/`-navy`, see 00_START_HERE.md
+and 02_CURRENT_STATE.md HEAD `8a9dd81`) — treat cream/bronze/navy as
+current, gold/red as superseded/stale if you see it referenced anywhere
+old. Both passes deliberately left interactive accents (buttons, links,
+nav active state, the BrandMark wordmark gradient) violet/blue, since
+neither brief's background section asked for a full brand recolor and
+that's a bigger identity decision than either pass warranted. If a future
+session is explicitly asked to extend the cream/bronze/navy direction
 further (e.g. into BrandMark or primary buttons), do it as its own
 deliberate scoped task, not as a side effect of an unrelated change — and
-keep `--color-ambient-wine` (decorative) and `--color-accent-red`
+keep the `ambient-*` tokens (decorative) and `--color-accent-red`
 (status: error/offline) separate regardless.
 - `ScrollReveal` was only added to the Integrations page's "All
   integrations" section (the largest block) — Currently

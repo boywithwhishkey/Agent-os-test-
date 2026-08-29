@@ -68,15 +68,22 @@ below this point can be done by an agent. These specifically cannot:
   layers — Sidebar + Topbar + every Card on a page simultaneously), and
   Dashboard's scroll-reveal timing actually feeling smooth rather than
   janky.
-- **Highest-priority single check, next session**: confirm the
-  `AccountPopover` fix (HEAD `4eb018a`) actually opens correctly and stays
-  on-screen in a real browser — it was `right-0`-anchored near the
-  toolbar's left edge (a real, code-verifiable bug matching "the login/
-  account option is not opening properly"), now `left-0`-anchored with a
-  viewport-capped width. Also confirm the `HeartbeatLine` ECG waveform
+- **Highest-priority single check, still true across three sessions now**:
+  confirm the `AccountPopover` fix (introduced HEAD `4eb018a`) actually
+  opens correctly and stays on-screen in a real browser — it was
+  `right-0`-anchored near the toolbar's left edge (a real,
+  code-verifiable bug matching "the login/account option is not opening
+  properly"), now `left-0`-anchored with a viewport-capped width. Also
+  confirm the `HeartbeatLine` ECG waveform
   (`components/ui/HeartbeatLine.tsx`) actually renders and loops smoothly
   — it uses SVG SMIL `animateTransform`, which vitest/jsdom does not
-  meaningfully execute, so passing tests only prove it doesn't crash.
+  meaningfully execute, so passing tests only prove it doesn't crash. And
+  now also: does the cream/bronze/deep-navy background (HEAD `8a9dd81`)
+  actually read as premium/elegant rather than muddy against near-black —
+  this has been retuned twice by reasoning alone, never seen rendered.
+  **If browser tooling becomes available, this is the very first thing to
+  spend it on** — every session since HEAD `70cf378` has added more
+  code-reasoned-but-unseen visual changes on top of the last.
 
 ## 4. Connectors/integrations — STATUS: code-complete, NEEDS CREDENTIALS to go live
 - DONE (this session): Integration Hub UX overhaul (neutral setup states,
@@ -171,7 +178,7 @@ session.
 - Before the next commit, re-run: `python -m pytest tests/ -q` (backend,
   208 tests — not re-run this session since no backend code changed),
   `pnpm typecheck && pnpm lint && pnpm test && pnpm build` (frontend, 43
-  tests, run from `frontend/`). All were green as of commit `4eb018a`.
+  tests, run from `frontend/`). All were green as of commit `8a9dd81`.
 
 ## 9. Production verification — STATUS: VERIFIED as of this session
 - Re-verify after any new push: `curl https://api.thynact.com/health`,

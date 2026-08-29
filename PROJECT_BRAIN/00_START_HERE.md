@@ -146,7 +146,13 @@ primitives rather than reinventing bordered cards:
   wherever a surface only needs a whisper of separation rather than a
   visible outline; `border-surface` itself is untouched and still used for
   genuinely interactive chrome (buttons, inputs, tabs) where a visible edge
-  is the correct affordance, not "boxiness".
+  is the correct affordance, not "boxiness". As of HEAD `8a9dd81` this
+  sweep is complete app-wide: the only remaining `border-surface`/
+  `bg-surface-raised` usages are that interactive chrome
+  (`Button`/`Input`/`Badge`/`Tabs`/`Toast`) and the React Flow `MiniMap`
+  (needs an opaque background to stay legible over the canvas). A future
+  "remove hard borders" request should start from that premise — grep for
+  `border-surface` first rather than assuming there's more to do.
 - **`GlassSurface`** (`components/ui/GlassSurface.tsx`) — the base
   translucent-pane primitive (`level: ambient|soft|panel|focus`).
 - **`Card`/`MetricCard`** (`components/ui/Card.tsx`, `MetricCard.tsx`) were
@@ -196,14 +202,19 @@ primitives rather than reinventing bordered cards:
   optional `graphic` slot). Checks Framer Motion's `useReducedMotion`
   itself, since SMIL animation isn't touched by the global CSS
   `prefers-reduced-motion` override that neutralizes everything else.
-- **Ambient background color direction**: `--color-ambient-wine` (a deep
-  muted red, `index.css`) plus the existing `--color-accent-gold` drive a
-  faint black/gold/deep-red radial-gradient `body` background and
-  `AmbientBackground`'s mesh glows/grid/data points in dark mode.
-  `--color-ambient-wine` is deliberately a separate token from
-  `--color-accent-red` — the latter stays reserved for real error/offline
-  status everywhere else in the UI; never repurpose it for decoration, and
-  never use `--color-ambient-wine` for a status color.
+- **Ambient background color direction**: `--color-ambient-cream`
+  (`#f5e9dd`), `--color-ambient-bronze` (`#a67c52`), and
+  `--color-ambient-navy` (`#122d70`) — a specific reference palette given
+  in a later session — drive a faint cream/bronze/deep-navy
+  radial-gradient `body` background over a near-black foundation, plus
+  `AmbientBackground`'s mesh glows/data points, in dark mode. These
+  superseded an earlier `--color-ambient-wine` (deep red) direction from
+  the session in between — if you see `ambient-wine` referenced anywhere
+  it's stale, the palette is cream/bronze/navy now. All three
+  `ambient-*` tokens are deliberately separate from `--color-accent-*`
+  (interactive/status tokens, especially `--color-accent-red` which stays
+  reserved for real error/offline status) — never repurpose a status
+  token for decoration, and never use an `ambient-*` token for status.
 
 ## Coding & deployment safety conventions (from CLAUDE.md, still binding)
 

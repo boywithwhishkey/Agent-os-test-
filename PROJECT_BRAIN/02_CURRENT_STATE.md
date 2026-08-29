@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `4eb018a`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `8a9dd81`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -380,6 +380,43 @@ directories.
   - Verified via `pnpm typecheck`/`pnpm lint`/`pnpm test` (43/43)/`pnpm
     build` — all clean. No backend code touched this session.
 
+- **Cream/bronze/deep-navy background palette + final border sweep (this
+  session, HEAD `8a9dd81`).** A third consecutive premium-UI pass; a new,
+  more specific reference palette was given (`#F5E9DD` cream / `#A67C52`
+  bronze / `#122D70` deep navy over near-black), which **supersedes** the
+  prior session's gold/deep-red ambient direction. Replaced
+  `--color-ambient-wine` with `--color-ambient-cream`/`-bronze`/`-navy`
+  (index.css); reworked `body`'s dark-mode gradient and
+  `AmbientBackground`'s mesh glows/data points and Dashboard's hero
+  glow/scan-line to match. `--color-accent-*` (interactive/status tokens)
+  were left untouched, same reasoning as before — this is scoped to
+  ambient decoration, not a brand recolor. Also finished the whole-app
+  hard-border sweep started two sessions ago: `Skeleton`'s loading
+  placeholder, `JSONViewer`, `MemoryGraph`'s hover panel,
+  `OrchestrationPipeline`/`Timeline`'s pending-state ring color —
+  `border-surface` → `border-hairline` (+ `glass-*` where it's a
+  standalone panel). What's left using `border-surface`/
+  `bg-surface-raised` is now only legitimate interactive-affordance
+  chrome (`Button`/`Input`/`Badge`/`Tabs`/`Toast`) and the React Flow
+  `MiniMap` (needs an opaque background to stay legible over the canvas)
+  — there is no more "boxy card" surface left to soften; a future request
+  to "remove more hard borders" should start from that premise, not
+  re-sweep from scratch. `MetricCard` also got more padding, an
+  uppercase-tracked label, and larger/tighter value type for stronger
+  hierarchy (no data changes).
+  - **Everything else this new request asked for** — the old Dashboard
+    heading block removed, the borderless hero, the account-icon bug fix,
+    the waveform/heartbeat API status language (green online / amber
+    connecting / red straight-line offline), the Integrations honest
+    states and Search/Popular/Currently-integrated/Ready-to-connect
+    structure — **was already implemented and verified in the
+    immediately preceding two sessions** (HEAD `70cf378` then `4eb018a`)
+    and was re-confirmed still present, not re-built. See those entries
+    above for implementation detail; nothing new was needed for them this
+    session beyond the palette/border items above.
+  - Verified via `pnpm typecheck`/`pnpm lint`/`pnpm test` (43/43)/`pnpm
+    build` — all clean. No backend code touched.
+
 ## PARTIAL
 
 - **Workflow builder** is functional and has 3/4 flagship features (node
@@ -441,7 +478,11 @@ directories.
   has still not actually been seen opening correctly in a browser. Same
   for the new `HeartbeatLine` SMIL animation (vitest/jsdom passing only
   proves it doesn't crash, not that the waveform visibly loops/scales
-  correctly) and the gold/red background gradient's real visual balance.
+  correctly) and the ambient background gradient's real visual balance —
+  **reconfirmed a third time this session**, now for the cream/bronze/
+  navy palette that superseded the prior gold/red one; the exact opacity
+  mix (5-9% cream/bronze, 22% navy) was tuned by reasoning about contrast
+  against the near-black base, not by looking at a rendered page.
 - **No production API key available to this session.** Confirmed one is
   configured on Render (`401` not `503` on protected routes), but its value
   isn't available here, so authenticated production flows (create task,
