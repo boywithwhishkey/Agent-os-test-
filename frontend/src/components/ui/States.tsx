@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Inbox, Loader2, WifiOff, Clock, KeyRound, SearchX } from "lucide-react";
+import { AlertTriangle, Inbox, Loader2, WifiOff, Clock, Lock, SearchX } from "lucide-react";
 import { Button } from "./Button";
 import { ApiError } from "@/lib/api/client";
 
@@ -16,7 +16,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-surface bg-surface-canvas px-6 py-14 text-center">
+    <div className="glass-ambient flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-hairline px-6 py-14 text-center">
       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-hover text-content-muted">
         {icon ?? <Inbox className="h-5 w-5" />}
       </div>
@@ -72,14 +72,16 @@ function describeError(error: unknown): { title: string; description: string; ic
 // rules, applied app-wide here rather than only on the Integrations page).
 function AuthRequiredState({ description }: { description: string }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-surface bg-surface-canvas px-4 py-3.5 text-sm text-content-secondary">
-      <span className="flex items-center gap-2">
-        <KeyRound className="h-4 w-4 shrink-0 text-accent-amber" />
+    <div className="glass-soft flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline px-4 py-3.5 text-sm text-content-secondary">
+      <span className="flex items-center gap-2.5">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-gold/10 text-accent-gold">
+          <Lock className="h-3.5 w-3.5" />
+        </span>
         {description}
       </span>
       <Link
         to="/settings"
-        className="focus-ring shrink-0 rounded-lg border border-surface px-3 py-1.5 text-xs font-medium text-content-primary hover:bg-surface-hover"
+        className="focus-ring shrink-0 rounded-lg border border-hairline px-3 py-1.5 text-xs font-medium text-content-primary hover:bg-surface-hover"
       >
         Configure API key
       </Link>
@@ -95,7 +97,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
   const { title, description, icon } = describeError(error);
   const correlationId = error instanceof ApiError ? error.correlationId : null;
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-accent-red/25 bg-accent-red/5 px-6 py-14 text-center">
+    <div className="glass-soft flex flex-col items-center justify-center gap-3 rounded-xl border border-accent-red/20 px-6 py-14 text-center">
       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-red/10 text-accent-red">
         {icon}
       </div>

@@ -22,14 +22,16 @@ export function AccountPopover() {
 
   useEffect(() => {
     if (!open) return;
-    const onClick = (e: MouseEvent) => {
+    // pointerdown (not click) so this can't race the toggle button's own
+    // click handler, and so it fires consistently on touch as well as mouse.
+    const onPointerDown = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onClick);
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
@@ -44,8 +46,10 @@ export function AccountPopover() {
     <div className="relative" ref={ref}>
       <Tooltip content={configured ? "Operator session" : "No operator session"}>
         <button
+          type="button"
           onClick={() => setOpen((o) => !o)}
           aria-label="Account and operator session"
+          aria-haspopup="menu"
           aria-expanded={open}
           className={cn(
             "focus-ring relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full glass-soft border border-hairline text-content-secondary transition-colors hover:text-accent-violet"
@@ -71,7 +75,7 @@ export function AccountPopover() {
             animate={modalMotion.animate}
             exit={modalMotion.exit}
             transition={modalMotion.transition}
-            className="glass-focus absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-hairline"
+            className="glass-focus absolute left-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-hairline"
           >
             <div className="flex items-center gap-2.5 border-b border-hairline px-4 py-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-violet/10 text-accent-violet">

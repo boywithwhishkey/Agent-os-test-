@@ -89,7 +89,7 @@ export default function Audit() {
               <option value="success">Success</option>
               <option value="failed">Failed</option>
             </Select>
-            <div className="flex rounded-lg border border-surface p-0.5">
+            <div className="glass-ambient flex rounded-lg border border-hairline p-0.5">
               <button
                 onClick={() => setView("table")}
                 aria-label="Table view"
@@ -126,7 +126,7 @@ export default function Audit() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
-                  <tr className="border-b border-surface text-left text-xs uppercase tracking-wider text-content-muted">
+                  <tr className="border-b border-hairline text-left text-xs uppercase tracking-wider text-content-muted">
                     <th className="py-2 pr-3 font-medium">Tool</th>
                     <th className="py-2 pr-3 font-medium">Risk</th>
                     <th className="py-2 pr-3 font-medium">Outcome</th>
@@ -139,7 +139,7 @@ export default function Audit() {
                     <tr
                       key={i}
                       onClick={() => setSelected(event)}
-                      className="cursor-pointer border-b border-surface last:border-0 hover:bg-surface-hover"
+                      className="cursor-pointer border-b border-hairline last:border-0 hover:bg-surface-hover"
                     >
                       <td className="py-2.5 pr-3 font-medium text-content-primary">{event.tool}</td>
                       <td className="py-2.5 pr-3 capitalize text-content-muted">{event.risk.replace("_", " ")}</td>

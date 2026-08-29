@@ -37,7 +37,7 @@ import type { UnifiedConnector } from "@/lib/integration-hub";
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-surface py-2 text-sm last:border-0">
+    <div className="flex items-center justify-between gap-3 border-b border-hairline py-2 text-sm last:border-0">
       <dt className="text-content-muted">{label}</dt>
       <dd className="text-right text-content-primary">{children}</dd>
     </div>
@@ -53,7 +53,7 @@ function CapabilityGroup({ icon: Icon, title, items }: { icon: typeof Wrench; ti
       </p>
       <ul className="space-y-1">
         {items.map((item) => (
-          <li key={item.name} className="rounded-lg border border-surface bg-surface-canvas px-2.5 py-1.5 text-xs">
+          <li key={item.name} className="glass-ambient rounded-lg border border-hairline px-2.5 py-1.5 text-xs">
             <span className="font-medium text-content-primary">{item.name}</span>
             {item.description && <span className="ml-1.5 text-content-muted">{item.description}</span>}
           </li>
@@ -155,7 +155,7 @@ export function ConnectorDrawer({
       <div className="space-y-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-surface bg-surface-hover text-accent-violet">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-hairline bg-surface-hover text-accent-violet">
               <Icon className="h-5 w-5" />
             </span>
             <div>
@@ -171,13 +171,13 @@ export function ConnectorDrawer({
         {!authed && <AuthRequiredBanner />}
 
         {!connector.implemented ? (
-          <div className="rounded-lg border border-surface bg-surface-hover p-3 text-sm text-content-secondary">
+          <div className="rounded-lg border border-hairline bg-surface-hover p-3 text-sm text-content-secondary">
             Catalog only — this connector isn't built yet. It describes what THYNACT could
             support; no credentials are collected and no connection is possible until it's
             implemented.
           </div>
         ) : connector.status === "needs_setup" ? (
-          <div className="rounded-lg border border-surface bg-surface-hover p-3 text-sm text-content-secondary">
+          <div className="rounded-lg border border-hairline bg-surface-hover p-3 text-sm text-content-secondary">
             Requires setup. This connector needs{" "}
             {connector.requires.map((name, i) => (
               <span key={name}>
@@ -280,7 +280,7 @@ export function ConnectorDrawer({
         )}
 
         {connector.implemented && (
-          <div className="flex flex-wrap gap-2 border-t border-surface pt-4">
+          <div className="flex flex-wrap gap-2 border-t border-hairline pt-4">
             {isOAuth && connector.status !== "connected" ? (
               <Button
                 size="sm"
@@ -309,7 +309,7 @@ export function ConnectorDrawer({
         )}
 
         {connector.id === "n8n" && connector.configured && (
-          <div className="space-y-3 border-t border-surface pt-4">
+          <div className="space-y-3 border-t border-hairline pt-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Execute a workflow</p>
             <div>
               <Label htmlFor="drawer-workflow">Webhook workflow</Label>

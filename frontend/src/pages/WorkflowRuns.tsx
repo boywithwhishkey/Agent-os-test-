@@ -109,7 +109,7 @@ function RunDetail({ runId }: { runId: string | undefined }) {
   };
 
   return (
-    <div className="space-y-4 rounded-lg border border-surface bg-surface-canvas p-4">
+    <div className="glass-ambient space-y-4 rounded-lg border border-hairline p-4">
       <div className="flex items-center justify-between">
         <StatusBadge status={data.status} />
         <span className="font-mono text-xs text-content-muted">{data.id}</span>
@@ -118,7 +118,7 @@ function RunDetail({ runId }: { runId: string | undefined }) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[480px] text-sm">
           <thead>
-            <tr className="border-b border-surface text-left text-xs uppercase tracking-wider text-content-muted">
+            <tr className="border-b border-hairline text-left text-xs uppercase tracking-wider text-content-muted">
               <th className="py-2 pr-3 font-medium">Step</th>
               <th className="py-2 pr-3 font-medium">Status</th>
               <th className="py-2 pr-3 font-medium">Attempts</th>
@@ -127,7 +127,7 @@ function RunDetail({ runId }: { runId: string | undefined }) {
           </thead>
           <tbody>
             {steps.map((step) => (
-              <tr key={step.step_id} className="border-b border-surface last:border-0">
+              <tr key={step.step_id} className="border-b border-hairline last:border-0">
                 <td className="py-2 pr-3 font-medium text-content-primary">{step.step_id}</td>
                 <td className="py-2 pr-3">
                   <StatusBadge status={step.status} />

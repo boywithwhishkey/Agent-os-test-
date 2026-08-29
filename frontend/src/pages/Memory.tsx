@@ -127,7 +127,7 @@ function MemorySearchPanel() {
                 </option>
               ))}
             </Select>
-            <div className="flex rounded-lg border border-surface p-0.5">
+            <div className="glass-ambient flex rounded-lg border border-hairline p-0.5">
               <button
                 onClick={() => setView("list")}
                 aria-label="List view"

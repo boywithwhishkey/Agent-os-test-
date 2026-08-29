@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState, LoadingState, ErrorState } from "@/components/ui/States";
 import { ScrollReveal, StaggerGroup, StaggerItem } from "@/components/ui/ScrollReveal";
+import { HeartbeatLine } from "@/components/ui/HeartbeatLine";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 import { useHealth, useReadiness, useTools, useToolAudit } from "@/lib/api/queries";
 import { useSessionHistory } from "@/lib/session-history";
@@ -31,9 +32,9 @@ export default function Dashboard() {
       {/* System identity — deliberately not a bordered card. It emerges
           straight out of the ambient canvas behind the app shell. */}
       <div className="relative -mx-4 overflow-hidden px-4 py-10 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-accent-violet/[0.08] blur-[100px] animate-float" aria-hidden />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-accent-gold/[0.09] blur-[100px] animate-float" aria-hidden />
         <div className="relative overflow-hidden">
-          <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-accent-violet-soft/60 to-transparent" aria-hidden />
+          <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-accent-gold-light/60 to-transparent" aria-hidden />
           <motion.div
             initial="hidden"
             animate="visible"
@@ -59,6 +60,9 @@ export default function Dashboard() {
             tone={health.data ? "green" : "red"}
             icon={<Activity className="h-4 w-4" />}
             hint={readiness.data ? `${readiness.data.status}` : undefined}
+            graphic={
+              <HeartbeatLine state={health.isLoading ? "connecting" : health.data ? "online" : "offline"} width={72} height={18} />
+            }
           />
         </StaggerItem>
         <StaggerItem>

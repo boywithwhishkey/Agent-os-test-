@@ -119,7 +119,8 @@ export type FilterChip =
   | "ai"
   | "productivity"
   | "developer"
-  | "data";
+  | "data"
+  | "google";
 
 export function matchesFilter(connector: UnifiedConnector, filter: FilterChip): boolean {
   switch (filter) {

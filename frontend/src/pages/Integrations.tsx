@@ -5,6 +5,7 @@ import { Plug, Sparkles, Plus, Clock3 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { ConnectorCard } from "@/components/integrations/ConnectorCard";
 import { ConnectorDrawer } from "@/components/integrations/ConnectorDrawer";
@@ -40,6 +41,7 @@ const FILTERS: { value: FilterChip; label: string }[] = [
   { value: "developer", label: "Developer" },
   { value: "productivity", label: "Productivity" },
   { value: "data", label: "Data" },
+  { value: "google", label: "Google" },
 ];
 
 export default function Integrations() {
@@ -198,6 +200,7 @@ export default function Integrations() {
           )}
 
           {/* All integrations */}
+          <ScrollReveal>
           <section className="space-y-4">
             <div className="flex flex-col gap-3">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">All integrations</h2>
@@ -211,7 +214,7 @@ export default function Integrations() {
                       "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                       filter === f.value
                         ? "border-accent-violet/40 bg-accent-violet/10 text-accent-violet"
-                        : "border-surface text-content-muted hover:text-content-primary"
+                        : "glass-ambient border-hairline text-content-muted hover:text-content-primary"
                     )}
                   >
                     {f.label}
@@ -245,7 +248,7 @@ export default function Integrations() {
                 )}
 
                 {filteredComingSoon.length > 0 && (
-                  <div className="space-y-3 border-t border-surface pt-4">
+                  <div className="space-y-3 border-t border-hairline pt-4">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-content-muted">
                       Coming soon — no adapter built yet
                     </h3>
@@ -264,6 +267,7 @@ export default function Integrations() {
               Showing {filtered.length} of {allConnectors.length} integrations
             </p>
           </section>
+          </ScrollReveal>
         </>
       )}
 

@@ -8,6 +8,10 @@
 
   --color-accent-gold: #c8ad6d;
   --color-accent-gold-light: #ead9a6;
+  /* Ambient-only deep wine red for the background gradient/glow system —
+     deliberately distinct from --color-accent-red, which stays reserved
+     for real offline/error/failure status so the two are never confused. */
+  --color-ambient-wine: #7a2430;
   --color-accent-violet: #8574ff;
   --color-accent-violet-soft: #aa9fff;
   --color-accent-blue: #5bc7ff;
@@ -25,6 +29,7 @@
   --animate-grid-pan: grid-pan 60s linear infinite;
   --animate-float: float 6s ease-in-out infinite;
   --animate-scan: scan 5s ease-in-out infinite;
+  --animate-ecg-breathe: ecg-breathe 2.2s ease-in-out infinite;
 
   @keyframes pulse-slow {
     0%, 100% { opacity: 1; }
@@ -66,6 +71,10 @@
     10%, 90% { opacity: 0.5; }
     100% { transform: translateY(100%); opacity: 0; }
   }
+  @keyframes ecg-breathe {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 1; }
+  }
 }
 
 html {
@@ -86,6 +95,14 @@ body {
 }
 .dark body {
   background-color: #07080d;
+  /* Premium black/gold/deep-red gradient base — deliberately faint (6-9%
+     peak opacity) so it reads as elegant ambient depth, not a loud/gamer
+     RGB glow. Fixed so it doesn't reflow/tile while the page scrolls. */
+  background-image:
+    radial-gradient(ellipse 60rem 44rem at 12% -8%, color-mix(in srgb, var(--color-accent-gold) 9%, transparent), transparent 60%),
+    radial-gradient(ellipse 60rem 50rem at 92% 108%, color-mix(in srgb, var(--color-ambient-wine) 10%, transparent), transparent 60%),
+    radial-gradient(ellipse 70rem 70rem at 50% 40%, transparent 0%, #05060a 100%);
+  background-attachment: fixed;
   color: #f7f6f2;
 }
 
@@ -216,7 +233,7 @@ body {
 }
 .dark .bg-technical-grid {
   background-image:
-    linear-gradient(to right, rgba(133, 116, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(133, 116, 255, 0.07) 1px, transparent 1px);
+    linear-gradient(to right, rgba(200, 173, 109, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(200, 173, 109, 0.055) 1px, transparent 1px);
   background-size: 64px 64px;
 }

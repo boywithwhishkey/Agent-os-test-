@@ -9,12 +9,15 @@ export function MetricCard({
   icon,
   tone = "neutral",
   hint,
+  graphic,
 }: {
   label: string;
   value: ReactNode;
   icon?: ReactNode;
   tone?: "neutral" | "violet" | "blue" | "green" | "red" | "amber";
   hint?: string;
+  /** Optional small visual under the hint — e.g. a HeartbeatLine for the API status metric. */
+  graphic?: ReactNode;
 }) {
   const toneStyles: Record<string, string> = {
     neutral: "text-content-primary",
@@ -52,6 +55,7 @@ export function MetricCard({
         {value}
       </motion.p>
       {hint && <p className="relative mt-1 text-xs text-content-muted">{hint}</p>}
+      {graphic && <div className="relative mt-2">{graphic}</div>}
     </motion.div>
   );
 }

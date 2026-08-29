@@ -48,7 +48,7 @@ function BackendNode({ name, backend, index }: { name: string; backend: string; 
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.25 }}
-      className="flex items-center gap-3 rounded-lg border border-surface bg-surface-canvas px-3 py-2.5"
+      className="flex items-center gap-3 glass-ambient rounded-lg border border-hairline px-3 py-2.5"
     >
       <span
         className={cn(
@@ -178,7 +178,7 @@ export default function SystemHealth() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-surface py-2 text-sm last:border-0">
+    <div className="flex items-center justify-between border-b border-hairline py-2 text-sm last:border-0">
       <dt className="capitalize text-content-muted">{label}</dt>
       <dd className="text-content-primary">{children}</dd>
     </div>

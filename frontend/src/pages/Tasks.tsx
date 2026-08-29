@@ -174,7 +174,7 @@ function TaskLookupResult({ taskId }: { taskId: string | undefined }) {
   if (!data) return null;
 
   return (
-    <div className="space-y-2 rounded-lg border border-surface bg-surface-canvas p-4">
+    <div className="space-y-2 glass-ambient rounded-lg border border-hairline p-4">
       <div className="flex items-center justify-between">
         <StatusBadge status={data.status} />
         <Badge tone="gold" className="capitalize">

@@ -156,7 +156,7 @@ function ExecutionLookup({ executionId }: { executionId: string | undefined }) {
   if (!data) return null;
 
   return (
-    <div className="space-y-3 rounded-lg border border-surface bg-surface-canvas p-4">
+    <div className="space-y-3 glass-ambient rounded-lg border border-hairline p-4">
       <div className="flex items-center justify-between">
         <StatusBadge status={data.status} />
         <span className="text-xs text-content-muted">{data.attempts} attempts</span>
@@ -198,7 +198,7 @@ function RuntimeGaugesDisplay({ data }: { data: RuntimeStatus }) {
   const gaugeTone = usagePct >= 90 ? "bg-accent-red" : usagePct >= 60 ? "bg-accent-amber" : "bg-accent-green";
 
   return (
-    <div className="grid gap-3 rounded-lg border border-surface bg-surface-canvas p-3 sm:grid-cols-2">
+    <div className="grid gap-3 glass-ambient rounded-lg border border-hairline p-3 sm:grid-cols-2">
       <div className="space-y-1.5">
         <p className="flex items-center gap-1.5 text-xs font-medium text-content-muted">
           {isOpen ? <ShieldAlert className="h-3.5 w-3.5 text-accent-red" /> : <ShieldCheck className="h-3.5 w-3.5 text-accent-green" />}

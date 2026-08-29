@@ -116,7 +116,7 @@ export default function Settings() {
                 className={`focus-ring flex flex-1 flex-col items-center gap-1.5 rounded-lg border p-3 text-sm font-medium transition-colors ${
                   theme === option.value
                     ? "border-accent-violet/40 bg-accent-violet/10 text-accent-violet"
-                    : "border-surface text-content-secondary hover:bg-surface-hover"
+                    : "border-hairline text-content-secondary hover:bg-surface-hover"
                 }`}
               >
                 <option.icon className="h-4 w-4" />
