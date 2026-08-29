@@ -60,12 +60,16 @@ file at the end of every session so the next agent can start cold.
 - DONE: Orchestrate now has `OrchestrationPipeline` (connected-node
   researcher/builder/reviewer visualization with status rings and a
   filling progress line).
-- Continue the motion/visual pass on: Autonomous, Memory, Runtime, Audit,
-  System Health (see 07_DEFERRED_GOALS.md for the specific list of
-  enhancements per page). Note: Autonomous already has a working
-  `Timeline` component (planner/specialists/verifier/synthesis stages)
-  and `AgentCard` list from a prior session — reasonably solid as-is,
-  lower priority than the still-bare pages.
+- DONE: Memory now shows real match-percentage scores (backed by a real,
+  previously-discarded backend ranking score) with a staggered result
+  fade-in. Runtime now shows a live circuit-breaker badge + rate-limit
+  gauge (backed by new read-only status/usage getters + a new `GET
+  /api/v1/runtime/status` route). System Health now has a persistence/LLM
+  service map (backed by an enriched `/health` response).
+- Remaining: Autonomous (existing `Timeline` + `AgentCard` combo is
+  functional, lower priority), Memory graph/network view, Runtime
+  execution-timeline/circuit-breaker-diagram view, Audit timeline view
+  mode. See 07_DEFERRED_GOALS.md for specifics.
 - Continue the Workflows builder toward the flagship vision: node toolbar,
   context side panel, execution-pulse-along-edge animation, per-node
   validation highlighting.

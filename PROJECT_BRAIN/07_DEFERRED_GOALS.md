@@ -21,18 +21,21 @@ don't leave completed work listed here.
 
 ## Broader premium motion pass
 
-A dedicated animation/visual-direction pass (beyond what already exists
-from prior sessions) for:
-- Orchestration: animated researcher → builder → reviewer flow with
-  connecting-line and active-step-pulse visualization.
+A dedicated animation/visual-direction pass (beyond what already exists)
+for what's left:
 - Autonomous runs: parallel-specialist visualization, planner/verifier/
-  synthesis state animation, live job cards.
-- Memory: similarity-score visual ranking, graph/network-style view of
-  related memories.
-- Runtime: circuit-breaker state diagram, rate-limit gauge visualization.
+  synthesis state animation, live job cards (existing `Timeline` +
+  `AgentCard` combo is functional but not a dedicated visual pass).
+- Memory: graph/network-style view of related memories (similarity-score
+  visual ranking is DONE — see 02_CURRENT_STATE.md).
+- Runtime: a circuit-breaker state diagram / execution timeline view
+  (live badge + rate-limit gauge are DONE — see 02_CURRENT_STATE.md).
 - Audit: a timeline view mode as an alternative to the table.
-- System Health: a visual service-dependency map (API/DB/Redis/LLM/queue
-  nodes with animated health-check pulses).
+
+Done this session (removed from this list): Orchestration's researcher →
+builder → reviewer connected-node visualization
+(`OrchestrationPipeline.tsx`); System Health's persistence/LLM service
+map.
 
 ## Integrations / connectors
 

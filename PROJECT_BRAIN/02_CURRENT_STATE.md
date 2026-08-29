@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `e02f3fb`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `96baeae`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -38,6 +38,17 @@ resolution through the already-authenticated `gh` CLI) and retrying — no
 secrets were exposed, nothing destructive was done. If a future session
 hits the same "Invalid username or token" push error, try this first
 before assuming a deeper auth problem.
+
+Also: a broad `find / -iname ...` (or `bfs`-backed) filesystem-wide search
+launched in the background can run for over an hour and grow to several
+GB of RSS on this box, eventually starving memory (observed: 7.6/7.8GB
+used, causing frontend test timeouts that looked like flaky/broken tests
+but were actually system thrashing). If frontend tests suddenly start
+timing out with no related code change, check `free -h` and `ps aux
+--sort=-%mem` before assuming a regression — kill any stray `find`/`bfs`
+process consuming outsized memory (safe: read-only, no side effects) and
+retest. Avoid unscoped `find /` entirely; scope searches to specific
+directories.
 
 ## DONE (verified this session)
 
@@ -107,7 +118,27 @@ before assuming a deeper auth problem.
   only renders from the final per-job result, not fabricated in-flight
   step tracking — the backend orchestration call is a single synchronous
   request with no incremental per-step status while pending.
-- **Backend test suite: 132/132 passing** (`uv run pytest tests/ -q`).
+- **Real hybrid-search relevance scores in Memory.** The semantic memory
+  service (`app/memory/semantic.py`) already computed a real weighted
+  score (semantic + lexical + importance) per ranked result but discarded
+  it before returning from `/api/v1/memory/search`. Now attached as
+  optional `score`/`semantic_score`/`lexical_score` fields on
+  `MemoryRecord` (additive — existing writes/reads unaffected) and
+  rendered as a match-percentage bar on the Memory search page. Note: the
+  raw `score` can slightly exceed 1.0 due to an importance bonus term in
+  the ranking formula — the frontend clamps it to 0–100% for display.
+- **Real circuit-breaker/rate-limit visibility in Runtime.** Added
+  read-only `CircuitBreaker.status(key)` and
+  `SlidingWindowRateLimiter.usage(key)` getters (neither mutates state) and
+  a new `GET /api/v1/runtime/status?provider=&workflow=` route. The
+  Runtime page shows a live circuit-breaker badge (with recovery countdown
+  when open) and a rate-limit usage gauge, polling every 15s.
+- **Persistence/LLM visibility in System Health.** `/health` now also
+  returns `llm_provider` and a `backends` map (memory/task/workflow/
+  runtime/tool/queue → which backend each is using). System Health has a
+  new "Persistence map" card visualizing durable (postgres/redis) vs
+  ephemeral (memory) per subsystem.
+- **Backend test suite: 136/136 passing** (`uv run pytest tests/ -q`).
 - **Frontend: 23/23 tests passing** (`pnpm test`), **typecheck clean**
   (`pnpm typecheck`), **lint clean** — 0 errors, 2 pre-existing warnings
   unrelated to this session's changes (`Toast.tsx`, `theme.tsx`,
@@ -176,12 +207,12 @@ Report only variable **names** — no secret values known or requested.
 | Workflows | PARTIAL (see above) | Flagship-level polish not complete |
 | Workflow Runs | DONE (prior session) | Run details, resume, persistence via workflow backend |
 | Approvals | DONE (prior session) | Single-use pre-authorized grants (not a pending-request queue by design) |
-| Memory | DONE (prior session), motion pass PARTIAL | Semantic + lexical search, context, filters, delete |
-| Runtime | DONE (prior session), motion pass PARTIAL | Execute/retries/rate-limit/circuit-breaker/idempotency |
+| Memory | DONE, motion pass PARTIAL | Semantic + lexical search, context, filters, delete, real match-score bar + staggered result animation (this session); no graph/network view yet |
+| Runtime | DONE, motion pass PARTIAL | Execute/retries/rate-limit/circuit-breaker/idempotency, live circuit-breaker badge + rate-limit gauge (this session); no execution timeline view yet |
 | Tools | DONE (prior session) | List/execute/risk levels/approval-required/audit |
 | Integrations | DONE (this session) | Connector registry + test-connection, n8n only, extensible adapter architecture |
 | Audit | DONE (prior session) | Tool events, correlation IDs, status, timestamps |
-| Health | DONE (prior session) | Live `/health` + `/ready` |
+| Health | DONE | Live `/health` + `/ready` + persistence/LLM service map (this session) |
 | Settings | DONE (this session: About/brand section added) | API base URL + key (sessionStorage only), theme, About |
 | Persistence | PARTIAL — production is memory-only | Code supports Postgres/Redis backends (`app/persistence/`, `app/queue/redis_queue.py`) but production has none configured (see NEEDS CREDENTIALS) |
 | Responsive UI | UNVERIFIED at real breakpoints | Codebase has solid responsive primitives (`overflow-x-hidden`, `min-w-0`, mobile sidebar drawer, responsive grids) but has not been checked in an actual browser at the 7 target breakpoints this session |
