@@ -7,15 +7,9 @@ don't leave completed work listed here.
 
 ## Workflow builder — flagship-level polish
 
-- Node toolbar (contextual actions on a selected node without opening the
-  modal dialog).
 - Context side panel for editing a step in place, instead of the current
-  modal dialog.
-- Execution-pulse animation that visibly travels along an edge while a
-  connected step is running (currently: nodes glow, edges are statically
-  animated/violet, but there's no traveling pulse tied to live run state).
-- Per-node inline validation-error highlighting (currently: a single list
-  of validation errors rendered above the canvas).
+  modal dialog. (Node toolbar, execution-pulse-along-edge, and per-node
+  validation highlighting are DONE — see 02_CURRENT_STATE.md.)
 - Additional keyboard interactions beyond delete (e.g. arrow-key node
   nudging, multi-select via marquee, copy/paste steps).
 
@@ -39,7 +33,8 @@ for what's left:
 Done this session (removed from this list): Orchestration's researcher →
 builder → reviewer connected-node visualization
 (`OrchestrationPipeline.tsx`); System Health's persistence/LLM service
-map; Audit's table/timeline view toggle.
+map; Audit's table/timeline view toggle; Workflows' node toolbar,
+execution-pulse edges, and validation highlighting.
 
 ## Integrations / connectors
 

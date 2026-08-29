@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `05aca45`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `ec554d6`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -7,10 +7,14 @@ contradicting note elsewhere.
 
 ## PRODUCTION STATUS
 
-- **Live frontend:** https://app.thynact.com — HTTP 200. Verified the
-  served `index.html` asset hashes (`index-CZTmzMyb.js`, `index-P7gKThML.css`)
-  match a fresh local `pnpm build` of commit `6aae299` byte-for-byte —
-  Cloudflare Pages is deploying `origin/main` correctly and is fully current.
+- **Live frontend:** https://app.thynact.com — HTTP 200. Repeatedly
+  verified throughout this session (most recently at HEAD `ec554d6`) that
+  the served `index.html` asset hashes match a fresh local `pnpm build`
+  byte-for-byte — Cloudflare Pages deploys `origin/main` correctly,
+  usually within ~1-2 minutes of a push. Re-verify this the same way after
+  any future push: `pnpm build` locally, then compare
+  `dist/assets/index-*.{js,css}` filenames against what
+  `curl https://app.thynact.com/` serves.
 - **Live API:** https://api.thynact.com — `/health` returns
   `{"status":"ok","service":"THYNACT","environment":"development"}` (HTTP 200).
   `/ready` returns `{"status":"ready","checks":{}}` (HTTP 200). The empty
@@ -147,8 +151,18 @@ directories.
   correlation id through `ToolExecutor`/`ToolExecuteRequest` — not done
   blind without a real database to test the migration against (this repo
   has no `DATABASE_URL` available to this session).
+- **Workflows flagship features (3 of 4).** Per-node validation
+  highlighting (`invalidStepIds()` parses which step id a validation
+  error names, that node gets a dashed red ring); a node toolbar
+  (React Flow's built-in `NodeToolbar`, shown on selection, with Edit/
+  Delete); execution-pulse-along-edge (`PulseEdge.tsx`, a small dot
+  traveling via native SVG `animateMotion` whenever the connected step's
+  live run status is "running" — real state, not fabricated). The context
+  side panel (4th item) is intentionally not done — the existing modal
+  step editor works well and replacing it is a bigger UX change than this
+  pass warranted.
 - **Backend test suite: 136/136 passing** (`uv run pytest tests/ -q`).
-- **Frontend: 23/23 tests passing** (`pnpm test`), **typecheck clean**
+- **Frontend: 25/25 tests passing** (`pnpm test`), **typecheck clean**
   (`pnpm typecheck`), **lint clean** — 0 errors, 2 pre-existing warnings
   unrelated to this session's changes (`Toast.tsx`, `theme.tsx`,
   `react-refresh/only-export-components`), **production build clean**
@@ -156,23 +170,22 @@ directories.
 
 ## PARTIAL
 
-- **Workflow builder** is functional (create/run/status-aware nodes/
-  animated edges/minimap/controls) but not the full "flagship" vision from
-  the product brief: no node toolbar, no context side panel (editing is a
-  modal dialog), no execution-pulse animation traveling along an edge
-  during a run, no per-node validation-error highlighting (validation
-  errors currently render as a plain list above the canvas).
-- **Premium motion pass** has only been done for Dashboard (brand moment),
-  the API heartbeat, and the Workflows canvas this session. Orchestrate,
-  Autonomous, Agents, Memory, Runtime, Approvals, Tools, Audit, and System
-  Health still use the pre-existing (already reasonably polished — cards,
-  StatusBadge pulses, skeletons, toasts, command palette, Framer-Motion
-  modals/drawers) design system from prior sessions, but have not had a
-  dedicated additional animation/visual-direction pass this session.
-- **Backend test coverage for the connector registry** exists at the route
-  level (mocked adapters) — the underlying n8n `test_connection()` network
-  probe itself is not covered by an automated test (only manually reasoned
-  about); consider adding an `httpx.MockTransport`-based test for it.
+- **Workflow builder** is functional and has 3/4 flagship features (node
+  toolbar, validation highlighting, execution-pulse edges — see DONE
+  above); only the context side panel (editing is still a modal dialog,
+  deliberately) is not done.
+- **Premium motion pass** has been done this session for: Dashboard (brand
+  moment), API heartbeat, Workflows canvas, Orchestrate (pipeline
+  visualization), Memory (match-score bar), Runtime (circuit-breaker/
+  rate-limit gauges), System Health (persistence map), Audit (timeline
+  view). Remaining: Autonomous (existing `Timeline`+`AgentCard` combo is
+  functional, lower priority), Agents (static/informational by design —
+  see per-subsystem table), Approvals, Tools. These still use the
+  pre-existing (already reasonably polished) design system from prior
+  sessions without a dedicated additional pass.
+- **Connector registry test coverage** is now complete: route-level
+  coverage via mocked adapters, plus direct `httpx.MockTransport` tests
+  for `N8NWebhookAdapter.test_connection()` itself (see DONE above).
 
 ## BLOCKED (this session, environment-limited — not code issues)
 
@@ -190,7 +203,7 @@ directories.
   run, runtime execution, integration execute) could not be exercised
   end-to-end against the **live** API. They are however fully covered by
   the local backend test suite, which exercises the same code paths
-  in-process (129 tests, all passing).
+  in-process (136 tests, all passing).
 
 ## NEEDS CREDENTIALS
 
@@ -210,10 +223,10 @@ Report only variable **names** — no secret values known or requested.
 |---|---|---|
 | Dashboard | DONE (this session: brand moment added) | Metrics, recent audit, quick actions, session activity — all backed by real queries |
 | Tasks | DONE (prior session) | Create/retrieve, validation, error states — covered by `Tasks.test.tsx` + backend tests |
-| Orchestration | DONE (prior session), motion pass PARTIAL | researcher/builder/reviewer roles; no dedicated animated flow visualization yet |
+| Orchestration | DONE, motion pass DONE | researcher/builder/reviewer roles + `OrchestrationPipeline` connected-node visualization (this session) |
 | Autonomous | DONE (prior session), motion pass PARTIAL | planner/specialists/verifier/synthesis; no dedicated live-job-card visualization yet |
 | Agents | DONE, UI-only by design | Static/informational cards — there is no backend agent registry endpoint; agents are roles invoked through orchestration/autonomous runs, not standalone listable entities |
-| Workflows | PARTIAL (see above) | Flagship-level polish not complete |
+| Workflows | DONE, 3/4 flagship features done | Validation highlighting, node toolbar, edge pulse (this session); context side panel still deferred |
 | Workflow Runs | DONE (prior session) | Run details, resume, persistence via workflow backend |
 | Approvals | DONE (prior session) | Single-use pre-authorized grants (not a pending-request queue by design) |
 | Memory | DONE, motion pass PARTIAL | Semantic + lexical search, context, filters, delete, real match-score bar + staggered result animation (this session); no graph/network view yet |

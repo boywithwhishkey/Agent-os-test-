@@ -67,16 +67,15 @@ file at the end of every session so the next agent can start cold.
   /api/v1/runtime/status` route). System Health now has a persistence/LLM
   service map (backed by an enriched `/health` response).
 - DONE: Audit now has a Table/Timeline view toggle.
-- Remaining: Autonomous (existing `Timeline` + `AgentCard` combo is
-  functional, lower priority), Memory graph/network view, Runtime
-  execution-timeline/circuit-breaker-diagram view, Audit correlation-ID
-  quick-copy (needs a `DATABASE_URL`-backed migration — see
-  07_DEFERRED_GOALS.md). Workflows flagship features (node toolbar,
-  context panel, execution-pulse-along-edge) are still the biggest
-  remaining UI lift.
-- Continue the Workflows builder toward the flagship vision: node toolbar,
-  context side panel, execution-pulse-along-edge animation, per-node
-  validation highlighting.
+- DONE: Workflows now has a node toolbar (Edit/Delete on selection),
+  per-node validation-error highlighting, and execution-pulse-along-edge
+  animation (3 of the 4 flagship features).
+- Remaining: Workflows' context side panel (still a modal dialog —
+  deliberately left as-is, see 07_DEFERRED_GOALS.md). Autonomous (existing
+  `Timeline` + `AgentCard` combo is functional, lower priority), Memory
+  graph/network view, Runtime execution-timeline/circuit-breaker-diagram
+  view, Audit correlation-ID quick-copy (needs a `DATABASE_URL`-backed
+  migration — see 07_DEFERRED_GOALS.md).
 - Keep using the existing design system (`frontend/src/components/ui/*`,
   the `@theme` tokens/keyframes in `index.css`, Framer Motion, React Flow)
   — do not introduce new UI libraries.
