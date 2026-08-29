@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `776dd63`
+# CURRENT STATE — verified as of 2026-08-29, HEAD `8cae377`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
@@ -7,13 +7,13 @@ contradicting note elsewhere.
 
 ## PRODUCTION STATUS
 
-- **Live frontend:** https://app.thynact.com — as of the last push
-  (commit `8a9dd81`), HTTP 200 with the served asset hash confirmed
-  matching a fresh local build. Commit `776dd63` (the invisible-
-  background fix, portal `AccountPopover`, multi-cycle `HeartbeatLine`)
-  was committed locally but had **not yet been pushed** as of the start
-  of this session — see the entry below for what it contains. Re-verify
-  the asset hash the same way after it's pushed.
+- **Live frontend:** https://app.thynact.com — HTTP 200 confirmed this
+  session, before and after pushing `776dd63` + `8cae377`. Re-verify the
+  asset hash against a fresh local `pnpm build` after this push
+  completes and Cloudflare Pages picks it up (~60s historically) — not
+  done yet as of writing this entry, see the note at the end of this
+  session's work in 10_NEXT_STEPS.md for whether that follow-up
+  happened.
 - **Live API:** https://api.thynact.com — `/health` returns
   `{"status":"ok","service":"THYNACT","environment":"development","llm_provider":"mock",...}`
   (HTTP 200). `/ready` returns `{"status":"ready","checks":{}}` (HTTP 200).
@@ -468,6 +468,53 @@ directories.
     commit message. Not independently re-run this session since no code
     has changed since that commit. No backend code touched.
 
+- **Glass translucency retune + glass form fields + light-mode gradient
+  (this session, HEAD `8cae377`).** A new, more specific brief gave a
+  concrete alpha target (~0.04-0.16 for cards/sections) and named exact
+  surfaces that must not look opaque, including forms/inputs and
+  dropdowns. This session's audit found the central glass system
+  (`GlassSurface`, `Card`/`MetricCard`, `Sidebar`/`Topbar`, `Dialog`/
+  `Drawer`/`CommandPalette`/`AccountPopover`) was already architecturally
+  centralized exactly as the brief asked — no page had its own bespoke
+  opaque surface — so this was a one-file retune (`index.css`), not a
+  page-by-page rewrite:
+  - `.glass-ambient`/`.glass-soft`/`.glass-panel` alpha cut roughly 3-5x
+    in both themes (dark: 0.2/0.34/0.5 -> 0.06/0.1/0.15; light: 0.3/0.55/
+    0.72 -> 0.08/0.12/0.16) with blur bumped slightly (6/14/20px ->
+    9/16/22px) to compensate for legibility at the lower alpha.
+  - `.glass-focus` (dialogs/drawers/popovers/dropdowns — the tier that
+    overlays real page content, not just the ambient background)
+    deliberately kept as the most opaque tier per the brief's "slightly
+    stronger modal/overlay glass," but still cut substantially (dark
+    0.88->0.4, light 0.92->0.55) — no longer near-solid like before.
+  - New `.glass-field` tier (dark 0.28 / light 0.22 alpha, 10px blur) for
+    `Input`/`Textarea`/`Select` (`components/ui/Input.tsx`), which
+    previously used fully opaque `bg-surface-canvas`. This is a
+    **reversal** of an earlier session's explicit call that Input was
+    legitimate opaque "interactive chrome" alongside Button/Badge/Tabs/
+    Toast — the new brief specifically named forms/inputs as a surface
+    that must read as glass, so that precedent no longer applies to
+    Input specifically. Button/Badge/Tabs/Toast/the React Flow `MiniMap`
+    were left as-is (small interactive affordances or, for MiniMap, a
+    documented need for opaque contrast over the canvas) since the brief
+    didn't name them and changing them wasn't asked for.
+  - Light mode previously had **no** ambient gradient at all — only
+    `.dark body` did (`AmbientBackground`'s grid/glow/points layer runs
+    in both themes, but the base gradient wash was dark-only). Added a
+    light-mode gradient using the same `--color-ambient-cream/-bronze/
+    -navy` tokens (not new colors — reuses the existing palette per "no
+    random gradients") at much lower color-mix intensity (7-55% vs
+    dark's 16-48%) since a light background goes muddy far faster than
+    near-black.
+  - Verified via `pnpm typecheck`/`pnpm lint` (0 errors, 2 pre-existing
+    warnings)/`pnpm test` (48/48, no test changes needed)/`pnpm build` —
+    all clean. **Not visually verified in a real browser** — no browser
+    tooling available in this session either (Claude-in-Chrome tools were
+    not present); the alpha/blur values above were chosen by reasoning
+    about contrast, not by rendering and looking. This is the single
+    highest-priority follow-up — see BLOCKED below and 10_NEXT_STEPS.md.
+  - Backend untouched.
+
 ## PARTIAL
 
 - **Workflow builder** is functional and has 3/4 flagship features (node
@@ -509,10 +556,18 @@ directories.
 ## BLOCKED (this session, environment-limited — not code issues)
 
 - **No interactive browser tooling connected in this session.**
-  Claude-in-Chrome was not available here. All frontend verification this
-  session was via `vitest` (jsdom), `tsc`, `eslint`, and `vite build` (no
-  code changed this session, so these were not re-run — see the
-  `776dd63` DONE entry above for what its own commit message reports).
+  Claude-in-Chrome was not available here (checked via tool search, found
+  nothing). All frontend verification this session was via `vitest`
+  (jsdom), `tsc`, `eslint`, and `vite build` — including for the
+  `8cae377` glass-alpha retune, which has real visual risk (lower alpha
+  could hurt text contrast on some surfaces) that none of those checks
+  can catch. **This is now the single most important thing to get for
+  this project** — two consecutive sessions have made significant visual
+  changes (`776dd63`'s actual rendered QA, then this session's alpha
+  retune reasoned about but not rendered) and only one of them was ever
+  actually seen. If Claude-in-Chrome or equivalent becomes available,
+  point it at `776dd63`'s and `8cae377`'s combined result before touching
+  anything else.
   **Status changed from the prior four sessions**: HEAD `776dd63`
   reports the first-ever real rendered visual QA (headless Chromium in a
   scratch environment) and used it to find and fix the actual
