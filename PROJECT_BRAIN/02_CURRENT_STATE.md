@@ -320,8 +320,11 @@ duotone stopped being visible at all.
 mark was wrong in three specific ways, all found by extracting the reference
 crop, thresholding it and measuring the ink bands rather than eyeballing a
 low-resolution image:
-- The stem must stop SHORT of the curve (~4.5-unit gap). Closing it turns the
-  glyph into a solid arch and loses the "T over a flourish" reading.
+- The stem is CONTINUOUS into the curve's peak. A version that broke it with a
+  ~4.5-unit gap shipped briefly and was wrong: the gap was measured off a
+  low-resolution JPEG of the lockup, where compression plus the gradient dimming
+  at the join read as a break. The brand sheet has one unbroken line. Measuring
+  a thin stroke at a join in a lossy image is not reliable evidence of a gap.
 - The right hook is SHORT and ends high (y≈38), well above the left tail
   (y≈60). The old drawing ran it to the baseline, producing a symmetric arch —
   the single biggest way this mark gets redrawn wrong.

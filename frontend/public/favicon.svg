@@ -15,7 +15,7 @@
   <g stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"
      transform="translate(32 32) scale(0.8) translate(-32 -34)">
     <path d="M9.7 8 H55.7" stroke="#eef1f6"/>
-    <path d="M32.2 8 V27" stroke="#eef1f6"/>
+    <path d="M32.3 8 V31.5" stroke="#eef1f6"/>
     <path d="M8.4 60.3 C15 54 17 48 22 41 C26 35.4 28.5 31.5 32.5 31.5 C36.5 31.5 38.8 34 40.3 37.9" stroke="url(#fl)"/>
   </g>
 </svg>

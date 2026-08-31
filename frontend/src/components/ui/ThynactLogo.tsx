@@ -5,20 +5,23 @@ import { useId } from "react";
  * than drawn by eye.
  *
  * Geometry (64-unit box, 1 unit = 1px of the reference at its native size):
- * a round-capped crossbar, a stem that stops SHORT of the curve below it, and
- * a single sinuous stroke that sweeps up from the bottom-left, peaks directly
+ * a round-capped crossbar, a stem running down into the curve below it, and a
+ * single sinuous stroke that sweeps up from the bottom-left, peaks directly
  * under the stem, and finishes in a short hook to the right.
  *
- * Three details are what make it read as this mark rather than a generic one,
- * and all three were wrong when it was drawn from memory:
+ * Two details are what make it read as this mark rather than a generic one,
+ * and both were wrong when it was drawn from memory:
  *
- * 1. The stem does not touch the curve. The ~4.5-unit gap is deliberate;
- *    closing it turns the glyph into a solid arch and loses the "T over a
- *    flourish" reading entirely.
- * 2. The right hook is SHORT and ends high — at y≈38, well above the
+ * 1. The right hook is SHORT and ends high — at y≈38, well above the
  *    left tail's y≈60. Extending it to the baseline makes a symmetric arch,
  *    which is the single biggest way this mark gets redrawn wrong.
- * 3. The glyph is taller than it is wide (≈47×52), not squat.
+ * 2. The glyph is taller than it is wide (≈47×52), not squat.
+ *
+ * The stem is CONTINUOUS into the curve's peak. An earlier version broke it
+ * with a gap, on the strength of a gap measured in a low-resolution JPEG of
+ * the lockup — that gap was compression artefact plus the gradient dimming at
+ * the join, not a feature of the mark. The brand sheet has one unbroken line.
+ * Do not reintroduce the break.
  *
  * Colour: the T is solid `currentColor`, and only the flourish carries the
  * gradient — ink at the tail, warming through the brand magenta, resolving to
@@ -70,8 +73,8 @@ export function ThynactMark({
       <g strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
         {/* Crossbar */}
         <path d="M9.7 8 H55.7" stroke="currentColor" />
-        {/* Stem — stops short of the curve, leaving the gap. */}
-        <path d="M32.2 8 V27" stroke="currentColor" />
+        {/* Stem — runs unbroken into the curve's peak at y=31.5. */}
+        <path d="M32.3 8 V31.5" stroke="currentColor" />
         {/* The flourish: long tail out of the bottom-left, peak under the
             stem, then the short hook right. */}
         <path
