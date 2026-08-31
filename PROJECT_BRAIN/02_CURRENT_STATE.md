@@ -194,6 +194,85 @@ are implemented and tested, but the staging backend does not exist, and
 Cloudflare/Render dashboard actions. Test counts after this work: backend 243,
 frontend 55.
 
+## PRODUCTION-READINESS PASS (2026-08-31, later in the same session)
+
+All verified by running it. Test counts now: **backend 275, frontend 62**,
+ruff clean, typecheck/build clean.
+
+### Production safety — the serious finding, now made loud
+`api.thynact.com` reports `environment: development` with all seven subsystems
+on `memory`: production is ephemeral and mislabelled, and nothing surfaced it.
+Root causes fixed in code (production itself was NOT touched):
+- `AGENT_OS_APP_ENV` had no alias and no validation. Now validated against
+  production/staging/development/test, so a typo cannot invent a fourth
+  environment with its own Redis namespace and DB stamp.
+- `/health` now reports `persistence` (durable|partial|ephemeral) and a
+  `warnings` list. `/ready` no longer counts `unconfigured` as healthy — a
+  check only exists when its backend was explicitly selected, so unconfigured
+  means misconfigured. New `/live` for dependency-free liveness.
+- `AGENT_OS_REQUIRE_DURABLE_PERSISTENCE` fails startup closed when any
+  subsystem is still in-memory. Deliberately opt-in: inferring it from
+  `app_env` would have turned today's silent degradation into an outage for a
+  production service that has no `DATABASE_URL` yet. Set for staging in
+  `render.yaml`.
+
+### Security
+- No security headers existed. Added `X-Content-Type-Options`,
+  `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`. HSTS deliberately
+  omitted (TLS terminates at Cloudflare).
+- `/docs`, `/redoc`, `/openapi.json` were public — a public hostname was
+  publishing its whole route surface anonymously. Now disabled when
+  `app_env=production` unless `AGENT_OS_ENABLE_DOCS` re-enables them.
+
+### Workers, migrations, Redis — LOCAL_REAL_VALIDATED
+- Workers had never been exercised. Five integration tests against **real
+  Redis**: enqueue/dequeue with correlation id preserved, processing,
+  empty-queue, and failure→retry→dead-letter asserting the attempt sequence.
+  Plus the isolation proof: two queues on ONE Redis with the SAME queue name,
+  differing only by namespace — neither sees the other's jobs.
+- **There is no scheduler subsystem in this repository.** A `JobWorker` exists;
+  a scheduler does not. Reported NOT_IMPLEMENTED, not validated.
+- All **7** migrations applied to a genuinely fresh database and re-run
+  idempotently: 9 tables, pgvector 0.6.0, HNSW index, correct stamp.
+- Redis access is centralized in `redis_queue.py` and fully namespaced; an
+  audit found no unnamespaced access.
+
+### CI — new, and it caught real problems
+`.github/workflows/ci.yml` (backend + frontend) runs against real
+`pgvector/pgvector:pg16` and `redis:7` service containers, needs no production
+secrets, applies migrations, asserts idempotency, and proves the stamp guard
+**refuses** a foreign environment. Simulating the backend job locally caught
+three genuine problems first: two env-sensitive tests (one pre-existing —
+`test_redis_adapter_requires_redis_url` only passed on machines with no
+`REDIS_URL`) and the `CREATE EXTENSION vector` privilege requirement, now
+documented. The suite now passes identically with and without ambient
+`DATABASE_URL`/`REDIS_URL`/`AGENT_OS_APP_ENV`.
+
+Cleared the 40-finding ruff backlog so CI lint can be blocking. `ruff format`
+was deliberately NOT run — it would reformat 72 unrelated files.
+
+### Frontend
+Non-production deployments now show a STAGING/PREVIEW/LOCAL badge, derived by
+the same fail-safe hostname rule. Rendered and inspected at 390/768/1440px:
+fits beside the health pill at the tightest width, no overflow, design intact.
+
+### New documentation
+`docs/DEPLOYMENT.md` (environment map, isolation mechanisms, staging secret
+contract by class, OAuth callback architecture for all four implemented
+providers, production cutover sequence, backup/recovery procedure) and
+`docs/CONNECTORS.md` (real 28-entry matrix + intended universe classification).
+
+**Honest connector headline: 2 LIVE_VALIDATED, both THYNACT's own
+infrastructure (postgresql, redis). Customer-facing SaaS connectors
+live-validated: 0.** The real bottleneck is not adapter count — there is **no
+canonical capability layer**; `capabilities` are display strings only.
+
+### Known gaps (do not describe as done)
+No multi-tenancy (verified: "tenant" appears nowhere in `app/` or
+`migrations/`); OAuth tokens in-memory and unencrypted, no PKCE/refresh
+rotation/revocation; no inbound rate limiting or request size limits; no
+external metrics/tracing stack; DR unvalidated — no restore ever exercised.
+
 ## PRODUCTION STATUS
 
 - **Live frontend:** https://app.thynact.com — HTTP 200. Verified this

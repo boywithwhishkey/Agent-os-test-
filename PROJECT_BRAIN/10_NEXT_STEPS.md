@@ -45,52 +45,74 @@ time, highest first.
    `N8N_BASE_URL`, `MAKE_WEBHOOK_URL`, and the OAuth pairs for GitHub, GitLab,
    Slack and Notion.
 
-## 0. Deployment / staging state — read before shipping anything
+## 0. CONSOLIDATED MANUAL-ACTION QUEUE
 
-**DOMAIN BLOCKER RESOLVED: permanent domain `thynact.com` is ACTIVE**
-(nine-point item 1 done). Cloudflare Pages project is `agent-os-test`.
+**DOMAIN BLOCKER RESOLVED — `thynact.com` is ACTIVE.** Do not label the project
+`STABLE_DOMAIN_REQUIRED` any more; individual connectors may still be
+`AUTH_REQUIRED` / `CREDENTIAL_REQUIRED` / `PROVIDER_APPROVAL_REQUIRED`.
 
-### Verified live state (2026-08-31)
+Everything below needs a dashboard, a credential or a payment decision. This
+session held no `CLOUDFLARE_API_TOKEN` / `RENDER_API_KEY`. Ordered by
+dependency then value; never put secret values in this file.
+
+1. **Render → new Blueprint from `render.yaml`, branch `staging`.**
+   Creates `thynact-api-staging` + `thynact-staging-db` + `thynact-staging-redis`.
+   Set the three `sync: false` secrets to **staging-only** values
+   (`AGENT_OS_API_KEY`, `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`).
+   *Watch for:* the blueprint has never been synced — expect to correct field
+   names if Render's schema moved (`type: redis` is the likely one), and confirm
+   the DB role may `CREATE EXTENSION vector` or migration 001 fails.
+   *Unlocks:* the entire staging environment.
+2. **Render → `thynact-api-staging` → Custom domain → `api-staging.thynact.com`.**
+   *Unlocks:* the staging frontend, which already routes there by hostname.
+3. **Run migrations against staging once** — `AGENT_OS_APP_ENV=staging
+   python scripts/migrate.py`. Expect `Environment: staging` then 7 applied.
+   *Unlocks:* durable staging; the service will not boot until this is done,
+   because `AGENT_OS_REQUIRE_DURABLE_PERSISTENCE=true`.
+4. **Cloudflare Pages → `agent-os-test` → Custom domains → repoint
+   `staging.thynact.com` to the `staging` branch** (it currently serves the
+   production deployment — verified identical asset hash).
+   *Unlocks:* a staging frontend that is actually staging.
+5. **Render → production service → set `AGENT_OS_APP_ENV=production`.**
+   Do this **before** any production database is attached so the stamp binds
+   correctly. Safe, non-destructive, fixes the mislabelled `/health`.
+6. **Provision production PostgreSQL (pgvector) + Redis** — paid
+   infrastructure, needs explicit approval. Then follow the cutover sequence in
+   `docs/DEPLOYMENT.md` §5 exactly; set
+   `AGENT_OS_REQUIRE_DURABLE_PERSISTENCE=true` only at the end.
+   *Unlocks:* production stops losing every task/workflow/approval/audit record
+   on restart.
+7. **Register per-environment OAuth apps** (GitHub first) with callbacks
+   `https://api-staging.thynact.com/api/v1/integrations/oauth/{provider}/callback`
+   and the `api.thynact.com` equivalent. Separate registrations per
+   environment — see `docs/DEPLOYMENT.md` §4.
+8. **Optional provider credentials**, one connector each: `GEMINI_API_KEY`,
+   `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `CLOUDFLARE_API_TOKEN`,
+   `RENDER_API_KEY`, `N8N_BASE_URL`, `MAKE_WEBHOOK_URL`.
+9. **Production deployment authorization** — merging to `main` IS a production
+   deploy. Withheld until staging is validated.
+
+### Not needed from the operator
+CI, lint, deploy-config validation, environment isolation, worker validation
+and visual QA are all automated now. Cloudflare Access on preview URLs is
+intentional security — do not weaken it; local rendering against the real local
+backend is the engineering substitute, and is not a substitute for final
+staging validation.
+
+## 0b. Verified live state (2026-08-31)
 
 | Host | State |
 |---|---|
 | `app.thynact.com` | Production frontend, Active + SSL |
-| `staging.thynact.com` | **Still serving PRODUCTION** — byte-identical asset `index-DFpw3o8A.js` to app.thynact.com. It is a second custom domain on the production deployment, NOT a staging environment. |
-| `api.thynact.com` | Render backend, live. `/health` reports `environment: development` and every backend `memory` — production is still ephemeral and mislabelled. |
-| `api-staging.thynact.com` | Does not resolve — not created yet. |
-| `staging.agent-os-test.pages.dev` | Branch preview for `staging` EXISTS, but is gated by **Cloudflare Access** (302 to `billowing-sunset-96c8.cloudflareaccess.com`), so automated validation cannot load it. |
+| `staging.thynact.com` | **Still serving PRODUCTION** — identical asset hash. Not staging yet. |
+| `api.thynact.com` | Live; `environment: development`, all backends `memory` |
+| `api-staging.thynact.com` | Does not resolve |
+| `staging.agent-os-test.pages.dev` | Branch preview exists, gated by Cloudflare Access |
 
-### STAGING IS NOT READY. What is done vs. what is blocked
-
-Done in code (all committed, all tested):
-- `staging` branch created and pushed.
-- API host derived from hostname in `frontend/src/lib/api/config.ts` **and**
-  `functions/api/v1/orchestrate.js` — only `app.thynact.com` reaches
-  production; staging/previews/unknown hosts fall back to staging.
-- Database environment stamping (migration 007 + `app/persistence/environment.py`),
-  enforced by `scripts/migrate.py` before schema changes; verified against real
-  PostgreSQL.
-- Redis namespaced `agent-os:<env>`.
-- Dockerfile fixed: installs the `persistence` extra (asyncpg/redis were
-  missing, so ANY durable deploy would have crashed) and ships
-  `migrations/`+`scripts/`; honours `$PORT`.
-- `render.yaml` blueprint for staging only (service + own Postgres + own Redis).
-
-Blocked on dashboard actions this session cannot perform (no
-`CLOUDFLARE_API_TOKEN` / `RENDER_API_KEY`):
-1. **Render**: sync `render.yaml` as a Blueprint to create
-   `thynact-api-staging` + `thynact-staging-db` + `thynact-staging-redis`, set
-   the `sync: false` secrets, and attach the custom domain
-   `api-staging.thynact.com`.
-2. **Cloudflare Pages**: repoint `staging.thynact.com` from the production
-   deployment to the **`staging` branch** (Pages → agent-os-test → Custom
-   domains). Until this is done, "staging" is production.
-3. Then run `scripts/migrate.py` against the staging database once
-   (`AGENT_OS_APP_ENV=staging`), and re-validate.
-
-**Do not merge to `main` until staging is deployed and validated.** The branch
-`claude/thynact-env-audit-fjinfj` and `staging` both hold validated work; `main`
-is untouched.
+**STAGING_READY: NO.** Frontend routing, backend isolation, durability guards,
+deploy config and CI are implemented and tested; the staging backend does not
+exist and `staging.thynact.com` still points at production.
+**Do not merge to `main`.** `main` is untouched.
 
 ## 1. Production persistence — READY, blocked only on provisioning
 The exact sequence is now proven locally, in this order:
