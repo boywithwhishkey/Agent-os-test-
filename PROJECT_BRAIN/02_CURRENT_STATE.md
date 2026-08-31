@@ -105,6 +105,52 @@ plus two scripts, so future sessions no longer need a giant pasted prompt.
   OIDC or tenancy layer. Per the conflict order, the repository wins — treat
   those guide sections as product direction, not present state.
 
+### Full visual sweep + two more real defects fixed (same session)
+
+All 15 routes rendered at 1440×900 and 390×844 against a live backend with
+real data. No horizontal overflow and no console errors on any of them.
+
+- **Route names matter when sweeping**: the real paths are `workflows/runs`
+  and `system-health` (not `workflow-runs`/`health`). Two screenshots in the
+  first pass silently rendered the 404 page and reported "clean" — always
+  check `App.tsx`'s `<Route path=...>` list before trusting a sweep.
+- **Workflows canvas — real defect, fixed.** `fitView` had no options, so it
+  scaled to React Flow's default `maxZoom` of 2 whenever the graph was small.
+  A new workflow has exactly one node, so the canvas always opened at 200%
+  and the "start" node rendered comically oversized at every viewport (worst
+  at 390px, where it filled and overflowed the visible canvas). Fixed with
+  `fitViewOptions={{ maxZoom: 1, padding: 0.25 }}`.
+- **Workflows chrome — real defect, fixed.** `Controls` and `MiniMap` use
+  React Flow's own styling, which ships light-mode by default and rendered as
+  stark white blocks on the dark UI. Now themed via `colorMode={resolvedTheme}`,
+  which also made the old `!bg-surface-raised` MiniMap override redundant (it
+  only ever patched the container, not the mask or the Controls buttons).
+  **Supersedes** the earlier note that MiniMap must stay opaque — that was a
+  workaround for exactly this, and `colorMode` is the real fix.
+- **System Health rendered showing all 7 stores as Durable/Postgres and the
+  job queue as Durable/Redis**, with Readiness checks Database + Queue
+  Healthy — the persistence map reflecting genuinely durable backends.
+- Checked and confirmed **not** defects: the account control's offset green
+  dot (deliberate status badge) and the "Anthropic" label (correctly spelled
+  in `catalog.py`; a misread of rendered pixels).
+
+### Audit correlation IDs — implemented, previously blocked on a real database
+
+Deferred for several sessions only because the migration could not be tested
+against real Postgres. Done now, end to end, and verified against one:
+`migrations/006` (forward-only, nullable column + index; 001-005 untouched),
+`ToolAuditEvent`/`ToolAuditLog.record`, `ToolExecutor.execute` threading the id
+through all three audit paths including the unknown-tool and policy-denial
+early returns, `PostgresToolAuditLog` read/write, and a copy control in the
+Audit drawer. A request carrying `X-Correlation-ID: bootstrap-trace-001`
+produced an audit row with that exact id in PostgreSQL, returned it through
+the API, and displayed it in the drawer (rendered and confirmed on screen).
+
+Test counts after this work: **backend 236 passed** (6 new), **frontend 50
+passed** (2 new), typecheck/lint/build clean. One pre-existing fake-DB test
+modelled the old five-column insert and was updated to the real six-column
+shape — not relaxed.
+
 ## PRODUCTION STATUS
 
 - **Live frontend:** https://app.thynact.com — HTTP 200. Verified this

@@ -78,21 +78,19 @@ Until then every task/workflow/approval/audit record is lost on each restart.
 
 ## 2. Highest-value agent work available with no credentials
 In rough priority order:
-- **Finish the visual sweep now that it is cheap.** Only Dashboard,
-  Integrations and Memory were rendered this session. Render the remaining
-  pages (Tasks, Orchestrate, Autonomous, Agents, Workflows, Workflow Runs,
-  Approvals, Runtime, Tools, Audit, Health, Settings) at 390/768/1440 in both
-  themes against a live backend and fix what is actually wrong. The React Flow
-  Workflows canvas at mobile width is the least-examined surface.
+- ~~Finish the visual sweep~~ **DONE** — all 15 routes rendered at 1440 and
+  390 against a live backend; two real Workflows-canvas defects found and
+  fixed. Remaining visual work is narrower: 768px/tablet, light theme on more
+  than the two pages checked, and real touch/drag behaviour on the React Flow
+  canvas (which still cannot be assessed from screenshots alone).
 - **Postgres-backed correctness under real data.** The suite covers the
   postgres paths with fakes; now that a real database is one script away, add
   targeted tests that run against it for the trickiest queries (memory hybrid
   ranking, workflow run resume, approval single-use semantics).
-- **Audit correlation-ID quick-copy** — previously deferred purely because
-  there was no real database to test a migration against. That excuse is gone:
-  add a forward migration (never edit 001-005) adding `correlation_id` to
-  `tool_audit_events`, thread it through `ToolExecutor`/`ToolExecuteRequest`,
-  and verify against the local Postgres.
+- ~~Audit correlation-ID quick-copy~~ **DONE** (migration 006, verified
+  against real PostgreSQL). Natural follow-on: thread the same correlation id
+  through workflow runs and runtime executions, whose types already declare a
+  `correlation_id` field, so one id traces a whole multi-step run.
 - **Observability foundations** (nine-point item 8) — structured request logs
   with correlation id, timing, tenant placeholder; no secrets in logs.
 - Bespoke UI follow-ups in `07_DEFERRED_GOALS.md` — optional visual depth only,

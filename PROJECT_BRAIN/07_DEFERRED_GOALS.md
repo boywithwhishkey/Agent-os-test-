@@ -18,11 +18,9 @@ don't leave completed work listed here.
 - Runtime: a circuit-breaker state *diagram* / execution timeline view as
   a richer alternative to the current live badge + rate-limit gauge
   (which ARE done — see 02_CURRENT_STATE.md).
-- Audit: correlation-ID quick-copy — needs a Postgres migration to add a
-  `correlation_id` column to `tool_audit_events` plus threading a
-  correlation id through `ToolExecutor`/`ToolExecuteRequest`; do this once
-  `DATABASE_URL` exists and can be tested against for real (timeline view
-  mode itself is DONE — see 02_CURRENT_STATE.md).
+- ~~Audit: correlation-ID quick-copy~~ **DONE 2026-08-31** — migration 006,
+  threaded through `ToolExecutor`, exposed in the API and the Audit drawer,
+  verified against a real PostgreSQL. See 02_CURRENT_STATE.md.
 - Agents, Approvals, Tools have not had a dedicated additional animation
   pass beyond the shared glass/motion design system (see next item) —
   lower priority since they already use the shared Card/Badge/
