@@ -40,6 +40,33 @@ if (!url || !outPath) {
   process.exit(1);
 }
 
+// Sandboxed/CI environments often route outbound HTTPS through a local proxy.
+// curl picks it up from the environment automatically; Chromium does not, and
+// fails with ERR_CONNECTION_RESET on any external URL. Pass it through so
+// deployed sites (not just localhost) can be rendered and inspected.
+const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy || "";
+// Chromium's --proxy-server ignores NO_PROXY, so without an explicit bypass the
+// proxy also swallows http://localhost:3000 and the dev/preview server renders
+// as the proxy's error page instead of the app. Bypass loopback always, plus
+// whatever NO_PROXY lists.
+const proxyBypass = [
+  "localhost",
+  "127.0.0.1",
+  "::1",
+  ...(process.env.NO_PROXY || process.env.no_proxy || "").split(",").map((h) => h.trim()),
+]
+  .filter(Boolean)
+  .join(",");
+const launchProxy = proxyUrl ? { server: proxyUrl, bypass: proxyBypass } : undefined;
+
+// Such proxies usually terminate TLS with their own CA, which Chromium does not
+// trust. Opt-in only, and never a substitute for verifying a deployment: check
+// certificates with curl (which does validate), and use this purely to get
+// pixels on screen.
+const insecureTls =
+  process.env.THYNACT_SCREENSHOT_INSECURE_TLS === "1" ||
+  process.env.THYNACT_SCREENSHOT_INSECURE_TLS === "true";
+
 const tried = [];
 
 function candidateFromEnv(name) {
@@ -93,8 +120,12 @@ async function launch() {
 
   for (const executablePath of explicit) {
     try {
-      const browser = await chromium.launch({ executablePath, args: ["--no-sandbox"] });
-      console.log(`Using Chromium: ${executablePath}`);
+      const browser = await chromium.launch({
+        executablePath,
+        args: ["--no-sandbox"],
+        proxy: launchProxy,
+      });
+      console.log(`Using Chromium: ${executablePath}${proxyUrl ? ` (via proxy)` : ""}`);
       return browser;
     } catch (err) {
       tried.push(`${executablePath}: ${err.message.split("\n")[0]}`);
@@ -103,7 +134,7 @@ async function launch() {
 
   // Playwright-managed browser (whatever `playwright install` put in place).
   try {
-    const browser = await chromium.launch({ args: ["--no-sandbox"] });
+    const browser = await chromium.launch({ args: ["--no-sandbox"], proxy: launchProxy });
     console.log("Using Chromium: playwright-managed default");
     return browser;
   } catch (err) {
@@ -113,8 +144,12 @@ async function launch() {
   for (const executablePath of SYSTEM_PATHS) {
     if (!existsSync(executablePath)) continue;
     try {
-      const browser = await chromium.launch({ executablePath, args: ["--no-sandbox"] });
-      console.log(`Using Chromium: ${executablePath}`);
+      const browser = await chromium.launch({
+        executablePath,
+        args: ["--no-sandbox"],
+        proxy: launchProxy,
+      });
+      console.log(`Using Chromium: ${executablePath}${proxyUrl ? ` (via proxy)` : ""}`);
       return browser;
     } catch (err) {
       tried.push(`${executablePath}: ${err.message.split("\n")[0]}`);
@@ -134,6 +169,7 @@ async function launch() {
 const browser = await launch();
 const context = await browser.newContext({
   viewport: { width: parseInt(width, 10), height: parseInt(height, 10) },
+  ignoreHTTPSErrors: insecureTls,
 });
 // Seed theme, and optionally the operator session, before first paint.
 // Without the session seed every page renders its unauthenticated state, which
