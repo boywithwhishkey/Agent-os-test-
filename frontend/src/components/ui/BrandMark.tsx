@@ -37,9 +37,14 @@ function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
  * The THYNACT brand treatment, in three variants:
  * - "mark": icon only, for a collapsed sidebar
  * - "compact": icon + wordmark on one line
- * - "full": the brand-sheet lockup — icon and wordmark on the first line, with
- *   the tagline on a second line running the full width beneath BOTH, rather
- *   than indented into a column beside the mark.
+ * - "full": the brand-sheet lockup — icon and wordmark on the first line, and
+ *   the tagline on a second line that starts just past the MARK'S MIDPOINT.
+ *
+ *   That indent is measured, not chosen: on the reference lockup the mark spans
+ *   x 35-83 (midpoint 59), the tagline's first glyph starts at x 63, and the
+ *   wordmark starts at x 97. So the tagline aligns with neither the mark's left
+ *   edge nor the wordmark — it begins under the middle of the mark, at ~58% of
+ *   the mark's width. Both of the obvious alternatives are wrong.
  */
 export function BrandMark({
   variant = "compact",
@@ -61,6 +66,10 @@ export function BrandMark({
     );
   }
 
+  // ~58% of each size's mark width, so the tagline starts just past the mark's
+  // midpoint at every size: 28px -> 16, 36px -> 20, 44px -> 24.
+  const taglineIndent = size === "sm" ? "pl-4" : size === "lg" ? "pl-6" : "pl-5";
+
   return (
     <div className={cn("flex min-w-0 flex-col", className)}>
       <div className="flex items-center gap-2.5">
@@ -69,8 +78,10 @@ export function BrandMark({
       </div>
       <span
         className={cn(
-          // Also pinned: the tagline belongs to the logo lockup.
+          // Weight is pinned, like the wordmark's: the tagline belongs to the
+          // logo lockup and stays out of the site-wide type tokens.
           "truncate font-[350] tracking-[0.01em] text-content-muted",
+          taglineIndent,
           size === "lg" ? "mt-1 text-sm" : "mt-0.5 text-[11px]"
         )}
       >

@@ -338,10 +338,18 @@ swatches together; ids are now per-instance via `useId()`, with colons stripped
 (legal in `url(#…)`, not in a CSS selector).
 
 **3. Lockup and site typography.** `BrandMark` "full" now matches the brand
-sheet exactly — mark and wordmark on line one, tagline on line two running the
-full width beneath BOTH, left-aligned to the mark rather than indented into a
-column. Verified by measuring the reference: tagline ink starts at x=35, the
-same x as the mark, while the wordmark starts at x≈98.
+sheet: mark and wordmark on line one, tagline on line two starting just past
+the MARK'S MIDPOINT — aligned to neither the mark's left edge nor the wordmark.
+
+The first measurement of this was WRONG and shipped briefly: reading the
+tagline's row band across the full image width picked up the mark's own
+descending tail at x=35 and reported that as the tagline's start, so the
+tagline was left-aligned to the mark. Re-measuring with the tail separated by
+its column gap shows the mark spans x 35-83 (midpoint 59), the tagline's first
+glyph starts at x=63 and the wordmark at x=97. The indent is therefore ~58% of
+the mark's width, applied per size (28px→16, 36px→20, 44px→24). Lesson for the
+next person measuring a lockup: a row band that crosses the mark includes the
+mark.
 
 Site-wide type is one step larger and one step lighter: the `--text-*` tokens
 were each raised ~1px and the `--font-weight-*` ladder shifted down (normal
