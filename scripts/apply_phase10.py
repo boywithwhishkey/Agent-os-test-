@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def append_once(path: Path, text: str):
     current = path.read_text() if path.exists() else ""
     if text not in current:
