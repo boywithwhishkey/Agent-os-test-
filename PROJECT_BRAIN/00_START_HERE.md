@@ -22,6 +22,22 @@ the same pattern ready for more), and generic remote MCP server
 connectors — see 02_CURRENT_STATE.md's Integrations row for exactly which
 of these are READY_FOR_AUTH vs. still catalog-only.
 
+## Durable rules live in root `CLAUDE.md`
+
+Root `CLAUDE.md` is the permanent operating contract (priorities, security
+invariants, connector/validation rules, environment facts, autonomy rules). It
+is loaded automatically every session — read it, and keep it free of changing
+state. Two helpers back it up:
+
+- `bash scripts/bootstrap_claude_cloud.sh` — idempotent environment setup
+  (uv sync, pnpm install, native Postgres + pgvector, Redis, migrations,
+  browser check). Safe to re-run; never destructive.
+- `bash scripts/project_doctor.sh` — report-only diagnostics. Prints credential
+  **names** and whether they are set, never values.
+
+Facts that change (what is DONE/BLOCKED, connector status, test counts) belong
+in this directory, not in `CLAUDE.md`.
+
 ## Canonical project knowledge — how these 4 files work together
 
 This `PROJECT_BRAIN/` directory is the **only** canonical, persistent

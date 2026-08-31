@@ -93,20 +93,22 @@ keep the `ambient-*` tokens (decorative) and `--color-accent-red`
 
 ## Integrations / connectors
 
-- A session following CLAUDE.md's explicit "finish everything possible
-  without new credentials" directive added real read/verify adapters for
-  Gemini, PostgreSQL, Redis, OpenAI, Anthropic, Cloudflare, and Render,
-  plus a full OAuth2 authorize/callback/disconnect flow for GitHub — see
-  02_CURRENT_STATE.md. The remaining 11 OAuth catalog entries (Slack,
-  Notion, Gmail, Google Calendar, Google Drive, GitLab, Jira, HubSpot,
-  Salesforce, Dropbox, OneDrive) follow the exact same pattern as GitHub
-  (`app/integrations/oauth/config.py` + two Settings fields +
-  `implemented=True` on the CatalogSpec) — **still don't add these
-  speculatively**; do the next one only when there's a concrete product
-  need or the operator actually wants to connect that account. Google's
-  three entries (gmail/calendar/drive) can likely share one OAuth app/
-  client id with different `scope` strings — verify this before assuming
-  three separate client id/secret pairs are needed.
+- Real read/verify adapters exist for Gemini, PostgreSQL, Redis, OpenAI,
+  Anthropic, Cloudflare and Render, plus a generic OAuth2 authorize/callback/
+  disconnect framework. **Corrected 2026-08-31:** GitHub is no longer the only
+  OAuth connector — **Slack, Notion and GitLab OAuth configs already exist in
+  `app/integrations/oauth/config.py` with Settings fields and tests, and a
+  Make webhook adapter exists too.** Earlier versions of this file described
+  Slack/Notion as speculative future work; that was stale. They are
+  implemented-but-unconfigured (AUTH_REQUIRED / CREDENTIAL_REQUIRED), not
+  missing. Live catalog as of 2026-08-31: 28 entries, 13 implemented, 2
+  LIVE_VALIDATED (postgresql, redis).
+  The remaining OAuth catalog entries (Gmail, Google Calendar, Google Drive,
+  Jira, HubSpot, Salesforce, Dropbox, OneDrive) follow the same pattern —
+  **still don't add these speculatively**; do the next one only when there is a
+  concrete product need or the operator actually wants that account connected.
+  Google's three entries can likely share one OAuth app with different `scope`
+  strings — verify before assuming three client id/secret pairs.
 - `execute()` is intentionally "not supported" on every non-webhook
   adapter added this session (OpenAI, Anthropic, Cloudflare, Render,
   GitHub, Gemini, Postgres, Redis) — they only verify identity/

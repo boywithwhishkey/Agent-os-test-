@@ -1,9 +1,109 @@
-# CURRENT STATE — verified as of 2026-08-29, HEAD `52c78e1`
+# CURRENT STATE — verified as of 2026-08-31, HEAD `1b5ccc6`
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
+
+## SESSION 2026-08-31 — FIRST REAL POSTGRES/REDIS/pgvector VALIDATION
+
+Everything in this section was verified by running it, not by reading code.
+This session also converted the durable operating rules into root `CLAUDE.md`
+plus two scripts, so future sessions no longer need a giant pasted prompt.
+
+### Environment is now genuinely ready (Claude cloud)
+
+- `scripts/bootstrap_claude_cloud.sh` (new, idempotent) and
+  `scripts/project_doctor.sh` (new, report-only) — both executed successfully,
+  and bootstrap was re-run to prove it is a no-op second time.
+- Python: `uv sync --extra dev --frozen` → venv on **3.12.3** (system `python3`
+  is 3.11 — always `uv run`). Frontend: `pnpm install --frozen-lockfile` (pnpm
+  resolved 10.26.1 via `packageManager`).
+- **Docker has no daemon here** (`/var/run/docker.sock` absent). `infra/`
+  compose files are untouched and still valid for other environments; native
+  services are the right path in Claude cloud.
+
+### PostgreSQL + pgvector + Redis — REAL, first time in this project's history
+
+- **pgvector was genuinely missing** and is a hard requirement (migrations 001
+  and 002 `CREATE EXTENSION vector`, use a `vector` column and build an HNSW
+  index). Installed `postgresql-16-pgvector` **0.6.0**. Note `apt-get update`
+  is required first — the preinstalled lists 404.
+- Dev-local role/db `agent_os` created (dev credentials only, never committed).
+- **`uv run python scripts/migrate.py` applied all 5 migrations against a real
+  PostgreSQL 16.13 for the first time** — previously only ever unit-tested with
+  a fake DB. Re-run confirms idempotency ("Database is already up to date").
+  Real objects verified: 8 tables, `agent_memories.embedding` is a real
+  `vector` column, and `idx_agent_memories_embedding_hnsw` exists.
+- Redis 7.0.15 started natively and answered `PING`.
+- Backend booted with every `AGENT_OS_*_BACKEND` on `postgres` and the queue on
+  `redis`. **`/ready` returned `{"database":"ok","queue":"ok"}` — the first time
+  that object has ever been non-empty.** `/health` `backends` map showed
+  postgres/postgres/postgres/postgres/postgres/postgres + redis.
+- Real business logic exercised through the durable path: created a task
+  (persisted), wrote a memory, and ran `POST /api/v1/memory/search`, which
+  returned **real hybrid scores from pgvector** (`score` 0.304,
+  `semantic_score` 0.345, `lexical_score` 0.0). Orchestration ran end-to-end.
+- Live connector probes: **`postgresql` and `redis` are LIVE_VALIDATED** (real
+  `SELECT 1` / `PING` through the governed broker, real latency ~40ms / ~1.6ms).
+  `n8n`/`openai`/`gemini` correctly returned `503` naming the exact missing env
+  var — honest, not faked.
+- **Nothing here is production.** This validates the code paths on a local dev
+  database; Render still has no `DATABASE_URL`/`REDIS_URL`.
+
+### Browser/visual QA is now portable — and the UI was actually looked at
+
+- `frontend/scripts/screenshot.mjs` **hard-required `REPLIT_PLAYWRIGHT_CHROMIUM_
+  EXECUTABLE` and exited immediately without it**, so it was dead everywhere
+  except that one Replit sandbox. Rewritten with a portable resolution chain
+  (`THYNACT_CHROMIUM_EXECUTABLE` → the Replit var for back-compat →
+  `PLAYWRIGHT_BROWSERS_PATH` → playwright-managed → system Chrome → an
+  actionable error listing every path tried). It found
+  `/opt/pw-browsers/chromium` here with no Replit variable set.
+- It now also **fails loudly on page-level horizontal overflow** (exit code 2)
+  and can seed the operator session via `THYNACT_SCREENSHOT_API_BASE_URL` /
+  `THYNACT_SCREENSHOT_API_KEY`, so authenticated, data-bearing pages can be
+  rendered — previously every screenshot could only show a logged-out state.
+- **Rendered against a live backend with real data**: Dashboard at 1440×900
+  (dark) and 390×844 (dark), Integrations at 1440×1000 (dark), Memory at
+  1024×800 (light). No horizontal overflow at any width; console clean.
+- Findings: mobile at 390px is **correct** — `1f9ffdc`'s responsive fix is now
+  visually confirmed for the first time (stat cards 1-up, Topbar fits on one
+  row). Light theme at `8cae377`'s reduced glass alpha is **legible** — the
+  long-standing "highest priority single check" in 10_NEXT_STEPS is resolved.
+  Integrations showed PostgreSQL/Redis as genuinely **Connected**.
+- Two things that *looked* like defects were checked and are **not** bugs (do
+  not "fix" them): the account control's offset green dot is a deliberate
+  status badge, and the "Anthropic" label is spelled correctly in
+  `app/integrations/catalog.py` (a misread of rendered pixels).
+
+### Real defect found and fixed by rendering
+
+- **No favicon existed at all** — no `<link rel="icon">`, no `frontend/public/`.
+  Every page load produced a permanent console 404 and a blank browser tab on a
+  product whose whole visual direction is "premium". Added
+  `frontend/public/favicon.svg` (brand gradient `#8574ff`→`#5bc7ff` + the
+  Sparkles glyph matching `BrandMark`) and linked it in `index.html`. Console
+  errors on the Dashboard went from 1 to **0**.
+
+### Doc drift corrected
+
+- Backend suite is **230 tests passing**, not the 208 this file claimed.
+- Frontend: 48/48 tests, typecheck clean, build clean, lint 0 errors + the same
+  2 pre-existing `react-refresh` warnings.
+- HEAD was `1b5ccc6`, two commits ahead of the `52c78e1` this file described.
+- **Slack, Notion, GitLab and Make already exist in code** (adapters, OAuth
+  config entries, Settings fields and tests) while `07_DEFERRED_GOALS.md` still
+  described Slack/Notion as speculative. Corrected there.
+- Live catalog truth: **28 catalog entries, 13 `implemented`, 2 LIVE_VALIDATED**
+  (postgresql, redis). The other 11 implemented connectors are
+  CREDENTIAL_REQUIRED or AUTH_REQUIRED, none faked.
+- The uploaded Master Guide describes GitHub MCP as `MCP_LIVE_VALIDATED`,
+  plus browser/filesystem MCP validation, OIDC sign-in and tenant isolation.
+  **This repository contains none of that**: `app/integrations/mcp/` is a
+  generic remote-MCP client/store, GitHub is an OAuth adapter, and there is no
+  OIDC or tenancy layer. Per the conflict order, the repository wins — treat
+  those guide sections as product direction, not present state.
 
 ## PRODUCTION STATUS
 
