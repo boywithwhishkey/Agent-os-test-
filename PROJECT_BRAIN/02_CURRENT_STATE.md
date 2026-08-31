@@ -151,6 +151,49 @@ passed** (2 new), typecheck/lint/build clean. One pre-existing fake-DB test
 modelled the old five-column insert and was updated to the real six-column
 shape — not relaxed.
 
+## STAGING ARCHITECTURE — designed and implemented in code, NOT yet deployed
+
+**Permanent domain `thynact.com` is ACTIVE** — the long-standing DOMAIN blocker
+is resolved. Target map: production `app`/`api` on `main`; staging
+`staging`/`api-staging` on the `staging` branch; feature previews on
+`*.agent-os-test.pages.dev` pointed at the staging API.
+
+**The critical finding: `staging.thynact.com` is currently production.** It
+served the byte-identical bundle (`index-DFpw3o8A.js`) as `app.thynact.com` —
+a second custom domain on the production deployment. Anyone "testing on
+staging" today is exercising production against the production API.
+
+Three real cross-environment leaks were found and fixed in code:
+1. `frontend/src/lib/api/config.ts` hardcoded `https://api.thynact.com` for
+   every non-dev build, so staging and **every** `*.pages.dev` preview talked
+   to the production backend. Now derived from the served hostname, failing
+   safe to staging for anything that is not exactly `app.thynact.com`.
+2. `functions/api/v1/orchestrate.js` (deployed to every Pages environment)
+   hardcoded the production orchestrate endpoint — a request to
+   staging.thynact.com would have run a real orchestration against production.
+   Same hostname-derived rule now applies.
+3. The Docker image installed the bare package, so `asyncpg`/`redis` were
+   absent and any `AGENT_OS_*_BACKEND=postgres` deploy would have failed at
+   first query; `migrations/`/`scripts/` were not in the image either. Fixed.
+
+Datastore isolation is now **enforced, not documented**: migration 007 stamps a
+database with its environment and `app/persistence/environment.py` refuses to
+proceed on mismatch, with `scripts/migrate.py` checking before any schema
+change and exiting 1. Verified against real PostgreSQL — the development-stamped
+database was accepted as `development` and refused for both `production` and
+`staging`. Redis keys are namespaced `agent-os:<env>`.
+
+`render.yaml` declares **staging only** (web service + its own Postgres + its
+own Redis + staging-only CORS/callback/secrets). Production is left
+dashboard-managed deliberately. The blueprint has **never been synced** — no
+`RENDER_API_KEY` in this session — so it is unvalidated against Render's schema.
+
+**STAGING_READY: NO.** Frontend routing, backend isolation and deploy config
+are implemented and tested, but the staging backend does not exist, and
+`staging.thynact.com` still points at production. Both remaining steps are
+Cloudflare/Render dashboard actions. Test counts after this work: backend 243,
+frontend 55.
+
 ## PRODUCTION STATUS
 
 - **Live frontend:** https://app.thynact.com — HTTP 200. Verified this

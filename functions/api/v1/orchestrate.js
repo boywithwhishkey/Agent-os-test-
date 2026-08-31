@@ -1,3 +1,32 @@
+/**
+ * Which backend this Pages Function proxies to.
+ *
+ * This Function is deployed to EVERY Pages environment — production, the
+ * staging branch, and every feature-branch preview — from one build. A
+ * hardcoded production URL therefore meant a request to
+ * staging.thynact.com/api/v1/orchestrate executed a real orchestration run
+ * against PRODUCTION, using whatever AGENT_OS_API_KEY that environment held.
+ * Orchestration is a consequential action, so this is exactly the
+ * cross-environment leak staging isolation is meant to prevent.
+ *
+ * Same fail-safe rule as the frontend (src/lib/api/config.ts): only the real
+ * production hostname resolves to the production API; everything else falls
+ * back to staging. AGENT_OS_API_BASE_URL overrides, so each Pages environment
+ * can be pinned explicitly in the dashboard.
+ */
+function resolveApiBaseUrl(env, request) {
+  const configured = env.AGENT_OS_API_BASE_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  let hostname = "";
+  try {
+    hostname = new URL(request.url).hostname;
+  } catch {
+    /* fall through to the staging default */
+  }
+  if (hostname === "app.thynact.com") return "https://api.thynact.com";
+  return "https://api-staging.thynact.com";
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -19,7 +48,8 @@ export async function onRequestPost(context) {
   try {
     const upstreamCorrelationId =
       request.headers.get("X-Correlation-ID") || crypto.randomUUID();
-    const response = await fetch("https://api.thynact.com/api/v1/orchestrate", {
+    const apiBaseUrl = resolveApiBaseUrl(env, request);
+    const response = await fetch(`${apiBaseUrl}/api/v1/orchestrate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

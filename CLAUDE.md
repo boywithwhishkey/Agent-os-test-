@@ -210,20 +210,41 @@ implement → targeted test → full validation when warranted → build
 → record real deployment state in PROJECT_BRAIN → continue the next item
 ```
 
-**This repository's actual topology (verify before relying on it):**
+**This repository's actual topology.** Permanent domain: **thynact.com**
+(ACTIVE). Intended environment map:
 
-- Cloudflare Pages auto-deploys the frontend from `origin/main`; Render
-  auto-deploys the backend from `origin/main`. Neither has in-repo config
-  (`wrangler.toml`/`render.yaml` absent) — it lives in the provider dashboards.
-- **There is no staging environment yet.** Until one exists, "deploy to
-  staging" has no target: say so plainly rather than pretending a step ran.
-  Standing up staging is nine-point item 2.
+| | Frontend | Backend | Branch |
+|---|---|---|---|
+| Production | `app.thynact.com` | `api.thynact.com` | `main` |
+| Staging | `staging.thynact.com` | `api-staging.thynact.com` | `staging` |
+| Preview | `*.agent-os-test.pages.dev` | staging API | any other branch |
+
+- Cloudflare Pages project is **`agent-os-test`**; Render hosts the backend.
+  Production on both is **dashboard-managed** — `render.yaml` deliberately
+  declares **staging only**, so adding it cannot put the live production
+  service under Blueprint control.
 - Because both providers deploy from `origin/main`, **merging or pushing to
-  `main` IS a production deployment.** Treat it as one: it needs explicit
-  authorization, never a side effect of finishing a task. Work on a branch.
+  `main` IS a production deployment.** It needs explicit authorization, never
+  a side effect of finishing a task. Work on a branch.
+- **Never point `api.thynact.com` at Cloudflare Pages** — it is the Render
+  backend hostname.
+- **Isolation is enforced in code, not by convention** — keep it that way:
+  - `frontend/src/lib/api/config.ts` and `functions/api/v1/orchestrate.js`
+    derive the API host from the hostname being served. **Only
+    `app.thynact.com` resolves to the production API**; staging, previews and
+    any unexpected host fall back to staging. Never reintroduce a hardcoded
+    production URL as a default.
+  - `migrations/007` stamps each database with its environment and
+    `app/persistence/environment.py` refuses to run when `AGENT_OS_APP_ENV`
+    disagrees. `scripts/migrate.py` checks this **before** touching schema and
+    exits 1. So set `AGENT_OS_APP_ENV` correctly on every service.
+  - Redis keys are namespaced `agent-os:<env>` (`settings.queue_namespace`).
+  - Staging must use **separate** OAuth app registrations and API keys, never
+    production credentials with a different callback.
 - **Migrations never run automatically.** After any deploy that includes a
   migration, run `scripts/migrate.py` against the target database by hand and
-  verify the applied state.
+  verify the applied state. The Docker image ships `migrations/` + `scripts/`
+  and installs the `persistence` extra so this is runnable in-container.
 
 **Deploy automatically only when all of these hold:** production auto-deploy has
 been explicitly authorized, tests and builds pass, migration safety checks pass,

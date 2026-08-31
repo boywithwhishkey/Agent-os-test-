@@ -45,23 +45,52 @@ time, highest first.
    `N8N_BASE_URL`, `MAKE_WEBHOOK_URL`, and the OAuth pairs for GitHub, GitLab,
    Slack and Notion.
 
-## 0. Deployment state — read before shipping anything
+## 0. Deployment / staging state — read before shipping anything
 
-Root `CLAUDE.md` §9 now requires the full implement→test→build→deploy→verify
-pipeline on every meaningful change. Current reality, verified 2026-08-31:
+**DOMAIN BLOCKER RESOLVED: permanent domain `thynact.com` is ACTIVE**
+(nine-point item 1 done). Cloudflare Pages project is `agent-os-test`.
 
-- **No staging environment exists.** Cloudflare Pages (frontend) and Render
-  (backend) both auto-deploy from `origin/main` only. So the "deploy to
-  staging" step has no target today — do not claim it ran. Creating staging is
-  nine-point item 2 and is now the blocker for satisfying §9 properly.
-- **Pushing/merging to `main` is a production deploy.** Current work sits on
-  `claude/thynact-env-audit-fjinfj` and was deliberately **not** merged: no
-  production-deploy authorization has been given. Ask before merging.
-- This session held no `CLOUDFLARE_API_TOKEN` / `RENDER_API_KEY`, so it could
-  not drive or inspect either provider's deploy pipeline directly; production
-  verification is limited to public `curl` of `/health`, `/ready` and the
-  served asset hash.
-- Post-deploy migration runs are manual (`scripts/migrate.py`) — see §9.
+### Verified live state (2026-08-31)
+
+| Host | State |
+|---|---|
+| `app.thynact.com` | Production frontend, Active + SSL |
+| `staging.thynact.com` | **Still serving PRODUCTION** — byte-identical asset `index-DFpw3o8A.js` to app.thynact.com. It is a second custom domain on the production deployment, NOT a staging environment. |
+| `api.thynact.com` | Render backend, live. `/health` reports `environment: development` and every backend `memory` — production is still ephemeral and mislabelled. |
+| `api-staging.thynact.com` | Does not resolve — not created yet. |
+| `staging.agent-os-test.pages.dev` | Branch preview for `staging` EXISTS, but is gated by **Cloudflare Access** (302 to `billowing-sunset-96c8.cloudflareaccess.com`), so automated validation cannot load it. |
+
+### STAGING IS NOT READY. What is done vs. what is blocked
+
+Done in code (all committed, all tested):
+- `staging` branch created and pushed.
+- API host derived from hostname in `frontend/src/lib/api/config.ts` **and**
+  `functions/api/v1/orchestrate.js` — only `app.thynact.com` reaches
+  production; staging/previews/unknown hosts fall back to staging.
+- Database environment stamping (migration 007 + `app/persistence/environment.py`),
+  enforced by `scripts/migrate.py` before schema changes; verified against real
+  PostgreSQL.
+- Redis namespaced `agent-os:<env>`.
+- Dockerfile fixed: installs the `persistence` extra (asyncpg/redis were
+  missing, so ANY durable deploy would have crashed) and ships
+  `migrations/`+`scripts/`; honours `$PORT`.
+- `render.yaml` blueprint for staging only (service + own Postgres + own Redis).
+
+Blocked on dashboard actions this session cannot perform (no
+`CLOUDFLARE_API_TOKEN` / `RENDER_API_KEY`):
+1. **Render**: sync `render.yaml` as a Blueprint to create
+   `thynact-api-staging` + `thynact-staging-db` + `thynact-staging-redis`, set
+   the `sync: false` secrets, and attach the custom domain
+   `api-staging.thynact.com`.
+2. **Cloudflare Pages**: repoint `staging.thynact.com` from the production
+   deployment to the **`staging` branch** (Pages → agent-os-test → Custom
+   domains). Until this is done, "staging" is production.
+3. Then run `scripts/migrate.py` against the staging database once
+   (`AGENT_OS_APP_ENV=staging`), and re-validate.
+
+**Do not merge to `main` until staging is deployed and validated.** The branch
+`claude/thynact-env-audit-fjinfj` and `staging` both hold validated work; `main`
+is untouched.
 
 ## 1. Production persistence — READY, blocked only on provisioning
 The exact sequence is now proven locally, in this order:
