@@ -15,7 +15,9 @@ class RedisJobQueue(JobQueue):
         url = settings.redis_url.strip()
         if not url:
             raise RuntimeError("REDIS_URL is required for Redis queue")
-        return cls(url, settings.queue_prefix)
+        # Namespaced per environment so a shared Redis cannot cross-feed jobs
+        # between production and staging.
+        return cls(url, settings.queue_namespace)
 
     async def _get_client(self):
         if self._client is None:

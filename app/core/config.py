@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_name: str = "THYNACT"
-    app_env: str = "development"
+    app_env: str = Field(default="development", validation_alias="AGENT_OS_APP_ENV")
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     log_level: str = "INFO"
@@ -114,6 +114,16 @@ class Settings(BaseSettings):
     lexical_weight: float = Field(
         default=0.25, ge=0, validation_alias="AGENT_OS_LEXICAL_WEIGHT"
     )
+
+    @property
+    def queue_namespace(self) -> str:
+        """Redis key prefix, namespaced per environment.
+
+        Production and staging should have separate Redis instances, but if they
+        ever do share one, unprefixed keys would let staging consume production
+        jobs. Namespacing makes that collision impossible rather than unlikely.
+        """
+        return f"{self.queue_prefix}:{self.app_env}"
 
     @property
     def allowed_origins(self) -> list[str]:

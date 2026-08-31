@@ -12,9 +12,40 @@ function computeDevDefault(): string {
   return `${protocol}//${hostname}:8000`;
 }
 
-const DEFAULT_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() ||
-  (import.meta.env.DEV ? computeDevDefault() : "https://api.thynact.com");
+/**
+ * Which backend a deployed frontend talks to, derived from the hostname it is
+ * actually served from.
+ *
+ * This is deliberately NOT a single hardcoded production URL. Cloudflare Pages
+ * serves the production branch, the staging branch and every feature-branch
+ * preview from the same build pipeline, so a fixed `https://api.thynact.com`
+ * default meant staging.thynact.com and every *.pages.dev preview pointed at
+ * the PRODUCTION API — production data reachable from any preview build.
+ * Deriving the host makes isolation fail-safe rather than dependent on someone
+ * remembering to set VITE_API_BASE_URL on the right Pages environment.
+ *
+ * VITE_API_BASE_URL still overrides this when set at build time.
+ */
+export function computeApiBaseUrl(hostname: string): string {
+  if (hostname === "app.thynact.com") return "https://api.thynact.com";
+  if (hostname === "staging.thynact.com") return "https://api-staging.thynact.com";
+  // Feature-branch previews (*.pages.dev) must never reach production; route
+  // them at staging, which holds no production data.
+  if (hostname.endsWith(".pages.dev")) return "https://api-staging.thynact.com";
+  // Unknown host: fall back to staging rather than production, so a
+  // misconfigured or unexpected domain cannot silently mutate production.
+  return "https://api-staging.thynact.com";
+}
+
+function computeDefaultBaseUrl(): string {
+  const configured = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (configured) return configured;
+  if (import.meta.env.DEV) return computeDevDefault();
+  if (typeof window === "undefined") return "https://api.thynact.com";
+  return computeApiBaseUrl(window.location.hostname);
+}
+
+const DEFAULT_BASE_URL = computeDefaultBaseUrl();
 
 export function getApiBaseUrl(): string {
   try {

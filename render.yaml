@@ -1,0 +1,109 @@
+# THYNACT — Render Blueprint for the ISOLATED STAGING environment.
+#
+# Scope, deliberately: this file defines STAGING ONLY.
+#
+# The production API service (api.thynact.com) was created by hand in the Render
+# dashboard and is intentionally NOT declared here. Declaring it would put a
+# live production service under Blueprint control as a side effect of adding a
+# file, which is exactly the kind of unrequested production change that needs
+# explicit authorization. Production stays dashboard-managed until someone
+# decides otherwise on purpose.
+#
+# What this gives staging: its own web service, its own PostgreSQL database and
+# its own Redis instance. Nothing is shared with production — separate
+# datastores, separate secrets, separate OAuth credentials, separate queue
+# namespace.
+#
+# NOT VALIDATED AGAINST RENDER: this session had no RENDER_API_KEY, so the
+# blueprint has never been synced. Treat the first sync as the validation step
+# and expect to correct field names if Render's schema has moved (in particular
+# `type: redis`, which newer Render docs call a Key Value instance).
+#
+# Secrets: every sync:false value must be set in the Render dashboard. No
+# secret values belong in this file.
+
+services:
+  - type: web
+    name: thynact-api-staging
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    branch: staging          # staging tracks the staging branch, never main
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      # Identity. AGENT_OS_APP_ENV is load-bearing: it is checked against the
+      # stamp written into the database by app/persistence/environment.py, so a
+      # DATABASE_URL accidentally pointing at production makes the deploy fail
+      # loudly instead of writing into production tables.
+      - key: AGENT_OS_APP_ENV
+        value: staging
+
+      # Datastores — wired to the staging-only instances defined below.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: thynact-staging-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: thynact-staging-redis
+          property: connectionString
+
+      # Durable backends. Staging exercises the same code paths as production;
+      # running it on memory backends would validate nothing.
+      - key: AGENT_OS_TASK_BACKEND
+        value: postgres
+      - key: AGENT_OS_MEMORY_BACKEND
+        value: postgres
+      - key: AGENT_OS_WORKFLOW_BACKEND
+        value: postgres
+      - key: AGENT_OS_WORKFLOW_DEFINITION_BACKEND
+        value: postgres
+      - key: AGENT_OS_RUNTIME_BACKEND
+        value: postgres
+      - key: AGENT_OS_TOOL_BACKEND
+        value: postgres
+      - key: AGENT_OS_QUEUE_BACKEND
+        value: redis
+
+      # Routing. Staging's browser origin and its own callback base — never the
+      # production hostnames, or an OAuth round trip would land on production.
+      - key: AGENT_OS_CORS_ORIGINS
+        value: https://staging.thynact.com
+      - key: AGENT_OS_FRONTEND_URL
+        value: https://staging.thynact.com
+      - key: AGENT_OS_OAUTH_REDIRECT_BASE_URL
+        value: https://api-staging.thynact.com
+
+      # Staging-only secrets. Set these in the dashboard; they must be DIFFERENT
+      # values from production. In particular the OAuth apps should be separate
+      # provider registrations pointing at the api-staging callback, so a
+      # staging test can never act on a production-connected account.
+      - key: AGENT_OS_API_KEY
+        sync: false
+      - key: GITHUB_OAUTH_CLIENT_ID
+        sync: false
+      - key: GITHUB_OAUTH_CLIENT_SECRET
+        sync: false
+
+      # Left unset on purpose: GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY,
+      # CLOUDFLARE_API_TOKEN, RENDER_API_KEY, N8N_BASE_URL, MAKE_WEBHOOK_URL.
+      # Staging then reports each honestly as credential-required rather than
+      # borrowing production credentials to look connected.
+
+  # Redis/Key Value instance for the staging job queue. Keys are additionally
+  # namespaced per environment (settings.queue_namespace -> "agent-os:staging"),
+  # so even a misconfigured shared instance cannot cross-feed production jobs.
+  - type: redis
+    name: thynact-staging-redis
+    plan: free
+    ipAllowList: []
+
+databases:
+  - name: thynact-staging-db
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+    # pgvector is required — migrations 001/002 CREATE EXTENSION vector, use a
+    # vector column and build an HNSW index. Render's PostgreSQL supports it;
+    # `CREATE EXTENSION vector` runs as part of the migration itself.
