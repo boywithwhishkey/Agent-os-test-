@@ -66,6 +66,10 @@ services:
         value: postgres
       - key: AGENT_OS_QUEUE_BACKEND
         value: redis
+      # Fail closed: if any subsystem is still in-memory at boot, refuse to
+      # start rather than serving traffic that silently loses state on restart.
+      - key: AGENT_OS_REQUIRE_DURABLE_PERSISTENCE
+        value: "true"
 
       # Routing. Staging's browser origin and its own callback base — never the
       # production hostnames, or an OAuth round trip would land on production.
@@ -105,5 +109,11 @@ databases:
     plan: basic-256mb
     postgresMajorVersion: "16"
     # pgvector is required — migrations 001/002 CREATE EXTENSION vector, use a
-    # vector column and build an HNSW index. Render's PostgreSQL supports it;
-    # `CREATE EXTENSION vector` runs as part of the migration itself.
+    # vector column and build an HNSW index.
+    #
+    # VERIFY ON FIRST SYNC: `CREATE EXTENSION vector` needs a role permitted to
+    # create extensions. Locally this failed with "permission denied to create
+    # extension / must be superuser" until the role was granted it, and managed
+    # providers vary. If migration 001 fails this way on Render, the database
+    # user needs the privilege (or the extension pre-created by an admin)
+    # before staging can come up.

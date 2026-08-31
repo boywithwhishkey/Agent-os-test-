@@ -20,6 +20,7 @@ dependencies = [
 persistence = [
     "asyncpg>=0.29,<1",
     "redis>=5,<6",
+    "pyyaml>=6,<7",
 ]
 dev = [
     "pytest>=8,<9",
@@ -28,6 +29,7 @@ dev = [
     "ruff>=0.6,<1",
     "asyncpg>=0.29,<1",
     "redis>=5,<6",
+    "pyyaml>=6,<7",
 ]
 
 [tool.pytest.ini_options]
@@ -42,3 +44,4 @@ target-version = "py312"
 [tool.setuptools.packages.find]
 include = ["app*"]
 exclude = ["tests*", "infra*", "migrations*", "scripts*"]
+

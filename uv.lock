@@ -25,11 +25,13 @@ dev = [
     { name = "httpx" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "pyyaml" },
     { name = "redis" },
     { name = "ruff" },
 ]
 persistence = [
     { name = "asyncpg" },
+    { name = "pyyaml" },
     { name = "redis" },
 ]
 
@@ -45,6 +47,8 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.4,<3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8,<9" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24,<1" },
+    { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6,<7" },
+    { name = "pyyaml", marker = "extra == 'persistence'", specifier = ">=6,<7" },
     { name = "redis", marker = "extra == 'dev'", specifier = ">=5,<6" },
     { name = "redis", marker = "extra == 'persistence'", specifier = ">=5,<6" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6,<1" },

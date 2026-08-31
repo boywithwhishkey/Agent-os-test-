@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+# No production secrets are required by any job here. CI runs entirely against
+# ephemeral service containers.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, tests, migrations)
+    runs-on: ubuntu-latest
+    services:
+      # pgvector image, not plain postgres: migrations 001/002 CREATE EXTENSION
+      # vector, use a vector column and build an HNSW index, so plain postgres
+      # would fail.
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: agent_os
+          POSTGRES_PASSWORD: agent_os_ci
+          POSTGRES_DB: agent_os
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U agent_os -d agent_os"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://agent_os:agent_os_ci@127.0.0.1:5432/agent_os
+      REDIS_URL: redis://127.0.0.1:6379/0
+      AGENT_OS_APP_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # The project requires >=3.12; the runner default may differ, and bare
+      # python/pytest must never be used for project work.
+      - name: Sync dependencies (frozen — never re-locks in CI)
+        run: uv sync --extra dev --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Validate deployment config
+        run: uv run python scripts/validate_deploy_config.py
+
+      - name: Apply migrations against real PostgreSQL
+        run: uv run python scripts/migrate.py
+
+      - name: Re-run migrations (must be idempotent)
+        run: |
+          output=$(uv run python scripts/migrate.py)
+          echo "$output"
+          echo "$output" | grep -q "already up to date" || {
+            echo "::error::migrations are not idempotent"; exit 1; }
+
+      # The stamp guard is the thing standing between staging and production
+      # data, so prove it actually refuses rather than trusting it.
+      - name: Environment stamp guard must reject a foreign environment
+        run: |
+          if AGENT_OS_APP_ENV=production uv run python scripts/migrate.py; then
+            echo "::error::guard did not reject a production deployment against the test database"
+            exit 1
+          fi
+          echo "guard correctly refused"
+
+      - name: Tests
+        run: uv run pytest tests/ -q
+
+  frontend:
+    name: Frontend (typecheck, lint, tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches frontend/.node-version, which pins Cloudflare Pages' build.
+          node-version-file: frontend/.node-version
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
