@@ -6,6 +6,11 @@ describe("getDeploymentEnvironment", () => {
     expect(getDeploymentEnvironment("app.thynact.com")).toBe("production");
   });
 
+  it("recognises the bare pages.dev alias as production", () => {
+    expect(getDeploymentEnvironment("agent-os-test.pages.dev")).toBe("production");
+    expect(getEnvironmentLabel("agent-os-test.pages.dev")).toBeNull();
+  });
+
   it("recognises staging", () => {
     expect(getDeploymentEnvironment("staging.thynact.com")).toBe("staging");
   });

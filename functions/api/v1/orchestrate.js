@@ -23,7 +23,11 @@ function resolveApiBaseUrl(env, request) {
   } catch {
     /* fall through to the staging default */
   }
-  if (hostname === "app.thynact.com") return "https://api.thynact.com";
+  // Cloudflare serves the production deployment on the custom domain AND on
+  // the project's bare pages.dev alias; previews are subdomains of that alias.
+  if (hostname === "app.thynact.com" || hostname === "agent-os-test.pages.dev") {
+    return "https://api.thynact.com";
+  }
   return "https://api-staging.thynact.com";
 }
 

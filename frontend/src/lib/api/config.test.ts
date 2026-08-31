@@ -10,6 +10,21 @@ describe("computeApiBaseUrl", () => {
     expect(computeApiBaseUrl("app.thynact.com")).toBe("https://api.thynact.com");
   });
 
+  it("routes the bare pages.dev production alias to the production API", () => {
+    // Cloudflare serves the production deployment here too; without this it
+    // would have been pointed at a staging API that does not exist yet.
+    expect(computeApiBaseUrl("agent-os-test.pages.dev")).toBe("https://api.thynact.com");
+  });
+
+  it("still routes preview subdomains of that alias to staging", () => {
+    expect(computeApiBaseUrl("staging.agent-os-test.pages.dev")).toBe(
+      "https://api-staging.thynact.com"
+    );
+    expect(computeApiBaseUrl("abc123.agent-os-test.pages.dev")).toBe(
+      "https://api-staging.thynact.com"
+    );
+  });
+
   it("routes staging to the staging API", () => {
     expect(computeApiBaseUrl("staging.thynact.com")).toBe("https://api-staging.thynact.com");
   });

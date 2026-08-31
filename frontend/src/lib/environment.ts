@@ -11,8 +11,12 @@
  */
 export type DeploymentEnvironment = "production" | "staging" | "preview" | "local";
 
+// Mirrors PRODUCTION_HOSTS in lib/api/config.ts: Cloudflare serves production
+// on the custom domain and on the project's bare pages.dev alias.
+const PRODUCTION_HOSTS = new Set(["app.thynact.com", "agent-os-test.pages.dev"]);
+
 export function getDeploymentEnvironment(hostname: string): DeploymentEnvironment {
-  if (hostname === "app.thynact.com") return "production";
+  if (PRODUCTION_HOSTS.has(hostname)) return "production";
   if (hostname === "staging.thynact.com") return "staging";
   if (hostname.endsWith(".pages.dev")) return "preview";
   if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local")) {

@@ -26,11 +26,17 @@ function computeDevDefault(): string {
  *
  * VITE_API_BASE_URL still overrides this when set at build time.
  */
+// Cloudflare Pages serves the production deployment on BOTH the custom domain
+// and the project's bare pages.dev alias (verified: both return the same asset
+// hash). Preview deployments are always a SUBDOMAIN of that alias, so the bare
+// host is production and anything in front of it is not.
+const PRODUCTION_HOSTS = new Set(["app.thynact.com", "agent-os-test.pages.dev"]);
+
 export function computeApiBaseUrl(hostname: string): string {
-  if (hostname === "app.thynact.com") return "https://api.thynact.com";
+  if (PRODUCTION_HOSTS.has(hostname)) return "https://api.thynact.com";
   if (hostname === "staging.thynact.com") return "https://api-staging.thynact.com";
-  // Feature-branch previews (*.pages.dev) must never reach production; route
-  // them at staging, which holds no production data.
+  // Feature-branch previews (<hash>.<project>.pages.dev) must never reach
+  // production; route them at staging, which holds no production data.
   if (hostname.endsWith(".pages.dev")) return "https://api-staging.thynact.com";
   // Unknown host: fall back to staging rather than production, so a
   // misconfigured or unexpected domain cannot silently mutate production.
