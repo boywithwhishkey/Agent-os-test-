@@ -40,6 +40,10 @@ export function ConnectorCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
+      // Press feedback on a card that is genuinely clickable. Skipped for
+      // coming-soon cards, which do nothing when tapped — feedback there would
+      // promise an action that never happens.
+      whileTap={comingSoon ? undefined : { scale: 0.985 }}
     >
       <Card
         className={cn(

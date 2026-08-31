@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, Inbox, Loader2, WifiOff, Clock, Lock, SearchX } from "lucide-react";
 import { Button } from "./Button";
 import { ApiError } from "@/lib/api/client";
+import { DEFAULT_BASE_URL, getApiBaseUrl, setApiBaseUrl } from "@/lib/api/config";
 
 export function EmptyState({
   icon,
@@ -101,6 +102,16 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
 
   const { title, description, icon } = describeError(error);
   const correlationId = error instanceof ApiError ? error.correlationId : null;
+  // A network failure is almost always "the app is pointed at the wrong API",
+  // so name the URL it actually tried and offer a one-click way back to the
+  // default. Without this the user sees "Can't reach the API" with no idea
+  // which address failed or how to change it.
+  // Network failures are wrapped in ApiError with isNetworkError set — they are
+  // NOT plain exceptions, so testing `instanceof ApiError` alone would never
+  // match and this hint would never render.
+  const isNetworkError =
+    error instanceof ApiError ? error.isNetworkError || error.isTimeout : true;
+  const attemptedBaseUrl = isNetworkError ? getApiBaseUrl() : null;
   return (
     <div className="glass-soft flex flex-col items-center justify-center gap-3 rounded-xl border border-accent-red/20 px-6 py-14 text-center">
       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-red/10 text-accent-red">
@@ -115,11 +126,30 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
           </p>
         )}
       </div>
-      {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry}>
-          Try again
-        </Button>
+      {attemptedBaseUrl && (
+        <p className="max-w-sm break-all font-mono text-[11px] text-content-muted">
+          Tried: {attemptedBaseUrl}
+        </p>
       )}
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Try again
+          </Button>
+        )}
+        {attemptedBaseUrl && attemptedBaseUrl !== DEFAULT_BASE_URL && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setApiBaseUrl(DEFAULT_BASE_URL);
+              onRetry?.();
+            }}
+          >
+            Reset API URL
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

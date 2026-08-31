@@ -53,9 +53,34 @@ function computeDefaultBaseUrl(): string {
 
 const DEFAULT_BASE_URL = computeDefaultBaseUrl();
 
+/**
+ * A stored override is only honoured if it could actually work from this page.
+ *
+ * The stored value used to win unconditionally, so a base URL left over from a
+ * local dev session (http://localhost:8000) kept overriding the correct
+ * production default in that browser session — every request then failed as a
+ * network error and the app showed "Can't reach the API" forever, with no clue
+ * that a stale setting was the cause. An http:// or loopback target is
+ * unreachable from an https:// page (mixed content is blocked outright), so
+ * treat it as unusable rather than obeying it.
+ */
+function isUsableOverride(url: string): boolean {
+  if (typeof window === "undefined") return true;
+  if (window.location.protocol !== "https:") return true; // local dev: anything goes
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return false;
+    return !["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(parsed.hostname);
+  } catch {
+    return false; // unparseable — fall back to the computed default
+  }
+}
+
 export function getApiBaseUrl(): string {
   try {
-    return sessionStorage.getItem(BASE_URL_KEY) || DEFAULT_BASE_URL;
+    const stored = sessionStorage.getItem(BASE_URL_KEY);
+    if (stored && isUsableOverride(stored)) return stored;
+    return DEFAULT_BASE_URL;
   } catch {
     return DEFAULT_BASE_URL;
   }

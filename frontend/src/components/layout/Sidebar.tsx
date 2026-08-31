@@ -65,7 +65,12 @@ export function Sidebar({
                       end={item.to === "/"}
                       onClick={onCloseMobile}
                       className={cn(
-                        "focus-ring relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                        // Tap/press feedback on the primary navigation. transform-only, and
+                        // neutralised under reduced motion (the global CSS override
+                        // cannot touch transforms).
+                        "focus-ring relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium",
+                        "transition-[color,background-color,transform] duration-150",
+                        "active:scale-[0.97] motion-reduce:active:scale-100",
                         isActive
                           ? "text-accent-violet"
                           : "text-content-primary hover:bg-surface-hover hover:text-content-primary"

@@ -135,7 +135,7 @@ export default function Audit() {
                     <button
                       type="button"
                       onClick={() => setSelected(event)}
-                      className="focus-ring glass-ambient w-full rounded-lg border border-hairline p-3 text-left transition-colors hover:bg-surface-hover"
+                      className="focus-ring glass-ambient w-full rounded-lg border border-hairline p-3 text-left transition-[background-color,transform] duration-150 hover:bg-surface-hover active:scale-[0.985] motion-reduce:active:scale-100"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <span className="min-w-0 flex-1 truncate text-sm font-medium text-content-primary">
@@ -169,7 +169,7 @@ export default function Audit() {
                     <tr
                       key={i}
                       onClick={() => setSelected(event)}
-                      className="cursor-pointer border-b border-hairline last:border-0 hover:bg-surface-hover"
+                      className="cursor-pointer border-b border-hairline transition-colors last:border-0 hover:bg-surface-hover active:bg-surface-hover/80"
                     >
                       <td className="py-2.5 pr-3 font-medium text-content-primary">{event.tool}</td>
                       <td className="py-2.5 pr-3 capitalize text-content-muted">{event.risk.replace("_", " ")}</td>

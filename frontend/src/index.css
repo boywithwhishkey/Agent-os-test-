@@ -211,7 +211,7 @@ body {
 
   /* Even fainter than .border-surface — for glass primitives that separate
      through depth/opacity and only want a whisper of a tonal edge. */
-  .border-hairline { border-color: rgba(0,0,0,0.06); }
+  .border-hairline { border-color: rgba(24,20,40,0.10); }
   .dark .border-hairline { border-color: rgba(255,255,255,0.12); }
 
   .text-content-primary { color: #14161c; }
@@ -240,7 +240,7 @@ body {
 /* legibility at low alpha, not opacity.                                */
 /* ------------------------------------------------------------------ */
 .glass-ambient {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(9px) saturate(130%);
   -webkit-backdrop-filter: blur(9px) saturate(130%);
 }
@@ -251,7 +251,7 @@ body {
 }
 
 .glass-soft {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.62);
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(20, 22, 28, 0.04);
@@ -264,10 +264,14 @@ body {
 }
 
 .glass-panel {
-  background-color: rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.3), 0 8px 24px -12px rgba(20, 22, 28, 0.12);
+  /* Light mode needs far more body than dark: over a pale background a 0.16
+     alpha pane is invisible, so cards had no edge and the page read flat. */
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+    0 10px 30px -14px rgba(24, 20, 40, 0.28);
 }
 .dark .glass-panel {
   background-color: rgba(255, 255, 255, 0.07);
@@ -282,7 +286,7 @@ body {
 }
 
 .glass-focus {
-  background-color: rgba(255, 255, 255, 0.55);
+  background-color: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.7), 0 24px 48px -16px rgba(20, 22, 28, 0.22);
@@ -303,7 +307,7 @@ body {
    distinct clickable target, plus a visible (not hairline) border for
    affordance — this is the "forms/inputs" tier of the hierarchy. */
 .glass-field {
-  background-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(10px) saturate(140%);
   -webkit-backdrop-filter: blur(10px) saturate(140%);
 }
