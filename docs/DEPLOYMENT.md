@@ -64,6 +64,85 @@ browser's `sessionStorage`, and OAuth access tokens live in process memory
 (`app/integrations/oauth/store.py`), never persisted. Persisting them later
 requires encryption at rest and a key-management decision — see §7.
 
+## 3b. Zero-cost staging on Render (no payment method)
+
+`render.yaml` declares **only free-plan resources**. An earlier revision used
+`plan: starter` (web, paid) and `plan: basic-256mb` (Postgres, paid) — that is
+what made Render demand a payment method. `scripts/validate_deploy_config.py`
+now fails if any non-free plan is reintroduced, and tests cover it.
+
+### Free-tier limits — staging only, never represented as production durability
+
+| Resource | Free plan reality |
+|---|---|
+| Web service | Spins down after **15 min idle**; next request takes ~1 min to wake. **750 instance-hours/month per workspace**, shared across all free services. |
+| PostgreSQL | **Expires 30 days after creation**, then a 14-day grace period before deletion. Treat staging data as disposable and expect to recreate it. |
+| Key Value | **In-memory only.** Queued jobs do not survive a restart. |
+
+`/health` reporting `persistence: durable` means "not in-process memory" — it
+does **not** mean the free datastores are backed up or survive their limits.
+
+**Check first:** if the production service is also on a free plan, two
+always-on services will exceed 750 hours/month. Production must be on a paid
+plan (or accept spin-down) before staging can run alongside it for a full month.
+
+### Path A — Blueprint (try this first)
+
+Render → **New → Blueprint** → pick this repo → branch **`staging`**. It reads
+`render.yaml` and creates `thynact-api-staging` (free web),
+`thynact-staging-db` (free Postgres) and `thynact-staging-keyvalue` (free Key
+Value). Then set the three `sync: false` secrets and attach the custom domain.
+
+The blueprint uses Render's **native Python runtime**, not the repo Dockerfile:
+Render's docs do not state that Docker builds are available on free instances,
+and the native path avoids that uncertainty. The Dockerfile is unchanged and
+remains the production path.
+
+### Path B — manual resources (use if Blueprint still asks for a card)
+
+Blueprints have historically prompted for a payment method even when every
+declared resource is free. If that happens, **do not add a card** — create the
+three resources by hand instead. The result is identical; only the automation
+is lost.
+
+1. **New → Key Value** · name `thynact-staging-keyvalue` · plan **Free** ·
+   leave the allowlist empty (private network only). Copy its **Internal**
+   connection string.
+2. **New → Postgres** · name `thynact-staging-db` · plan **Free** · version 16.
+   Copy its **Internal** connection string.
+3. **New → Web Service** · connect this repo · branch **`staging`** ·
+   runtime **Python 3** · plan **Free** ·
+   - Build command: `pip install ".[persistence]"`
+   - Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - Health check path: `/health`
+4. Add these environment variables (values from steps 1-2 where noted):
+
+   | Key | Value |
+   |---|---|
+   | `PYTHON_VERSION` | `3.12.3` |
+   | `AGENT_OS_APP_ENV` | `staging` |
+   | `DATABASE_URL` | Postgres internal connection string |
+   | `REDIS_URL` | Key Value internal connection string |
+   | `AGENT_OS_TASK_BACKEND` … `AGENT_OS_TOOL_BACKEND` (6 vars) | `postgres` |
+   | `AGENT_OS_QUEUE_BACKEND` | `redis` |
+   | `AGENT_OS_REQUIRE_DURABLE_PERSISTENCE` | `true` |
+   | `AGENT_OS_CORS_ORIGINS` | `https://staging.thynact.com` |
+   | `AGENT_OS_FRONTEND_URL` | `https://staging.thynact.com` |
+   | `AGENT_OS_OAUTH_REDIRECT_BASE_URL` | `https://api-staging.thynact.com` |
+   | `AGENT_OS_API_KEY` | a **new** staging-only key — never production's |
+
+   Leave provider credentials unset; each then reports `CREDENTIAL_REQUIRED`
+   honestly instead of borrowing production credentials.
+5. **Settings → Custom Domains → add `api-staging.thynact.com`** (free web
+   services do support custom domains and managed TLS).
+6. Run the migration once — see §5 — with `AGENT_OS_APP_ENV=staging`. The
+   service will not boot until this succeeds, because
+   `AGENT_OS_REQUIRE_DURABLE_PERSISTENCE=true` fails closed on memory backends.
+
+Isolation is unchanged either way: staging gets its own datastores, its own
+secrets, its own OAuth registrations, `agent-os:staging` Redis namespacing, and
+the database environment stamp still refuses a cross-environment `DATABASE_URL`.
+
 ## 4. OAuth callback architecture
 
 Four providers are implemented (`app/integrations/oauth/config.py`):

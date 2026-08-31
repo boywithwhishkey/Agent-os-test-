@@ -55,14 +55,20 @@ Everything below needs a dashboard, a credential or a payment decision. This
 session held no `CLOUDFLARE_API_TOKEN` / `RENDER_API_KEY`. Ordered by
 dependency then value; never put secret values in this file.
 
-1. **Render → new Blueprint from `render.yaml`, branch `staging`.**
-   Creates `thynact-api-staging` + `thynact-staging-db` + `thynact-staging-redis`.
-   Set the three `sync: false` secrets to **staging-only** values
-   (`AGENT_OS_API_KEY`, `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET`).
-   *Watch for:* the blueprint has never been synced — expect to correct field
-   names if Render's schema moved (`type: redis` is the likely one), and confirm
-   the DB role may `CREATE EXTENSION vector` or migration 001 fails.
-   *Unlocks:* the entire staging environment.
+1. **Render → create the free staging stack, branch `staging`.**
+   `render.yaml` is now **all-free** (`plan: free` for web, Postgres and Key
+   Value). The payment prompt was caused by the previous `plan: starter` (web)
+   and `plan: basic-256mb` (Postgres) — both paid. **Do not add a payment
+   method.**
+   Try **New → Blueprint** first. If Blueprint still asks for a card (it has
+   historically done so even for all-free specs), fall back to creating the
+   three resources by hand — exact steps in `docs/DEPLOYMENT.md` §3b Path B.
+   Same result, only the automation is lost.
+   *Free-tier reality:* Postgres expires after 30 days, Key Value is in-memory
+   only, the web service sleeps after 15 min idle, and 750 instance-hours/month
+   are shared workspace-wide — check whether production is also free before
+   running both.
+   *Unlocks:* the entire staging environment, at zero cost.
 2. **Render → `thynact-api-staging` → Custom domain → `api-staging.thynact.com`.**
    *Unlocks:* the staging frontend, which already routes there by hostname.
 3. **Run migrations against staging once** — `AGENT_OS_APP_ENV=staging

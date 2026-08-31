@@ -9,6 +9,7 @@ discovered during a failed sync or, worse, after a bad deploy:
   * the environment identity and durability guards are actually set
   * datastore connections come from the staging instances, not literals
   * no secret values are committed
+  * every resource stays on Render's free plan (zero-cost staging)
 
 Run: uv run python scripts/validate_deploy_config.py
 """
@@ -24,6 +25,12 @@ ROOT = Path(__file__).resolve().parent.parent
 RENDER_YAML = ROOT / "render.yaml"
 
 PRODUCTION_HOSTS = {"api.thynact.com", "app.thynact.com"}
+# Staging must cost nothing. A paid plan here is what made Render demand a
+# payment method before anything could be provisioned, so it is now an error
+# rather than something you discover in the dashboard.
+FREE_PLAN = "free"
+# `redis` still works as a deprecated alias, but the current type is keyvalue.
+DEPRECATED_SERVICE_TYPES = {"redis": "keyvalue"}
 # Values that must never be committed as literals.
 SECRET_KEYS = {
     "AGENT_OS_API_KEY",
@@ -51,6 +58,14 @@ def validate(spec: dict) -> list[str]:
 
     for service in services:
         name = service.get("name", "<unnamed>")
+        if service.get("plan") != FREE_PLAN:
+            errors.append(
+                f"{name}: plan must be '{FREE_PLAN}' (got {service.get('plan')!r}) — "
+                "a paid plan makes Render require a payment method"
+            )
+        replacement = DEPRECATED_SERVICE_TYPES.get(service.get("type", ""))
+        if replacement:
+            errors.append(f"{name}: type {service['type']!r} is deprecated, use {replacement!r}")
         # Staging-only invariant: nothing may track main or be named production.
         if service.get("branch") not in (None, "staging"):
             errors.append(f"{name}: branch must be 'staging', got {service.get('branch')!r}")
@@ -92,13 +107,18 @@ def validate(spec: dict) -> list[str]:
 
     for database in databases:
         name = database.get("name", "<unnamed>")
+        if database.get("plan") != FREE_PLAN:
+            errors.append(
+                f"{name}: plan must be '{FREE_PLAN}' (got {database.get('plan')!r}) — "
+                "a paid plan makes Render require a payment method"
+            )
         if "prod" in name.lower():
             errors.append(f"{name}: production databases must not be blueprint-managed")
 
     if not databases:
         errors.append("staging must declare its own database, not share production's")
-    if not any(s.get("type") == "redis" for s in services):
-        errors.append("staging must declare its own Redis instance")
+    if not any(s.get("type") in {"keyvalue", "redis"} for s in services):
+        errors.append("staging must declare its own Key Value instance")
 
     return errors
 
@@ -114,7 +134,10 @@ def main() -> int:
         for error in errors:
             print(f"  - {error}", file=sys.stderr)
         return 1
-    print("render.yaml OK: staging-only, isolated datastores, no committed secrets.")
+    print(
+        "render.yaml OK: staging-only, all-free plans, isolated datastores, "
+        "no committed secrets."
+    )
     return 0
 
 

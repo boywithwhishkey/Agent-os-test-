@@ -1,37 +1,51 @@
 # THYNACT — Render Blueprint for the ISOLATED STAGING environment.
 #
-# Scope, deliberately: this file defines STAGING ONLY.
+# ZERO-COST BY DESIGN. Every resource below is on Render's `free` plan. An
+# earlier revision declared `plan: starter` (web) and `plan: basic-256mb`
+# (Postgres) — both paid — which is what made Render demand a payment method.
+# Nothing here should trigger that. See scripts/validate_deploy_config.py,
+# which now fails the build if a non-free plan is ever reintroduced.
 #
-# The production API service (api.thynact.com) was created by hand in the Render
-# dashboard and is intentionally NOT declared here. Declaring it would put a
-# live production service under Blueprint control as a side effect of adding a
-# file, which is exactly the kind of unrequested production change that needs
-# explicit authorization. Production stays dashboard-managed until someone
-# decides otherwise on purpose.
+# Scope, deliberately: STAGING ONLY.
 #
-# What this gives staging: its own web service, its own PostgreSQL database and
-# its own Redis instance. Nothing is shared with production — separate
-# datastores, separate secrets, separate OAuth credentials, separate queue
-# namespace.
+# The production API service (api.thynact.com) was created by hand in the
+# Render dashboard and is intentionally NOT declared here. Declaring it would
+# put a live production service under Blueprint control as a side effect of
+# adding a file. Production's architecture is unchanged and still *designed*
+# for durable Postgres + persistent Key Value — it simply is not provisioned
+# yet, and nothing here provisions it.
 #
-# NOT VALIDATED AGAINST RENDER: this session had no RENDER_API_KEY, so the
-# blueprint has never been synced. Treat the first sync as the validation step
-# and expect to correct field names if Render's schema has moved (in particular
-# `type: redis`, which newer Render docs call a Key Value instance).
+# FREE-TIER LIMITS — staging/testing only, NOT production durability:
+#   * Free Postgres EXPIRES 30 DAYS after creation (then a 14-day grace period
+#     before deletion). Staging data is disposable; expect to recreate it.
+#   * Free Key Value is IN-MEMORY ONLY. Queued jobs do not survive a restart.
+#   * Free web services SPIN DOWN after 15 minutes idle; the next request takes
+#     roughly a minute to wake them. First hit after a pause will feel slow.
+#   * Free instance hours are 750/month per WORKSPACE, shared across all free
+#     services. If the production service is also on a free plan, two
+#     always-on services will exceed that — check before relying on this.
 #
-# Secrets: every sync:false value must be set in the Render dashboard. No
-# secret values belong in this file.
+# Runtime note: this uses Render's native Python runtime rather than the repo
+# Dockerfile. Render's docs do not state that Docker builds are available on
+# free instances, and the native path avoids that uncertainty entirely while
+# building faster. The Dockerfile remains correct and is still the production
+# path.
 
 services:
   - type: web
     name: thynact-api-staging
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    plan: starter
+    runtime: python
+    plan: free
     branch: staging          # staging tracks the staging branch, never main
     autoDeploy: true
     healthCheckPath: /health
+    # The project requires Python >=3.12; Render's default is older.
+    buildCommand: pip install ".[persistence]"
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+
       # Identity. AGENT_OS_APP_ENV is load-bearing: it is checked against the
       # stamp written into the database by app/persistence/environment.py, so a
       # DATABASE_URL accidentally pointing at production makes the deploy fail
@@ -46,12 +60,13 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
-          name: thynact-staging-redis
+          type: keyvalue
+          name: thynact-staging-keyvalue
           property: connectionString
 
       # Durable backends. Staging exercises the same code paths as production;
-      # running it on memory backends would validate nothing.
+      # running it on memory backends would validate nothing. Note "durable"
+      # here means "not in-process memory" — free Key Value is still volatile.
       - key: AGENT_OS_TASK_BACKEND
         value: postgres
       - key: AGENT_OS_MEMORY_BACKEND
@@ -96,24 +111,25 @@ services:
       # Staging then reports each honestly as credential-required rather than
       # borrowing production credentials to look connected.
 
-  # Redis/Key Value instance for the staging job queue. Keys are additionally
+  # Key Value (Redis-compatible) instance for the staging job queue. `keyvalue`
+  # is the current type; `redis` is a deprecated alias. Keys are additionally
   # namespaced per environment (settings.queue_namespace -> "agent-os:staging"),
   # so even a misconfigured shared instance cannot cross-feed production jobs.
-  - type: redis
-    name: thynact-staging-redis
+  - type: keyvalue
+    name: thynact-staging-keyvalue
     plan: free
+    # Private network only — nothing outside the Render workspace needs it.
     ipAllowList: []
 
 databases:
   - name: thynact-staging-db
-    plan: basic-256mb
+    plan: free
     postgresMajorVersion: "16"
     # pgvector is required — migrations 001/002 CREATE EXTENSION vector, use a
     # vector column and build an HNSW index.
     #
-    # VERIFY ON FIRST SYNC: `CREATE EXTENSION vector` needs a role permitted to
-    # create extensions. Locally this failed with "permission denied to create
-    # extension / must be superuser" until the role was granted it, and managed
-    # providers vary. If migration 001 fails this way on Render, the database
-    # user needs the privilege (or the extension pre-created by an admin)
-    # before staging can come up.
+    # VERIFY ON FIRST MIGRATION: `CREATE EXTENSION vector` needs a role
+    # permitted to create extensions. Locally this failed with "permission
+    # denied to create extension / must be superuser" until the role was
+    # granted it. If migration 001 fails that way on Render, the database user
+    # needs the privilege or an admin must pre-create the extension.

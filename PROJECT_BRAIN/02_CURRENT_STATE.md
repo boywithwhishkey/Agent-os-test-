@@ -194,6 +194,54 @@ are implemented and tested, but the staging backend does not exist, and
 Cloudflare/Render dashboard actions. Test counts after this work: backend 243,
 frontend 55.
 
+## STAGING REDESIGNED FOR ZERO COST (2026-08-31)
+
+The operator hit a Render payment-method prompt creating the staging Blueprint
+and did **not** authorize paid resources. Cause identified and removed.
+
+**What triggered it:** two paid plan declarations in `render.yaml` —
+`plan: starter` on the web service and `plan: basic-256mb` on the Postgres
+database. Neither is a free plan; `basic-256mb` is not even in Render's current
+database plan list. The Key Value instance was already `plan: free`.
+
+**Now:** every resource is `plan: free` (web, Postgres, Key Value). Verified
+against Render's current docs, which list `free` as valid for all three.
+
+Other corrections made from the same doc check:
+- `type: redis` is a **deprecated alias**; the current type is `keyvalue`.
+  Changed (this was flagged as a likely schema-drift risk in an earlier entry —
+  now confirmed and fixed).
+- The blueprint now uses Render's **native Python runtime** rather than the repo
+  Dockerfile. Render's docs do not state that Docker builds are available on
+  free instances, so the native path removes that unknown; it also needs
+  `PYTHON_VERSION=3.12.3` because Render's default is older than the project's
+  `>=3.12` floor. The Dockerfile is untouched and remains the production path.
+
+**Free-tier limits, recorded honestly — staging only, not production
+durability:** free Postgres expires 30 days after creation (14-day grace);
+free Key Value is in-memory only so queued jobs do not survive a restart; free
+web services sleep after 15 minutes idle (~1 min cold start); 750 instance-hours
+per month are shared across the whole workspace, so production being free too
+would exceed that with two always-on services. `/health` reporting
+`persistence: durable` means "not in-process memory", not "backed up".
+
+**Blueprint may still demand a card.** Render Blueprints have historically
+prompted for a payment method even when every declared resource is free. So
+`docs/DEPLOYMENT.md` §3b now documents **two paths**: Path A Blueprint, and
+Path B creating the three free resources by hand with the exact settings and
+env-var table. Path B is the guaranteed-free route. Free web services do
+support custom domains and managed TLS, so `api-staging.thynact.com` attaches
+either way.
+
+**Guardrail added:** `scripts/validate_deploy_config.py` now fails if any
+resource declares a non-free plan or the deprecated `redis` type, with tests
+proving it catches both `plan: starter` and `plan: basic-256mb`. This exact
+problem cannot silently return.
+
+Production architecture is unchanged and still designed for durable Postgres +
+persistent Key Value. Nothing paid was provisioned. Backend suite: **282
+passing** with real Postgres/Redis.
+
 ## PRODUCTION DEPLOYED — 2026-08-31 (authorized by the operator)
 
 **21 commits merged to `main` and live on app.thynact.com + api.thynact.com.**
