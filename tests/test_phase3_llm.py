@@ -4,6 +4,7 @@ from app.llm.mock import MockLLMProvider
 from app.services.llm_agents import ParallelAgentExecutor, SpecialistJob
 from app.services.phase3_runtime import execute_phase3
 
+
 @pytest.mark.asyncio
 async def test_parallel_specialists_return_results():
     executor = ParallelAgentExecutor(MockLLMProvider(), max_parallel=3)

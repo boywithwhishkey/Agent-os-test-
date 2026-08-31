@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -48,7 +48,7 @@ async def test_postgres_memory_write():
 
 @pytest.mark.asyncio
 async def test_postgres_memory_get_and_search():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     row = {
         "id": "m1",
         "scope": "project",

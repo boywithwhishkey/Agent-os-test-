@@ -1,7 +1,9 @@
 import asyncio
 import os
 from pathlib import Path
+
 import asyncpg
+
 
 async def main():
     dsn = os.environ["DATABASE_URL"]

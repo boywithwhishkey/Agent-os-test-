@@ -1,4 +1,5 @@
 import json
+
 import pytest
 
 from app.llm.base import LLMProvider, LLMRequest

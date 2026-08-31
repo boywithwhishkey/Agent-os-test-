@@ -10,6 +10,7 @@ from app.runtime.registry import ConnectorRegistry
 from app.runtime.service import IntegrationRuntime
 from app.runtime.store import InMemoryExecutionStore
 
+
 class FakeAdapter(IntegrationAdapter):
     def __init__(self, failures_before_success=0):
         self.calls = 0
