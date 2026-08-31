@@ -156,6 +156,28 @@ RPO/RTO are **not yet set** — they are a business decision, not an engineering
 one, and should be agreed before public beta. DR cannot be called ready until a
 restore has actually been exercised.
 
+## 6b. Health endpoint cost (measured, local)
+
+Measured locally on 2026-08-31 — a shared cloud container, native PostgreSQL 16
+and Redis 7 on localhost, 40-60 sequential requests per endpoint via urllib,
+single process. These are **indicative baselines, not controlled benchmarks**:
+
+| Endpoint | p50 | p95 |
+|---|---|---|
+| `GET /live` | 1.3 ms | 1.7 ms |
+| `GET /health` | 1.3 ms | 1.7 ms |
+| `GET /api/v1/tools` (auth + registry) | 1.1 ms | 1.5 ms |
+| `POST /api/v1/tools/execute` (echo, audited to PostgreSQL) | 2.7 ms | 3.5 ms |
+| `GET /ready` (real PostgreSQL + Redis) | 42.5 ms | 47.7 ms |
+
+`/ready` is ~30x the others because `_check_database` / `_check_redis` build and
+tear down a fresh connection pool per call — deliberate (it proves the
+dependency is genuinely reachable now) but expensive.
+
+**Therefore: point orchestrator/uptime probes at `/health` or `/live`, never at
+`/ready` on a short interval.** `render.yaml` already sets
+`healthCheckPath: /health`. Use `/ready` for deploy gates and manual checks.
+
 ## 7. Known gaps (do not describe these as done)
 
 - No production datastores; production is ephemeral and mislabelled.

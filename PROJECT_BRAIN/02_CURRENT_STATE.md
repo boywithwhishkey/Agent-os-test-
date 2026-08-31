@@ -267,6 +267,15 @@ infrastructure (postgresql, redis). Customer-facing SaaS connectors
 live-validated: 0.** The real bottleneck is not adapter count — there is **no
 canonical capability layer**; `capabilities` are display strings only.
 
+### Fast-path performance baseline (measured locally, indicative only)
+Shared cloud container, native PG16 + Redis on localhost, 40-60 sequential
+requests/endpoint, single process. `/live` 1.3ms p50, `/health` 1.3ms,
+`GET /api/v1/tools` 1.1ms, `POST /tools/execute` (echo, audited to PostgreSQL)
+2.7ms, **`/ready` 42.5ms** — ~30x the rest because it builds and tears down a
+fresh connection pool per call to genuinely prove reachability. Point
+orchestrator probes at `/health` or `/live`, never `/ready` on a short
+interval; `render.yaml` already uses `/health`. No regressions introduced.
+
 ### Known gaps (do not describe as done)
 No multi-tenancy (verified: "tenant" appears nowhere in `app/` or
 `migrations/`); OAuth tokens in-memory and unencrypted, no PKCE/refresh
