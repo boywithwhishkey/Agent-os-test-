@@ -194,6 +194,59 @@ are implemented and tested, but the staging backend does not exist, and
 Cloudflare/Render dashboard actions. Test counts after this work: backend 243,
 frontend 55.
 
+## PRODUCTION DEPLOYED — 2026-08-31 (authorized by the operator)
+
+**21 commits merged to `main` and live on app.thynact.com + api.thynact.com.**
+This was an explicitly authorized production deploy, not a side effect.
+
+Deployment verified, not assumed:
+- Frontend asset hashes on app.thynact.com match a fresh local build
+  **exactly**: `index-BsnCZEWz.js` + `index-BYESCO92.css` (was
+  `index-DFpw3o8A.js` / `index-BOwZmnqK.css`).
+- Backend redeployed successfully — the Dockerfile change (installs the
+  `persistence` extra, ships `migrations/`+`scripts/`, honours `$PORT`) was the
+  one unverified risk and it worked. Proof the new code is live:
+  `/health` now returns `persistence` and `warnings`; `/live` returns 200;
+  `x-content-type-options`, `x-frame-options`, `referrer-policy` all present.
+- Live JS/CSS greped: hostname routing (`app.thynact.com`,
+  `agent-os-test.pages.dev`, `api-staging.thynact.com`), the `shimmer`
+  keyframe, `max-width` touch-target rules, `prefers-reduced-motion`, and
+  `active\:scale-\[0\.97\]` are all in the served bundles. `/favicon.svg` 200.
+- **Behavioural proof of the routing change**: the live bundle was served under
+  the real `app.thynact.com` hostname in a browser; it contacted
+  **api.thynact.com** (not staging) and rendered **no** environment badge.
+
+### Frontend polish shipped in this deploy
+Full sweep of 15 routes x 6 widths (320/390/430/768/1024/1440) against a live
+backend — **90 renders, zero horizontal overflow, zero console errors** — then
+the real defects fixed:
+- Audit's 5-column table forced horizontal scrolling below `sm`, hiding
+  Approval and When. Now cards below `sm`, table unchanged from `sm` up.
+- WorkflowRuns' "Look up" button wrapped mid-phrase at 320px.
+- Button touch targets were 32-36px; sm/md/icon now grow on phones only
+  (`max-sm:`), desktop density untouched. Tailwind's `pointer-coarse` variant
+  does **not** compile in this version — verified against the built CSS.
+- Buttons had no press feedback: `active:scale-[0.97]`, neutralised under
+  `prefers-reduced-motion`, transform-only.
+- Skeleton used Tailwind's default pulse even though index.css already defined
+  an unused `shimmer` keyframe. Now uses it; verified in both themes by holding
+  API responses open to capture a real loading state.
+- Deliberately NOT done: staggering long data lists (audit holds up to 1000
+  rows) — the cost outweighs the polish.
+
+### Caught before it shipped
+The hostname rule treated everything ending in `.pages.dev` as a preview, but
+Cloudflare serves production on the bare alias `agent-os-test.pages.dev` too
+(verified: same asset hash as app.thynact.com). Merging as written would have
+pointed that live surface at a staging API that does not exist. Fixed: the bare
+alias is production, subdomains of it are previews.
+
+### Production still to fix (unchanged by this deploy)
+`/health` reports `environment: development`, `persistence: "ephemeral"`, all
+seven subsystems `memory`. `/docs` is still publicly reachable **because** the
+env label is `development` — setting `AGENT_OS_APP_ENV=production` on Render
+closes it and is safe to do before any database exists.
+
 ## PRODUCTION-READINESS PASS (2026-08-31, later in the same session)
 
 All verified by running it. Test counts now: **backend 275, frontend 62**,
