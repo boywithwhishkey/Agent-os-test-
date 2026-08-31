@@ -115,6 +115,11 @@ class Settings(BaseSettings):
         default=0.25, ge=0, validation_alias="AGENT_OS_LEXICAL_WEIGHT"
     )
 
+    # Interactive API docs. Public by default (useful in dev/staging); the
+    # property below turns them off in production unless deliberately enabled,
+    # so the full route surface is not published to anonymous callers.
+    enable_docs: bool | None = Field(default=None, validation_alias="AGENT_OS_ENABLE_DOCS")
+
     require_durable_persistence: bool = Field(
         default=False, validation_alias="AGENT_OS_REQUIRE_DURABLE_PERSISTENCE"
     )
@@ -136,6 +141,12 @@ class Settings(BaseSettings):
                 f"AGENT_OS_APP_ENV must be one of {sorted(allowed)}, got {value!r}"
             )
         return normalized
+
+    @property
+    def docs_enabled(self) -> bool:
+        if self.enable_docs is not None:
+            return self.enable_docs
+        return self.app_env != "production"
 
     @property
     def is_production_like(self) -> bool:

@@ -83,3 +83,27 @@ async def test_readiness_fails_when_durability_is_required_but_absent(monkeypatc
 def test_queue_namespace_is_environment_scoped():
     assert Settings(AGENT_OS_APP_ENV="production").queue_namespace == "agent-os:production"
     assert Settings(AGENT_OS_APP_ENV="staging").queue_namespace == "agent-os:staging"
+
+
+def test_security_headers_are_present():
+    response = client.get("/health")
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Referrer-Policy"] == "no-referrer"
+
+
+def test_docs_are_public_outside_production():
+    for env in ["development", "staging"]:
+        assert Settings(AGENT_OS_APP_ENV=env).docs_enabled is True
+
+
+def test_docs_are_closed_in_production_by_default():
+    # api.thynact.com is publicly reachable; publishing the whole route surface
+    # to anonymous callers is not a sensible production default.
+    assert Settings(AGENT_OS_APP_ENV="production").docs_enabled is False
+
+
+def test_docs_can_be_explicitly_re_enabled_in_production():
+    assert (
+        Settings(AGENT_OS_APP_ENV="production", AGENT_OS_ENABLE_DOCS="true").docs_enabled is True
+    )

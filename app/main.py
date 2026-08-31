@@ -49,7 +49,30 @@ app = FastAPI(
     version="0.1.0",
     description="THYNACT API",
     lifespan=lifespan,
+    # FastAPI publishes /docs, /redoc and /openapi.json to anonymous callers by
+    # default. api.thynact.com is public, so in production that hands the entire
+    # route surface to anyone who asks. Off in production unless AGENT_OS_ENABLE_DOCS
+    # says otherwise; unchanged in development and staging.
+    docs_url="/docs" if settings.docs_enabled else None,
+    redoc_url="/redoc" if settings.docs_enabled else None,
+    openapi_url="/openapi.json" if settings.docs_enabled else None,
 )
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Conservative security headers.
+
+    HSTS is deliberately omitted: TLS termination is Cloudflare's, and issuing
+    Strict-Transport-Security from the origin risks pinning a subdomain that is
+    not yet HTTPS everywhere. These three are safe for a JSON API plus SPA
+    fallback and cost nothing per request.
+    """
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    return response
 
 
 # ---------------------------------------------------------
