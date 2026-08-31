@@ -81,7 +81,7 @@ export default function Audit() {
       <Card>
         <CardHeader className="flex-col items-stretch gap-3 sm:flex-row sm:items-center">
           <CardTitle className="flex items-center gap-2">
-            <ScrollText className="h-4 w-4 text-accent-violet" /> Events
+            <ScrollText className="h-4 w-4 text-accent-gold" /> Events
           </CardTitle>
           <div className="flex flex-1 flex-wrap gap-2 sm:justify-end">
             <SearchInput value={search} onChange={setSearch} placeholder="Filter by tool…" className="max-w-xs" />
@@ -96,7 +96,7 @@ export default function Audit() {
                 aria-label="Table view"
                 className={cn(
                   "rounded-md p-1.5 transition-colors",
-                  view === "table" ? "bg-accent-violet/10 text-accent-violet" : "text-content-muted hover:text-content-primary"
+                  view === "table" ? "bg-accent-gold/10 text-accent-gold" : "text-content-muted hover:text-content-primary"
                 )}
               >
                 <Table2 className="h-4 w-4" />
@@ -106,7 +106,7 @@ export default function Audit() {
                 aria-label="Timeline view"
                 className={cn(
                   "rounded-md p-1.5 transition-colors",
-                  view === "timeline" ? "bg-accent-violet/10 text-accent-violet" : "text-content-muted hover:text-content-primary"
+                  view === "timeline" ? "bg-accent-gold/10 text-accent-gold" : "text-content-muted hover:text-content-primary"
                 )}
               >
                 <GanttChartSquare className="h-4 w-4" />

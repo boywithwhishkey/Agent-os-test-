@@ -92,7 +92,7 @@ export function Topbar({
                     setThemeMenuOpen(false);
                   }}
                   className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm capitalize hover:bg-surface-hover ${
-                    theme === option ? "text-accent-violet" : "text-content-secondary"
+                    theme === option ? "text-accent-gold" : "text-content-secondary"
                   }`}
                 >
                   {option === "dark" && <Moon className="h-3.5 w-3.5" />}

@@ -14,7 +14,7 @@ const roleIcons: Record<string, typeof Search> = {
 
 const statusConfig: Record<AgentCardStatus, { icon: typeof CheckCircle2; className: string; label: string }> = {
   pending: { icon: Loader2, className: "text-content-muted", label: "Pending" },
-  running: { icon: Loader2, className: "text-accent-blue animate-spin", label: "Running" },
+  running: { icon: Loader2, className: "text-accent-gold-soft animate-spin", label: "Running" },
   success: { icon: CheckCircle2, className: "text-accent-green", label: "Success" },
   failed: { icon: XCircle, className: "text-accent-red", label: "Failed" },
 };
@@ -49,7 +49,7 @@ export function AgentCard({
         onClick={() => setOpen((o) => !o)}
         className="focus-ring flex w-full items-center gap-3 px-4 py-3 text-left"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-violet/10 text-accent-violet">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-gold/10 text-accent-gold">
           <RoleIcon className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">

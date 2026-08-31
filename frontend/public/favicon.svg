@@ -1,12 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="THYNACT">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="THYNACT">
   <defs>
-    <linearGradient id="thynact" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8574ff"/>
-      <stop offset="1" stop-color="#5bc7ff"/>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a8842f"/>
+      <stop offset=".55" stop-color="#d0ad5f"/>
+      <stop offset="1" stop-color="#e3c98a"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="8" fill="url(#thynact)"/>
-  <!-- Sparkle glyph, matching BrandMark's lucide "Sparkles" icon. -->
-  <path fill="#fff" d="M16 6.5l1.85 5.15a3 3 0 0 0 1.8 1.8L24.8 15.3l-5.15 1.85a3 3 0 0 0-1.8 1.8L16 24.1l-1.85-5.15a3 3 0 0 0-1.8-1.8L7.2 15.3l5.15-1.85a3 3 0 0 0 1.8-1.8z"/>
-  <path fill="#fff" opacity=".85" d="M24.5 6l.7 1.95a1.4 1.4 0 0 0 .85.85L28 9.5l-1.95.7a1.4 1.4 0 0 0-.85.85L24.5 13l-.7-1.95a1.4 1.4 0 0 0-.85-.85L21 9.5l1.95-.7a1.4 1.4 0 0 0 .85-.85z"/>
+  <rect width="64" height="64" rx="14" fill="#0b1220"/>
+  <g stroke="#eef2f8" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M15 17 H49"/>
+    <path d="M32 17 V36"/>
+    <path d="M12 50 C21 50 24 30 33 30"/>
+  </g>
+  <path d="M33 30 C42 30 44 43 49 50" stroke="url(#g)" stroke-width="3" stroke-linecap="round" fill="none"/>
 </svg>

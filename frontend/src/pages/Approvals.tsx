@@ -52,9 +52,9 @@ export default function Approvals() {
         description="THYNACT uses single-use, pre-authorized approval grants rather than a pending-request queue."
       />
 
-      <Card className="border-accent-blue/25 bg-accent-blue/5">
+      <Card className="border-accent-gold-soft/25 bg-accent-gold-soft/5">
         <CardContent className="flex items-start gap-3 pt-5">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent-blue" />
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent-gold-soft" />
           <p className="text-sm text-content-secondary">
             There is no "pending approval" queue in this backend — a grant is issued proactively for a
             specific tool, then consumed exactly once the next time that tool is executed with
@@ -67,7 +67,7 @@ export default function Approvals() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-accent-violet" /> Issue a trusted approval
+            <ShieldCheck className="h-4 w-4 text-accent-gold" /> Issue a trusted approval
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3">

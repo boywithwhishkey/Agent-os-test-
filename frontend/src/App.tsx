@@ -9,6 +9,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { LoadingState } from "@/components/ui/States";
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Overview = lazy(() => import("@/pages/Overview"));
+const Privacy = lazy(() => import("@/pages/Privacy"));
 const Tasks = lazy(() => import("@/pages/Tasks"));
 const Orchestrate = lazy(() => import("@/pages/Orchestrate"));
 const Autonomous = lazy(() => import("@/pages/Autonomous"));
@@ -45,7 +47,7 @@ export function App() {
             <BrowserRouter>
               <a
                 href="#main-content"
-                className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-accent-violet focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+                className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-accent-gold focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
               >
                 Skip to content
               </a>
@@ -53,6 +55,8 @@ export function App() {
                 <Routes>
                   <Route element={<AppShell />}>
                     <Route index element={<Dashboard />} />
+                    <Route path="overview" element={<Overview />} />
+                    <Route path="privacy" element={<Privacy />} />
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="orchestrate" element={<Orchestrate />} />
                     <Route path="autonomous" element={<Autonomous />} />

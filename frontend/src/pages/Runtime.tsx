@@ -64,7 +64,7 @@ export default function Runtime() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <PlayCircle className="h-4 w-4 text-accent-violet" /> Execute
+              <PlayCircle className="h-4 w-4 text-accent-gold" /> Execute
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -98,7 +98,7 @@ export default function Runtime() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-accent-violet" /> Inspect execution
+              <Search className="h-4 w-4 text-accent-gold" /> Inspect execution
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -121,7 +121,7 @@ export default function Runtime() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Server className="h-4 w-4 text-accent-violet" /> This session's executions
+            <Server className="h-4 w-4 text-accent-gold" /> This session's executions
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -226,7 +226,7 @@ function RuntimeGaugesDisplay({ data }: { data: RuntimeStatus }) {
 
       <div className="space-y-1.5">
         <p className="flex items-center gap-1.5 text-xs font-medium text-content-muted">
-          <Gauge className="h-3.5 w-3.5 text-accent-violet" /> Rate limit
+          <Gauge className="h-3.5 w-3.5 text-accent-gold" /> Rate limit
         </p>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface">
           <div

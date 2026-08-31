@@ -85,7 +85,7 @@ function WorkflowEditor() {
   const onConnect = useCallback(
     (connection: Connection) => {
       if (connection.source === connection.target) return;
-      setEdges((eds) => addEdge({ ...connection, animated: true, style: { stroke: "var(--color-accent-violet)" } }, eds));
+      setEdges((eds) => addEdge({ ...connection, animated: true, style: { stroke: "var(--color-accent-gold)" } }, eds));
     },
     [setEdges]
   );
@@ -234,7 +234,7 @@ function WorkflowEditor() {
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <GitBranch className="h-4 w-4 text-accent-violet" /> Step graph
+            <GitBranch className="h-4 w-4 text-accent-gold" /> Step graph
           </CardTitle>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={addStep}>
@@ -261,7 +261,7 @@ function WorkflowEditor() {
               edgeTypes={edgeTypes}
               defaultEdgeOptions={{
                 animated: true,
-                style: { stroke: "var(--color-accent-violet)", strokeWidth: 2 },
+                style: { stroke: "var(--color-accent-gold)", strokeWidth: 2 },
               }}
               fitView
               // Without a maxZoom, fitView scales to React Flow's default

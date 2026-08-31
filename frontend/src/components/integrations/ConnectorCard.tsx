@@ -50,14 +50,14 @@ export function ConnectorCard({
           "group relative flex h-full flex-col overflow-hidden transition-all",
           comingSoon
             ? "cursor-default opacity-70 saturate-[0.4] hover:opacity-90"
-            : "cursor-pointer hover:-translate-y-0.5 hover:border-accent-violet/40 hover:shadow-lg",
+            : "cursor-pointer hover:-translate-y-0.5 hover:border-accent-gold/40 hover:shadow-lg",
           connector.status === "connected" && "border-accent-green/25"
         )}
         onClick={onSelect}
       >
         <CardContent className="flex flex-1 flex-col gap-3 p-4">
           <div className="flex items-start justify-between gap-2">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-hairline bg-surface-hover text-content-secondary transition-colors group-hover:border-accent-violet/30 group-hover:text-accent-violet">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-hairline bg-surface-hover text-content-secondary transition-colors group-hover:border-accent-gold/30 group-hover:text-accent-gold">
               <Icon className="h-5 w-5" />
             </span>
             {comingSoon ? <Badge tone="neutral">Coming soon</Badge> : <StatusBadge status={connector.status} />}

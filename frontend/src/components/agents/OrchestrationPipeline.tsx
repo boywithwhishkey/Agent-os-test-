@@ -11,7 +11,7 @@ const STEPS: { role: string; label: string; icon: typeof Search }[] = [
 
 const ringClass: Record<AgentCardStatus, string> = {
   pending: "border-hairline text-content-muted",
-  running: "border-accent-blue text-accent-blue shadow-[0_0_18px_-3px_var(--color-accent-blue)] animate-pulse-slow",
+  running: "border-accent-gold-soft text-accent-gold-soft shadow-[0_0_18px_-3px_var(--color-accent-gold-soft)] animate-pulse-slow",
   success: "border-accent-green text-accent-green bg-accent-green/10",
   failed: "border-accent-red text-accent-red bg-accent-red/10",
 };
@@ -28,7 +28,7 @@ export function OrchestrationPipeline({ statuses }: { statuses: Record<string, A
             {i > 0 && (
               <div className="relative h-0.5 w-8 shrink-0 overflow-hidden rounded-full bg-surface sm:w-14">
                 <motion.div
-                  className="absolute inset-y-0 left-0 bg-accent-violet"
+                  className="absolute inset-y-0 left-0 bg-accent-gold"
                   initial={{ width: "0%" }}
                   animate={{ width: prevDone ? "100%" : "0%" }}
                   transition={{ duration: 0.5, ease: "easeOut" }}

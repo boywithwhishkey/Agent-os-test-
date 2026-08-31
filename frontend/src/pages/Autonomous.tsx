@@ -109,7 +109,7 @@ export default function Autonomous() {
             <Card>
               <CardHeader className="flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <CardTitle className="flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-accent-violet" /> Specialist jobs
+                  <Bot className="h-4 w-4 text-accent-gold" /> Specialist jobs
                 </CardTitle>
                 <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
                   {health.data && (

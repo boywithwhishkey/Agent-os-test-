@@ -27,10 +27,10 @@ const statusStyles: Record<
 > = {
   pending: { border: "border-hairline", icon: null, className: "" },
   running: {
-    border: "border-accent-blue",
+    border: "border-accent-gold-soft",
     icon: Loader2,
-    className: "text-accent-blue animate-spin",
-    glow: "shadow-[0_0_18px_-3px_var(--color-accent-blue)] animate-pulse-slow",
+    className: "text-accent-gold-soft animate-spin",
+    glow: "shadow-[0_0_18px_-3px_var(--color-accent-gold-soft)] animate-pulse-slow",
   },
   completed: { border: "border-accent-green", icon: CheckCircle2, className: "text-accent-green" },
   failed: { border: "border-accent-red", icon: XCircle, className: "text-accent-red" },
@@ -56,7 +56,7 @@ export function StepNode({ data, selected }: NodeProps & { data: StepNodeData })
         "glass-soft min-w-[180px] rounded-lg border-2 px-3 py-2.5 transition-colors",
         invalid ? "border-accent-red border-dashed" : statusStyle?.border ?? "border-hairline",
         !invalid && statusStyle?.glow,
-        selected && "ring-2 ring-accent-violet/50"
+        selected && "ring-2 ring-accent-gold/50"
       )}
     >
       <NodeToolbar isVisible={selected} position={Position.Top} className="glass-focus flex gap-1 rounded-lg border border-hairline p-1">
@@ -73,9 +73,9 @@ export function StepNode({ data, selected }: NodeProps & { data: StepNodeData })
           <Trash2 className="h-3 w-3" /> Delete
         </button>
       </NodeToolbar>
-      <Handle type="target" position={Position.Top} className="!bg-accent-violet" />
+      <Handle type="target" position={Position.Top} className="!bg-accent-gold" />
       <div className="flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent-violet/10 text-accent-violet">
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent-gold/10 text-accent-gold">
           <Icon className="h-3.5 w-3.5" />
         </span>
         <span className="truncate text-sm font-medium text-content-primary">{data.stepId}</span>
@@ -88,7 +88,7 @@ export function StepNode({ data, selected }: NodeProps & { data: StepNodeData })
       <p className="mt-1 text-xs capitalize text-content-muted">
         {data.type} · retries {data.maxRetries} · {data.timeoutSeconds}s
       </p>
-      <Handle type="source" position={Position.Bottom} className="!bg-accent-violet" />
+      <Handle type="source" position={Position.Bottom} className="!bg-accent-gold" />
     </div>
   );
 }

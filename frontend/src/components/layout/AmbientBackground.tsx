@@ -101,12 +101,12 @@ export function AmbientBackground() {
           className="left-[-22vh] top-[-18vh] h-[66vh] w-[54vh]"
           blur="26px"
           spin="animate-blob-slow"
-          gradient="linear-gradient(155deg, color-mix(in srgb, var(--color-ambient-magenta) 62%, transparent) 0%, color-mix(in srgb, var(--color-ambient-plum) 70%, transparent) 46%, transparent 76%)"
+          gradient="linear-gradient(155deg, color-mix(in srgb, var(--color-ambient-gold) 62%, transparent) 0%, color-mix(in srgb, var(--color-ambient-ink) 70%, transparent) 46%, transparent 76%)"
         />
         <Blob
           className="bottom-[-26vh] right-[-16vh] h-[62vh] w-[58vh]"
           blur="30px"
-          gradient="linear-gradient(200deg, color-mix(in srgb, var(--color-ambient-magenta) 48%, transparent) 0%, color-mix(in srgb, var(--color-ambient-indigo) 46%, transparent) 55%, transparent 80%)"
+          gradient="linear-gradient(200deg, color-mix(in srgb, var(--color-ambient-gold) 48%, transparent) 0%, color-mix(in srgb, var(--color-ambient-slate) 46%, transparent) 55%, transparent 80%)"
         />
       </motion.div>
 
@@ -115,28 +115,28 @@ export function AmbientBackground() {
         <Blob
           className="right-[-10vh] top-[-14vh] h-[48vh] w-[46vh]"
           blur="18px"
-          gradient="linear-gradient(165deg, color-mix(in srgb, var(--color-ambient-magenta) 82%, transparent) 0%, color-mix(in srgb, var(--color-ambient-plum) 60%, transparent) 40%, transparent 72%)"
+          gradient="linear-gradient(165deg, color-mix(in srgb, var(--color-ambient-gold) 82%, transparent) 0%, color-mix(in srgb, var(--color-ambient-ink) 60%, transparent) 40%, transparent 72%)"
         />
         <Blob
           className="right-[2vh] top-[16vh] h-[54vh] w-[50vh]"
           blur="20px"
           spin="animate-blob-slow"
-          gradient="linear-gradient(190deg, color-mix(in srgb, var(--color-ambient-violet) 70%, transparent) 0%, color-mix(in srgb, var(--color-ambient-indigo) 62%, transparent) 44%, transparent 78%)"
+          gradient="linear-gradient(190deg, color-mix(in srgb, var(--color-ambient-navy) 70%, transparent) 0%, color-mix(in srgb, var(--color-ambient-slate) 62%, transparent) 44%, transparent 78%)"
         />
       </motion.div>
 
       {/* Near band — smaller, brighter, moves most on scroll. */}
       <motion.div className="absolute inset-0" style={{ y: nearY, x: nearX }}>
         <Blob
-          className="bottom-[6vh] left-[-8vh] h-[42vh] w-[38vh]"
-          blur="16px"
-          gradient="linear-gradient(140deg, color-mix(in srgb, var(--color-ambient-magenta) 70%, transparent) 0%, color-mix(in srgb, var(--color-ambient-violet) 52%, transparent) 48%, transparent 78%)"
+          className="bottom-[4vh] left-[-20vh] h-[42vh] w-[38vh]"
+          blur="20px"
+          gradient="linear-gradient(140deg, color-mix(in srgb, var(--color-ambient-gold) 48%, transparent) 0%, color-mix(in srgb, var(--color-ambient-navy) 44%, transparent) 48%, transparent 78%)"
         />
         <Blob
           className="left-[36vh] top-[52vh] h-[34vh] w-[32vh]"
           blur="22px"
           spin="animate-blob-slow"
-          gradient="linear-gradient(210deg, color-mix(in srgb, var(--color-ambient-violet) 58%, transparent) 0%, color-mix(in srgb, var(--color-ambient-indigo) 44%, transparent) 52%, transparent 80%)"
+          gradient="linear-gradient(210deg, color-mix(in srgb, var(--color-ambient-navy) 58%, transparent) 0%, color-mix(in srgb, var(--color-ambient-slate) 44%, transparent) 52%, transparent 80%)"
         />
       </motion.div>
 
@@ -145,7 +145,7 @@ export function AmbientBackground() {
           {points.map((p, i) => (
             <span
               key={i}
-              className="absolute h-1 w-1 rounded-full bg-ambient-violet/40 animate-float"
+              className="absolute h-1 w-1 rounded-full bg-ambient-navy/40 animate-float"
               style={{ left: `${p.x}%`, top: `${p.y}%`, animationDelay: `${p.delay}s` }}
             />
           ))}

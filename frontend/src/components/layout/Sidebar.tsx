@@ -72,7 +72,7 @@ export function Sidebar({
                         "transition-[color,background-color,transform] duration-150",
                         "active:scale-[0.97] motion-reduce:active:scale-100",
                         isActive
-                          ? "text-accent-violet"
+                          ? "text-accent-gold"
                           : "text-content-primary hover:bg-surface-hover hover:text-content-primary"
                       )}
                       title={collapsed ? item.label : undefined}
@@ -80,7 +80,7 @@ export function Sidebar({
                       {isActive && (
                         <motion.span
                           layoutId="sidebar-active-pill"
-                          className="absolute inset-0 rounded-lg bg-accent-violet/10"
+                          className="absolute inset-0 rounded-lg bg-accent-gold/10"
                           transition={{ type: "spring", stiffness: 380, damping: 32 }}
                         />
                       )}

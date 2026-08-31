@@ -15,7 +15,7 @@ export function AuthRequiredBanner({ className }: { className?: string }) {
         </span>
         Operator access required to connect, configure, or test integrations — the catalog below is still browsable.
       </span>
-      <Link to="/settings" className="shrink-0 font-medium text-accent-violet hover:underline">
+      <Link to="/settings" className="shrink-0 font-medium text-accent-gold hover:underline">
         Sign in
       </Link>
     </div>

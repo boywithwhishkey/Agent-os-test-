@@ -15,20 +15,23 @@
      separate from the semantic accent tokens above (--color-accent-gold
      included) so decoration never gets confused with status/interactive
      color, and can be retuned without touching UI chrome. */
-  /* "Infinity" ambient palette. Liquid magenta/violet blobs drifting on a
-     near-black field, reacting to scroll. These are DECORATIVE tokens only —
-     never reuse them for status, and never use --color-accent-red
-     (error/offline) for decoration. They sit close to the existing violet
-     accent family, so the ambient layer and the UI read as one system. */
-  --color-ambient-magenta: #b0309b;
-  --color-ambient-violet: #5b4fd6;
-  --color-ambient-indigo: #3a3f9e;
+  /* Ambient palette, retuned to the THYNACT logo: deep navy masses lit by
+     soft gold. The liquid-blob FORM is unchanged — only the colour — because
+     a magenta/violet field fought the navy-and-gold mark everywhere it
+     appeared. DECORATIVE tokens only: never reuse for status, and never use
+     --color-accent-red (error/offline) for decoration. */
+  --color-ambient-gold: #b98f3d;
+  --color-ambient-navy: #2b2114;
+  --color-ambient-slate: #3a2c1a;
   /* Deepest shade — where a blob turns away from the light.
      to the gold/amber glow in the cinematic background arcs/streaks below. */
-  --color-ambient-plum: #2a0f33;
-  --color-accent-violet: #8574ff;
-  --color-accent-violet-soft: #aa9fff;
-  --color-accent-blue: #5bc7ff;
+  --color-ambient-ink: #140f08;
+  /* Brand accent: soft dark gold, taken from the THYNACT logo's gradient.
+     Replaces the previous violet/blue pair entirely — the mark is deep navy +
+     gold, so a blue interactive accent fought the logo everywhere it appeared. */
+  --color-accent-gold: #d0ad5f;
+  --color-accent-gold-soft: #e3c98a;
+  --color-accent-gold-deep: #a8842f;
   --color-accent-green: #5dd7a2;
   --color-accent-red: #ff7382;
   --color-accent-amber: #f0b429;
@@ -126,13 +129,14 @@ html.dark {
 }
 html:not(.dark) {
   color-scheme: light;
-  /* Light-theme-only accent-violet retune: the dark-mode violet
-     (--color-accent-violet, #8574ff) reads at ~3.5:1 against light glass
+  /* Light-theme-only gold retune: the dark-mode gold reads too pale against
+     light glass
      surfaces — under AA for text and for white-on-violet button labels.
      This deepens it to ~5.9:1 while staying clearly violet, so sidebar
      active state, primary buttons, links, and badges all read clearly in
      light mode without changing the (already-correct) dark theme. */
-  --color-accent-violet: #5b4fd6;
+  --color-accent-gold: #8a6a1c;
+  --color-accent-gold-soft: #a8842f;
 }
 
 body {
@@ -146,26 +150,26 @@ body {
      this, low-alpha glass surfaces in light mode had nothing but flat
      gray behind them to reveal. */
   background-image:
-    radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-magenta) 9%, transparent), transparent 66%),
-    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-violet) 7%, transparent), transparent 70%),
-    radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-indigo) 8%, transparent), transparent 68%);
+    radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-gold) 10%, transparent), transparent 66%),
+    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-slate) 8%, transparent), transparent 70%),
+    radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-navy) 8%, transparent), transparent 68%);
   background-attachment: fixed;
 }
 .dark body {
-  background-color: #07050e;
+  background-color: #08060a;
   /* Base wash only. The liquid blobs in AmbientBackground carry the actual
      colour; these are faint pools so the page never reads as flat black
      between them. Fixed so it does not reflow while scrolling. */
   background-image:
-    radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-magenta) 14%, transparent), transparent 62%),
-    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-plum) 55%, transparent), transparent 68%),
-    radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-indigo) 16%, transparent), transparent 66%);
+    radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-gold) 12%, transparent), transparent 62%),
+    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-ink) 65%, transparent), transparent 68%),
+    radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-navy) 40%, transparent), transparent 66%);
   background-attachment: fixed;
   color: #f4f2f8;
 }
 
 ::selection {
-  background-color: color-mix(in srgb, var(--color-accent-violet) 35%, transparent);
+  background-color: color-mix(in srgb, var(--color-accent-gold) 35%, transparent);
 }
 
 * {
@@ -189,7 +193,7 @@ body {
   outline: none;
 }
 .focus-ring:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--color-accent-violet) 60%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--color-accent-gold) 60%, transparent);
   outline-offset: 2px;
 }
 

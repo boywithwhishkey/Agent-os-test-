@@ -94,7 +94,7 @@ export default function Orchestrate() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-accent-violet" /> Agent activity
+                <Sparkles className="h-4 w-4 text-accent-gold" /> Agent activity
               </CardTitle>
               <Badge tone={result.verification.passed ? "green" : "red"}>
                 {result.verification.passed ? (

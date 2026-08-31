@@ -6,9 +6,9 @@ import type { MemoryRecord, MemoryScope } from "@/lib/types";
 const MAX_NODES = 40;
 
 const scopeColor: Record<MemoryScope, string> = {
-  session: "var(--color-accent-blue)",
+  session: "var(--color-accent-gold-soft)",
   task: "var(--color-accent-green)",
-  project: "var(--color-accent-violet)",
+  project: "var(--color-accent-gold)",
   decision: "var(--color-accent-gold)",
   agent_run: "var(--color-accent-amber)",
 };
@@ -82,7 +82,7 @@ export function MemoryGraph({ records }: { records: MemoryRecord[] }) {
                   y1={positions[edge.a].y}
                   x2={positions[edge.b].x}
                   y2={positions[edge.b].y}
-                  stroke={active ? "var(--color-accent-violet)" : "currentColor"}
+                  stroke={active ? "var(--color-accent-gold)" : "currentColor"}
                   strokeOpacity={active ? 0.8 : 0.15}
                   strokeWidth={active ? 2 : 1}
                   className="text-content-muted transition-all"

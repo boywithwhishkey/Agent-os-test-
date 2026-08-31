@@ -21,16 +21,16 @@ export function MetricCard({
 }) {
   const toneStyles: Record<string, string> = {
     neutral: "text-content-primary",
-    violet: "text-accent-violet",
-    blue: "text-accent-blue",
+    violet: "text-accent-gold",
+    blue: "text-accent-gold-soft",
     green: "text-accent-green",
     red: "text-accent-red",
     amber: "text-accent-amber",
   };
   const glowStyles: Record<string, string> = {
     neutral: "bg-content-primary/[0.03]",
-    violet: "bg-accent-violet/[0.06]",
-    blue: "bg-accent-blue/[0.06]",
+    violet: "bg-accent-gold/[0.06]",
+    blue: "bg-accent-gold-soft/[0.06]",
     green: "bg-accent-green/[0.06]",
     red: "bg-accent-red/[0.06]",
     amber: "bg-accent-amber/[0.06]",

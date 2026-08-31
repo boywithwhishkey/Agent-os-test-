@@ -76,7 +76,7 @@ export default function Tasks() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-accent-violet" /> New task
+              <Plus className="h-4 w-4 text-accent-gold" /> New task
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -111,7 +111,7 @@ export default function Tasks() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-accent-violet" /> Look up a task
+              <Search className="h-4 w-4 text-accent-gold" /> Look up a task
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

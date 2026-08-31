@@ -98,7 +98,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                     onMouseEnter={() => setActiveIndex(i)}
                     className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm ${
                       i === activeIndex
-                        ? "bg-accent-violet/10 text-accent-violet"
+                        ? "bg-accent-gold/10 text-accent-gold"
                         : "text-content-secondary hover:bg-surface-hover"
                     }`}
                   >

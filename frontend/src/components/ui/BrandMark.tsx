@@ -1,19 +1,17 @@
-import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThynactMark } from "./ThynactLogo";
 
 const TAGLINE = "Built to Think. Powered to Act.";
 
 function Mark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const dims = size === "sm" ? "h-7 w-7" : size === "lg" ? "h-11 w-11" : "h-9 w-9";
-  const iconDims = size === "sm" ? "h-4 w-4" : size === "lg" ? "h-6 w-6" : "h-5 w-5";
+  // The real monogram replaces the old generic "sparkles in a gradient tile".
+  // No tile, no fill: the mark sits directly on the ambient background the way
+  // it does on the brand sheet, and its dark ink follows `currentColor` so one
+  // asset serves both themes.
   return (
-    <span
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent-violet to-accent-blue text-white shadow-[0_0_20px_-4px_var(--color-accent-violet)]",
-        dims
-      )}
-    >
-      <Sparkles className={iconDims} />
+    <span className={cn("flex shrink-0 items-center justify-center text-content-primary", dims)}>
+      <ThynactMark className="h-full w-full" />
     </span>
   );
 }
@@ -23,7 +21,10 @@ function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   return (
     <span
       className={cn(
-        "bg-gradient-to-r from-accent-violet-soft via-accent-blue to-accent-violet-soft bg-clip-text font-semibold tracking-tight text-transparent",
+        // Wide tracking and a light weight to match the logo lockup, in the
+        // app's own ink rather than a coloured gradient — the gold belongs to
+        // the mark, and repeating it in the word made the pair compete.
+        "font-medium tracking-[0.18em] text-content-primary",
         textSize
       )}
     >

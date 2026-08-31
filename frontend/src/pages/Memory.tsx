@@ -24,11 +24,11 @@ function MatchScore({ score }: { score: number }) {
     <div className="mt-1 flex items-center gap-2" title={`Relevance score ${score.toFixed(3)}`}>
       <div className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-surface">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-accent-violet to-accent-blue transition-[width] duration-500"
+          className="h-full rounded-full bg-gradient-to-r from-accent-gold to-accent-gold-soft transition-[width] duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs font-medium text-accent-violet">{pct}% match</span>
+      <span className="text-xs font-medium text-accent-gold">{pct}% match</span>
     </div>
   );
 }
@@ -117,7 +117,7 @@ function MemorySearchPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Brain className="h-4 w-4 text-accent-violet" /> Results
+            <Brain className="h-4 w-4 text-accent-gold" /> Results
           </CardTitle>
           <div className="flex items-center gap-2">
             <Select value={String(limit)} onChange={(e) => setLimit(Number(e.target.value))} className="w-28">
@@ -131,14 +131,14 @@ function MemorySearchPanel() {
               <button
                 onClick={() => setView("list")}
                 aria-label="List view"
-                className={`rounded-md p-1.5 transition-colors ${view === "list" ? "bg-accent-violet/10 text-accent-violet" : "text-content-muted hover:text-content-primary"}`}
+                className={`rounded-md p-1.5 transition-colors ${view === "list" ? "bg-accent-gold/10 text-accent-gold" : "text-content-muted hover:text-content-primary"}`}
               >
                 <List className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setView("graph")}
                 aria-label="Graph view"
-                className={`rounded-md p-1.5 transition-colors ${view === "graph" ? "bg-accent-violet/10 text-accent-violet" : "text-content-muted hover:text-content-primary"}`}
+                className={`rounded-md p-1.5 transition-colors ${view === "graph" ? "bg-accent-gold/10 text-accent-gold" : "text-content-muted hover:text-content-primary"}`}
               >
                 <Share2 className="h-4 w-4" />
               </button>
@@ -285,7 +285,7 @@ function MemoryWritePanel() {
               step={0.05}
               value={importance}
               onChange={(e) => setImportance(Number(e.target.value))}
-              className="mt-2.5 w-full accent-violet-500"
+              className="mt-2.5 w-full accent-gold-500"
             />
           </div>
         </div>

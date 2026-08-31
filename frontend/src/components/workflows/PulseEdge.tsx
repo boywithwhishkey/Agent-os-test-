@@ -24,7 +24,7 @@ export function PulseEdge({
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       {active && (
-        <circle r="4" fill="var(--color-accent-blue)" style={{ filter: "drop-shadow(0 0 4px var(--color-accent-blue))" }}>
+        <circle r="4" fill="var(--color-accent-gold-soft)" style={{ filter: "drop-shadow(0 0 4px var(--color-accent-gold-soft))" }}>
           <animateMotion dur="1.1s" repeatCount="indefinite" path={edgePath} />
         </circle>
       )}

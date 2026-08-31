@@ -50,7 +50,7 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-accent-violet" />
+            <KeyRound className="h-4 w-4 text-accent-gold" />
             API connection
           </CardTitle>
           {configured ? (
@@ -115,7 +115,7 @@ export default function Settings() {
                 onClick={() => setTheme(option.value)}
                 className={`focus-ring flex flex-1 flex-col items-center gap-1.5 rounded-lg border p-3 text-sm font-medium transition-colors ${
                   theme === option.value
-                    ? "border-accent-violet/40 bg-accent-violet/10 text-accent-violet"
+                    ? "border-accent-gold/40 bg-accent-gold/10 text-accent-gold"
                     : "border-hairline text-content-secondary hover:bg-surface-hover"
                 }`}
               >

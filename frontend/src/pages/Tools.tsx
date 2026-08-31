@@ -72,7 +72,7 @@ export default function Tools() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-accent-violet" /> Tool registry
+            <Wrench className="h-4 w-4 text-accent-gold" /> Tool registry
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -104,7 +104,7 @@ export default function Tools() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-accent-violet" /> Issue approval
+              <ShieldCheck className="h-4 w-4 text-accent-gold" /> Issue approval
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -144,7 +144,7 @@ export default function Tools() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <PlayCircle className="h-4 w-4 text-accent-violet" /> Execute tool
+              <PlayCircle className="h-4 w-4 text-accent-gold" /> Execute tool
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">

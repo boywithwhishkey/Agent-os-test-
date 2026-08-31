@@ -189,7 +189,7 @@ export default function Integrations() {
           {!isLoading && popular.length > 0 && (
             <section className="space-y-3">
               <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-content-muted">
-                <Sparkles className="h-3.5 w-3.5 text-accent-violet" /> Popular integrations
+                <Sparkles className="h-3.5 w-3.5 text-accent-gold" /> Popular integrations
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {popular.map((connector) => (
@@ -213,7 +213,7 @@ export default function Integrations() {
                     className={cn(
                       "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                       filter === f.value
-                        ? "border-accent-violet/40 bg-accent-violet/10 text-accent-violet"
+                        ? "border-accent-gold/40 bg-accent-gold/10 text-accent-gold"
                         : "glass-ambient border-hairline text-content-muted hover:text-content-primary"
                     )}
                   >

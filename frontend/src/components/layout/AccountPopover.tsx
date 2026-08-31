@@ -93,7 +93,7 @@ export function AccountPopover() {
   const menuContent = (
     <>
       <div className="flex items-center gap-2.5 border-b border-hairline px-4 py-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-violet/10 text-accent-violet">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-gold/10 text-accent-gold">
           <CircleUserRound className="h-4.5 w-4.5" />
         </div>
         <div className="min-w-0">
@@ -151,7 +151,7 @@ export function AccountPopover() {
           aria-label="Account and operator session"
           aria-haspopup="menu"
           aria-expanded={open}
-          className="focus-ring relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full glass-soft border border-hairline text-content-secondary transition-colors hover:text-accent-violet"
+          className="focus-ring relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full glass-soft border border-hairline text-content-secondary transition-colors hover:text-accent-gold"
         >
           <CircleUserRound className="h-4.5 w-4.5" />
           <span

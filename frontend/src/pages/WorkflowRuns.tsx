@@ -27,7 +27,7 @@ export default function WorkflowRuns() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-accent-violet" /> Look up a run
+            <Search className="h-4 w-4 text-accent-gold" /> Look up a run
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -55,7 +55,7 @@ export default function WorkflowRuns() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <History className="h-4 w-4 text-accent-violet" /> This session's runs
+            <History className="h-4 w-4 text-accent-gold" /> This session's runs
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -155,7 +155,7 @@ export function ConnectorDrawer({
       <div className="space-y-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-hairline bg-surface-hover text-accent-violet">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-hairline bg-surface-hover text-accent-gold">
               <Icon className="h-5 w-5" />
             </span>
             <div>
@@ -236,7 +236,7 @@ export function ConnectorDrawer({
                 href={connector.documentation_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-accent-violet hover:underline"
+                className="inline-flex items-center gap-1 text-accent-gold hover:underline"
               >
                 {new URL(connector.documentation_url).hostname} <ExternalLink className="h-3 w-3" />
               </a>

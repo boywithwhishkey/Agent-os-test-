@@ -94,7 +94,7 @@ export default function SystemHealth() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <HeartPulse className="h-4 w-4 text-accent-violet" /> API service
+              <HeartPulse className="h-4 w-4 text-accent-gold" /> API service
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -122,7 +122,7 @@ export default function SystemHealth() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <HeartPulse className="h-4 w-4 text-accent-violet" /> Readiness checks
+              <HeartPulse className="h-4 w-4 text-accent-gold" /> Readiness checks
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -155,7 +155,7 @@ export default function SystemHealth() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-accent-violet" /> Persistence map
+            <Layers className="h-4 w-4 text-accent-gold" /> Persistence map
           </CardTitle>
         </CardHeader>
         <CardContent>

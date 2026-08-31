@@ -15,6 +15,8 @@ import {
   ScrollText,
   HeartPulse,
   Settings,
+  Sparkles,
+  FileLock2,
 } from "lucide-react";
 
 export interface NavItem {
@@ -30,7 +32,10 @@ export interface NavGroup {
 export const navGroups: NavGroup[] = [
   {
     label: "Overview",
-    items: [{ label: "Dashboard", to: "/", icon: LayoutDashboard }],
+    items: [
+      { label: "Dashboard", to: "/", icon: LayoutDashboard },
+      { label: "Product Overview", to: "/overview", icon: Sparkles },
+    ],
   },
   {
     label: "Execution",
@@ -67,6 +72,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Health", to: "/system-health", icon: HeartPulse },
       { label: "Settings", to: "/settings", icon: Settings },
+      { label: "Privacy & Policy", to: "/privacy", icon: FileLock2 },
     ],
   },
 ];
