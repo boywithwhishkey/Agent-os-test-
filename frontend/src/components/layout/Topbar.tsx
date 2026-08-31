@@ -5,6 +5,7 @@ import { HealthIndicator } from "./HealthIndicator";
 import { AccountPopover } from "./AccountPopover";
 import { useTheme } from "@/lib/theme";
 import { isApiConfigured } from "@/lib/api/config";
+import { getEnvironmentLabel } from "@/lib/environment";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
@@ -19,6 +20,8 @@ export function Topbar({
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const configured = isApiConfigured();
 
+  const environmentLabel =
+    typeof window === "undefined" ? null : getEnvironmentLabel(window.location.hostname);
   const themeIcon = theme === "dark" ? <Moon className="h-4 w-4" /> : theme === "light" ? <Sun className="h-4 w-4" /> : <Monitor className="h-4 w-4" />;
 
   return (
@@ -46,6 +49,15 @@ export function Topbar({
       </button>
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        {/* Non-production deployments say so. staging.thynact.com was for a
+            period served from the production build, making the two visually
+            identical — an operator should never have to guess which one they
+            are about to act on. Nothing renders in production. */}
+        {environmentLabel && (
+          <Badge tone="amber" title={`Non-production deployment (${environmentLabel})`}>
+            {environmentLabel}
+          </Badge>
+        )}
         {!configured && (
           <Link to="/settings">
             <Badge tone="amber" className="hidden sm:inline-flex">
