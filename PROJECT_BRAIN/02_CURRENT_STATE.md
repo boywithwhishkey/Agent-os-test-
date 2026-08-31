@@ -300,6 +300,63 @@ Production architecture is unchanged and still designed for durable Postgres +
 persistent Key Value. Nothing paid was provisioned. Backend suite: **282
 passing** with real Postgres/Redis.
 
+## BRAND: GOLD + MAGENTA DUOTONE, MARK RE-TRACED (2026-08-31, latest)
+
+Supersedes the gold-only pass recorded immediately below. Three changes, all
+operator-directed:
+
+**1. The palette is a duotone, not gold-only.** The exact Infinity magenta
+(`#b0309b`) is restored as `--color-ambient-magenta`, with `--color-ambient-plum`
+as its deep companion, and mixed *within* individual blobs rather than split
+across gold blobs and pink blobs — the field has to read as one lit body.
+The magenta is deliberately weighted LOWER than the gold everywhere they meet:
+`#b0309b` is far more saturated than the muted `#b98f3d`, so equal percentages
+produced a pink field with gold trim. The first attempt did exactly that and was
+rebalanced after looking at it. Light-mode ambient opacity was raised 0.22 →
+0.34, because at 0.22 both hues faded to the same near-neutral grey and the
+duotone stopped being visible at all.
+
+**2. The mark was re-traced from measurement, not redrawn by eye.** The previous
+mark was wrong in three specific ways, all found by extracting the reference
+crop, thresholding it and measuring the ink bands rather than eyeballing a
+low-resolution image:
+- The stem must stop SHORT of the curve (~4.5-unit gap). Closing it turns the
+  glyph into a solid arch and loses the "T over a flourish" reading.
+- The right hook is SHORT and ends high (y≈38), well above the left tail
+  (y≈60). The old drawing ran it to the baseline, producing a symmetric arch —
+  the single biggest way this mark gets redrawn wrong.
+- The glyph is taller than wide (≈47×52). The old one was squat (52×43).
+Colour: the T is solid `currentColor`; only the flourish carries the gradient
+(ink → magenta → gold). A gradient across the whole glyph was tried and
+rejected — the magenta swallowed the crossbar and the mark read simply purple.
+
+A real latent bug was found and fixed here: the leg gradient used a SHARED id
+while containing `currentColor`, so every instance resolved against the first
+gradient in the document. Two marks in different ink colours on one page
+rendered with the same ink. It surfaced when proofing on light and dark
+swatches together; ids are now per-instance via `useId()`, with colons stripped
+(legal in `url(#…)`, not in a CSS selector).
+
+**3. Lockup and site typography.** `BrandMark` "full" now matches the brand
+sheet exactly — mark and wordmark on line one, tagline on line two running the
+full width beneath BOTH, left-aligned to the mark rather than indented into a
+column. Verified by measuring the reference: tagline ink starts at x=35, the
+same x as the mark, while the wordmark starts at x≈98.
+
+Site-wide type is one step larger and one step lighter: the `--text-*` tokens
+were each raised ~1px and the `--font-weight-*` ladder shifted down (normal
+350, medium 450, semibold 550, bold 650), plus body tracking +0.006em and
+optical tightening on headings. Done through the SIZE tokens rather than the
+root font-size deliberately — Tailwind's spacing scale is rem-based, so raising
+the root would have zoomed every padding and gap and re-flowed the app. The
+logo lockup is excluded by pinning literal weights (`font-[450]`,
+`font-[350]`) so it does not follow the tokens if they move again.
+
+Validation: all 17 routes at 390/768/1440 in both themes, 0 horizontal
+overflow. Frontend typecheck clean, lint 0 errors / 2 pre-existing warnings,
+65 frontend tests, build clean. Backend 282 tests, ruff clean,
+`validate_deploy_config.py` clean.
+
 ## BRAND: GOLD MONOGRAM DIRECTION (2026-08-31, supersedes the magenta/violet pass)
 
 The operator supplied the THYNACT logo (navy + gold "TA" monogram) with an
