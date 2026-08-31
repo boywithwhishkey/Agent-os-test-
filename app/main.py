@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -20,9 +21,25 @@ from app.core.config import settings
 from app.core.correlation import CORRELATION_HEADER, get_or_create_correlation_id
 from app.core.readiness import check_readiness
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Fail closed when durable persistence was explicitly required. This is
+    # opt-in (AGENT_OS_REQUIRE_DURABLE_PERSISTENCE) rather than implied by
+    # app_env, so enabling it is a deliberate act: turning it on implicitly for
+    # production would have converted today's silent degradation into an
+    # immediate outage for a deployment that has no DATABASE_URL yet.
+    if settings.require_durable_persistence and settings.ephemeral_subsystems:
+        raise RuntimeError(
+            "AGENT_OS_REQUIRE_DURABLE_PERSISTENCE is set but these subsystems are "
+            f"still in-memory: {', '.join(settings.ephemeral_subsystems)}. "
+            "Set the corresponding AGENT_OS_*_BACKEND variables (and DATABASE_URL/"
+            "REDIS_URL) or unset the requirement."
+        )
+    for warning in settings.persistence_warnings():
+        logger.warning("configuration: %s", warning)
     yield
     await lifecycle.close_all()
 
@@ -104,8 +121,16 @@ app.include_router(phase10_router)
 # System Health
 # ---------------------------------------------------------
 
+@app.get("/live", tags=["system"])
+def liveness() -> dict:
+    """Liveness: the process is up. Deliberately checks no dependencies, so a
+    database blip never causes an orchestrator to kill a healthy process."""
+    return {"status": "alive", "environment": settings.app_env}
+
+
 @app.get("/health", tags=["system"])
 def health() -> dict:
+    warnings = settings.persistence_warnings()
     return {
         "status": "ok",
         "service": settings.app_name,
@@ -121,13 +146,21 @@ def health() -> dict:
             "tool": settings.tool_backend,
             "queue": settings.queue_backend,
         },
+        # Honest persistence summary: "ephemeral" means every task, workflow,
+        # approval and audit record is lost on restart. This used to be
+        # inferable only by reading the backends map field by field.
+        "persistence": settings.persistence_mode,
+        "warnings": warnings,
     }
 
 
 @app.get("/ready", tags=["system"])
 async def readiness() -> JSONResponse:
     checks = await check_readiness()
-    healthy = all(value in {"ok", "unconfigured"} for value in checks.values())
+    # "unconfigured" is NOT healthy here: check_readiness only adds a check when
+    # the corresponding backend has been explicitly selected, so an unconfigured
+    # dependency means the deployment is misconfigured and cannot serve.
+    healthy = all(value == "ok" for value in checks.values())
     return JSONResponse(
         status_code=200 if healthy else 503,
         content={"status": "ready" if healthy else "degraded", "checks": checks},

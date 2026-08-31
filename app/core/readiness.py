@@ -8,6 +8,12 @@ _POSTGRES_BACKENDS = {"postgres", "postgres_pgvector"}
 async def check_readiness() -> dict[str, str]:
     checks: dict[str, str] = {}
 
+    # Durable persistence was explicitly required but is not actually
+    # configured — surface it as a readiness failure rather than letting the
+    # deployment serve traffic while silently losing every write on restart.
+    if settings.require_durable_persistence and settings.ephemeral_subsystems:
+        checks["persistence"] = "ephemeral"
+
     uses_postgres = (
         settings.memory_backend in _POSTGRES_BACKENDS
         or settings.workflow_backend == "postgres"

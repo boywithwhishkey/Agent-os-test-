@@ -101,6 +101,10 @@ async def test_redis_adapter_reports_failure():
 
 
 @pytest.mark.asyncio
-async def test_redis_adapter_requires_redis_url():
+async def test_redis_adapter_requires_redis_url(monkeypatch):
+    # The adapter falls back to settings.redis_url, so the ambient environment
+    # has to be cleared for this to test what it claims to test. Without this
+    # the test silently passes only on machines with no REDIS_URL set.
+    monkeypatch.setattr("app.integrations.redis.settings.redis_url", "")
     with pytest.raises(RuntimeError):
         RedisAdapter(redis_url="")

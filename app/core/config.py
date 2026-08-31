@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -114,6 +114,71 @@ class Settings(BaseSettings):
     lexical_weight: float = Field(
         default=0.25, ge=0, validation_alias="AGENT_OS_LEXICAL_WEIGHT"
     )
+
+    require_durable_persistence: bool = Field(
+        default=False, validation_alias="AGENT_OS_REQUIRE_DURABLE_PERSISTENCE"
+    )
+
+    @field_validator("app_env")
+    @classmethod
+    def _validate_app_env(cls, value: str) -> str:
+        """Reject unknown environment names.
+
+        AGENT_OS_APP_ENV is load-bearing: it decides the Redis namespace and is
+        checked against the database's environment stamp. A typo like "prod"
+        would silently create a THIRD environment sharing nothing with either
+        real one, so fail on an unknown value rather than inventing it.
+        """
+        normalized = value.strip().lower()
+        allowed = {"production", "staging", "development", "test"}
+        if normalized not in allowed:
+            raise ValueError(
+                f"AGENT_OS_APP_ENV must be one of {sorted(allowed)}, got {value!r}"
+            )
+        return normalized
+
+    @property
+    def is_production_like(self) -> bool:
+        """Environments where losing state on restart is not acceptable."""
+        return self.app_env in {"production", "staging"}
+
+    @property
+    def ephemeral_subsystems(self) -> list[str]:
+        """Subsystems currently backed by process memory, so lost on restart."""
+        backends = {
+            "memory": self.memory_backend,
+            "task": self.task_backend,
+            "workflow": self.workflow_backend,
+            "workflow_definition": self.workflow_definition_backend,
+            "runtime": self.runtime_backend,
+            "tool": self.tool_backend,
+            "queue": self.queue_backend,
+        }
+        return sorted(name for name, backend in backends.items() if backend == "memory")
+
+    @property
+    def persistence_mode(self) -> str:
+        ephemeral = self.ephemeral_subsystems
+        if not ephemeral:
+            return "durable"
+        if len(ephemeral) == 7:
+            return "ephemeral"
+        return "partial"
+
+    def persistence_warnings(self) -> list[str]:
+        """Configuration problems that would otherwise degrade silently."""
+        warnings: list[str] = []
+        ephemeral = self.ephemeral_subsystems
+        if self.is_production_like and ephemeral:
+            warnings.append(
+                f"{self.app_env} is running with in-memory backends "
+                f"({', '.join(ephemeral)}); this state is lost on every restart"
+            )
+        if self.memory_backend in {"postgres", "postgres_pgvector"} and not self.database_url:
+            warnings.append("a postgres backend is selected but DATABASE_URL is empty")
+        if self.queue_backend == "redis" and not self.redis_url:
+            warnings.append("the redis queue backend is selected but REDIS_URL is empty")
+        return warnings
 
     @property
     def queue_namespace(self) -> str:
