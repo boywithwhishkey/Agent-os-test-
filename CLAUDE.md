@@ -196,7 +196,59 @@ and **name the missing environment variable** — that is not an error state.
 
 ---
 
-## 9. Nine-point production plan (do not lose these)
+## 9. Continuous deployment — required
+
+Work is not complete because local tests pass. For every meaningful completed
+change, when deployment infrastructure **and authorization** are available, run
+the whole pipeline automatically — the operator should not have to press Deploy
+after each task:
+
+```
+implement → targeted test → full validation when warranted → build
+→ deploy to staging → verify the real staging URL → health check
+→ visual validation (UI) / API validation (backend) / migration validation (DB)
+→ record real deployment state in PROJECT_BRAIN → continue the next item
+```
+
+**This repository's actual topology (verify before relying on it):**
+
+- Cloudflare Pages auto-deploys the frontend from `origin/main`; Render
+  auto-deploys the backend from `origin/main`. Neither has in-repo config
+  (`wrangler.toml`/`render.yaml` absent) — it lives in the provider dashboards.
+- **There is no staging environment yet.** Until one exists, "deploy to
+  staging" has no target: say so plainly rather than pretending a step ran.
+  Standing up staging is nine-point item 2.
+- Because both providers deploy from `origin/main`, **merging or pushing to
+  `main` IS a production deployment.** Treat it as one: it needs explicit
+  authorization, never a side effect of finishing a task. Work on a branch.
+- **Migrations never run automatically.** After any deploy that includes a
+  migration, run `scripts/migrate.py` against the target database by hand and
+  verify the applied state.
+
+**Deploy automatically only when all of these hold:** production auto-deploy has
+been explicitly authorized, tests and builds pass, migration safety checks pass,
+no unresolved security blocker exists, and a rollback path exists where
+appropriate.
+
+**Always require operator approval for:** destructive database operations,
+irreversible production changes, security/auth changes, payment or billing
+actions, deleting production resources, and anything outside previously granted
+deployment authorization.
+
+**After deploying, verify the thing that is actually deployed** — not the local
+build. UI: open the real deployed page and look at it at desktop and mobile
+widths. Backend: call the real deployed health/API endpoints. Connectors: a
+connector is not working because an adapter, registry entry, mock, test or UI
+card exists — verify against the real provider whenever credentials and access
+are available (see §6). Workers/schedulers: check their actual running health.
+Database: check migration state against the real target database.
+
+If a deploy fails, diagnose and repair it when safe rather than reporting the
+first error and stopping. Never expose deployment secrets. **Never deploy broken
+or unvalidated code merely to satisfy this requirement** — a skipped deploy with
+an honest reason always beats a green-looking bad one.
+
+## 10. Nine-point production plan (do not lose these)
 
 1. Final domain  2. Stable production + staging deployment  3. Production
 PostgreSQL + Redis  4. Permanent OAuth/webhook callback URLs  5. Google
@@ -212,7 +264,7 @@ tunnel → callback → restart loop.
 
 ---
 
-## 10. Autonomy
+## 11. Autonomy
 
 Maximum useful work, minimum user interaction. Do not answer with only a plan,
 roadmap or TODO list — implement the safe work, batch independent tasks, and

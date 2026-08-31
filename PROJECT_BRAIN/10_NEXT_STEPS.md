@@ -45,6 +45,24 @@ time, highest first.
    `N8N_BASE_URL`, `MAKE_WEBHOOK_URL`, and the OAuth pairs for GitHub, GitLab,
    Slack and Notion.
 
+## 0. Deployment state — read before shipping anything
+
+Root `CLAUDE.md` §9 now requires the full implement→test→build→deploy→verify
+pipeline on every meaningful change. Current reality, verified 2026-08-31:
+
+- **No staging environment exists.** Cloudflare Pages (frontend) and Render
+  (backend) both auto-deploy from `origin/main` only. So the "deploy to
+  staging" step has no target today — do not claim it ran. Creating staging is
+  nine-point item 2 and is now the blocker for satisfying §9 properly.
+- **Pushing/merging to `main` is a production deploy.** Current work sits on
+  `claude/thynact-env-audit-fjinfj` and was deliberately **not** merged: no
+  production-deploy authorization has been given. Ask before merging.
+- This session held no `CLOUDFLARE_API_TOKEN` / `RENDER_API_KEY`, so it could
+  not drive or inspect either provider's deploy pipeline directly; production
+  verification is limited to public `curl` of `/health`, `/ready` and the
+  served asset hash.
+- Post-deploy migration runs are manual (`scripts/migrate.py`) — see §9.
+
 ## 1. Production persistence — READY, blocked only on provisioning
 The exact sequence is now proven locally, in this order:
 1. Set `DATABASE_URL` (and `REDIS_URL`) on Render.
