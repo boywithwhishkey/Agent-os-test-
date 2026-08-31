@@ -300,6 +300,46 @@ Production architecture is unchanged and still designed for durable Postgres +
 persistent Key Value. Nothing paid was provisioned. Backend suite: **282
 passing** with real Postgres/Redis.
 
+## BRAND: GOLD MONOGRAM DIRECTION (2026-08-31, supersedes the magenta/violet pass)
+
+The operator supplied the THYNACT logo (navy + gold "TA" monogram) with an
+annotated screenshot marking exactly two placements, and asked for the blue to
+be replaced with a soft dark gold. **This supersedes the "Infinity"
+magenta/violet ambient direction recorded earlier in this file** — that palette
+is gone from the codebase, not merely overridden.
+
+- `frontend/src/components/ui/ThynactLogo.tsx` (new) draws the mark as strokes
+  rather than a filled asset, so one file is crisp at both 20px (sidebar) and
+  44px (dashboard hero) and the dark ink inherits `currentColor` while the gold
+  leg carries the gradient. That inheritance is why a single file works on both
+  themes. `BrandMark.tsx` renders it with no tile or gradient chip behind it,
+  matching the reference; `public/favicon.svg` carries the same mark.
+- Placement matches the two red circles in the reference and nothing else: the
+  sidebar header lockup and the dashboard hero.
+- Palette: **0 stale `violet`/`blue`/`indigo`/`magenta`/`plum` token references
+  remain in `src/`** (grep-verified), against 147 gold usages. Ambient tokens
+  were re-tuned warm after the first pass still read blue on screen —
+  `--color-ambient-navy` `#16233f`→`#2b2114`, `--color-ambient-slate`
+  `#223049`→`#3a2c1a`, `--color-ambient-ink` `#0b1220`→`#140f08`, dark body
+  `#05070d`→`#08060a`. Verified in the **built** bundle, not just source.
+- Two new pages, written from the shipped surface rather than a roadmap:
+  `pages/Overview.tsx` (6 capability pillars, each linking to a real route, plus
+  4 governance cards) and `pages/Privacy.tsx` (states plainly that it is **not
+  legal advice and unreviewed**, documents the 6 real tables and the 4 real
+  browser storage keys, and records the OAuth-tokens-in-memory limitation
+  honestly rather than glossing it). Both are routed and in the sidebar nav.
+
+Visual validation actually performed, not inferred from code: every route
+(17 paths) rendered at 390/768/1440 in both themes — **0 horizontal overflow,
+0 failures**. Two real defects were found by looking at the PNGs and fixed: the
+Overview section caption collided with its heading at 390px, and the Privacy
+table scrolled with no affordance that it was scrollable. The 4 console errors
+on dashboard renders are local-API 401s (no operator key seeded), not defects.
+
+Regression at this point: frontend typecheck clean, lint 0 errors / 2
+pre-existing warnings, **65 frontend tests**, production build succeeded,
+**282 backend tests**, `ruff` clean, `validate_deploy_config.py` clean.
+
 ## PRODUCTION DEPLOYED — 2026-08-31 (authorized by the operator)
 
 **21 commits merged to `main` and live on app.thynact.com + api.thynact.com.**
