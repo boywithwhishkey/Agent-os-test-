@@ -25,6 +25,7 @@ import { StepEditorDialog } from "@/components/workflows/StepEditorDialog";
 import { PulseEdge } from "@/components/workflows/PulseEdge";
 import { useRunWorkflow } from "@/lib/api/queries";
 import { useToast } from "@/components/ui/Toast";
+import { useTheme } from "@/lib/theme";
 import { recordHistory } from "@/lib/session-history";
 import { validateWorkflowGraph, invalidStepIds } from "@/lib/workflow-validate";
 import type { WorkflowStep } from "@/lib/types";
@@ -51,6 +52,7 @@ export default function Workflows() {
 }
 
 function WorkflowEditor() {
+  const { resolvedTheme } = useTheme();
   const [name, setName] = useState("New workflow");
   const [contextText, setContextText] = useState("{}");
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<StepNodeData>>([
@@ -262,11 +264,21 @@ function WorkflowEditor() {
                 style: { stroke: "var(--color-accent-violet)", strokeWidth: 2 },
               }}
               fitView
+              // Without a maxZoom, fitView scales to React Flow's default
+              // maxZoom of 2 whenever the graph is small — a brand-new
+              // workflow has one node, so the canvas opened at 200% and the
+              // single "start" node rendered comically oversized at every
+              // viewport. Cap the auto-fit at 100%; the user can still zoom.
+              fitViewOptions={{ maxZoom: 1, padding: 0.25 }}
               deleteKeyCode={["Backspace", "Delete"]}
+              // React Flow's own chrome (Controls, MiniMap) ships light-mode
+              // styling by default, which rendered as stark white blocks on
+              // the dark UI. colorMode themes them from the app's theme.
+              colorMode={resolvedTheme}
             >
               <Background gap={18} />
               <Controls />
-              <MiniMap pannable zoomable className="!bg-surface-raised" />
+              <MiniMap pannable zoomable />
             </ReactFlow>
           </div>
         </CardContent>
