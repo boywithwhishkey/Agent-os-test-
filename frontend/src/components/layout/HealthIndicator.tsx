@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 type ConnState = HeartbeatState;
 
 const toneClass: Record<ConnState, string> = {
-  online: "border-accent-green/25 bg-accent-green/10 text-accent-green",
-  connecting: "border-accent-amber/25 bg-accent-amber/10 text-accent-amber",
-  offline: "border-accent-red/25 bg-accent-red/10 text-accent-red",
+  online: "text-accent-green",
+  connecting: "text-accent-amber",
+  offline: "text-accent-red",
 };
 
 const label: Record<ConnState, string> = {
@@ -32,7 +32,10 @@ export function HealthIndicator() {
     <Tooltip content={tooltip}>
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border px-1.5 py-1 text-xs font-medium sm:gap-2 sm:pl-2 sm:pr-2.5",
+          // No pill: the waveform and colour already carry the state, and a
+          // filled capsule here read as one more box in a bar meant to be
+          // chrome-less.
+          "inline-flex items-center gap-1.5 px-1 py-1 text-xs font-medium sm:gap-2",
           toneClass[state]
         )}
       >

@@ -194,6 +194,64 @@ are implemented and tested, but the staging backend does not exist, and
 Cloudflare/Render dashboard actions. Test counts after this work: backend 243,
 frontend 55.
 
+## VISUAL DIRECTION CHANGED — "Infinity" (2026-08-31)
+
+Operator-requested redesign of the ambient layer. **Supersedes the
+cream/bronze/navy direction**, which supersedes the earlier gold/wine one — if
+you see `ambient-cream` / `-bronze` / `-navy` / `-steel` referenced anywhere,
+it is stale. A brief mint/eclipse direction was explored in the same session
+and discarded before commit; it never landed.
+
+Current tokens (`index.css`): `--color-ambient-magenta` `#b0309b`,
+`--color-ambient-violet` `#5b4fd6`, `--color-ambient-indigo` `#3a3f9e`,
+`--color-ambient-plum` `#2a0f33`, over a `#07050e` base. These sit next to the
+existing `--color-accent-violet`, so the ambient layer and the UI now read as
+one family rather than two palettes. They remain **decorative only** — never
+reuse them for status, never use `--color-accent-red` for decoration.
+
+**Liquid blobs, not glow blobs.** `AmbientBackground` renders six morphing
+shapes across three depth bands. `animate-blob` drives `border-radius` (that
+is what makes them read as soft bodies rather than circles) and
+`animate-blob-turn` slowly rotates the gradient so the highlight travels.
+Blur is deliberately modest — over-blurring collapses them back into the
+generic glow blobs this replaced; the softness comes from gradient falloff.
+
+**Scroll response.** One spring-smoothed scroll value (stiffness 48, damping
+22) drives all three bands at different rates, plus slight lateral drift, so
+the field parallaxes and keeps moving for a beat after the wheel stops rather
+than tracking it 1:1. transform/opacity/filter only — no layout properties.
+
+**Light mode needed a real fix, not a tint.** At full strength the blobs washed
+over body text; sidebar labels and card headings were getting lost. The layer
+now renders at `opacity-[0.22]` in light and full strength in dark — same
+design, quieter. Caught by rendering, not review.
+
+**Glass upgraded to frosted panes.** Dark-mode glass was *dark*-tinted, which
+over a colourful field read as smoked plastic. All tiers now use a faint white
+tint at higher blur with a bright inner top edge (`glass-panel` 30px blur), and
+`border-hairline` went 0.06 → 0.12 so panes have an edge to catch light.
+`glass-focus` keeps a dark base since it overlays real content.
+
+**Topbar is now chrome-less**, per the operator's "remove extra background box
+or cards": the header lost its glass panel, border and fade strip; search is a
+ghost control that only reveals a surface on hover; the environment marker and
+"API key needed" became inline dot+text instead of filled badges; and
+`HealthIndicator` lost its pill. The `⌘K` hint had to be re-anchored — with the
+box gone, `flex-1` on the label left it floating mid-bar.
+
+**Card now animates app-wide.** `Card` was static; it is the default surface on
+14+ pages, so animating it there (shared `glassAppear` variant, `whileInView`
+with `once`) gives consistent entrances everywhere instead of a per-page
+sprinkle, and long pages do not re-run animations while scrolling. Falls back
+to a plain div under `prefers-reduced-motion`.
+
+Verified: 60 renders (15 routes x 320/390/768/1440) — zero horizontal overflow,
+zero console errors — plus light theme at 1440. Frontend 65 tests, backend 282,
+typecheck/lint/build clean.
+
+Note: a `/tools/audit` 500 seen mid-session was **not** a code regression —
+Postgres had stopped in the container. Restarting it returned 200.
+
 ## STAGING REDESIGNED FOR ZERO COST (2026-08-31)
 
 The operator hit a Render payment-method prompt creating the staging Blueprint

@@ -32,9 +32,9 @@ export default function Dashboard() {
       {/* System identity — deliberately not a bordered card. It emerges
           straight out of the ambient canvas behind the app shell. */}
       <div className="relative -mx-4 overflow-hidden px-4 py-7 sm:-mx-6 sm:px-6 sm:py-10 lg:-mx-8 lg:px-8">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-ambient-bronze/[0.1] blur-[100px] animate-float" aria-hidden />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-ambient-magenta/[0.14] blur-[100px] animate-float" aria-hidden />
         <div className="relative overflow-hidden">
-          <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-ambient-cream/60 to-transparent" aria-hidden />
+          <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-ambient-violet/60 to-transparent" aria-hidden />
           <motion.div
             initial="hidden"
             animate="visible"

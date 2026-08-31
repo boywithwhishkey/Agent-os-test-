@@ -18,51 +18,126 @@ const DATA_POINTS = [
 ];
 
 /**
- * Layer 2+ of THYNACT's ambient technical background: a faint grid, two
- * slow-drifting mesh-gradient glows, two diagonal light streaks/arcs (a
- * warm cream one and a cool steel-blue one) for cinematic depth, and sparse
- * floating data points. Fixed behind the whole app shell so every page
- * shares one continuous canvas instead of feeling like stacked, disconnected
- * sections. Layer 1 (the deep near-black/near-white base) is `body`'s own
- * background-color in index.css.
+ * One liquid "infinity" blob.
+ *
+ * Each is a morphing rounded shape (animate-blob drives border-radius, which
+ * is what makes it read as a soft body rather than a circle) filled with a
+ * two-stop gradient: a lit magenta/violet edge falling away into near-black,
+ * so the shape looks like a form catching light rather than a flat colour
+ * patch. A slow counter-rotation moves the highlight around the body.
+ *
+ * `blur` is deliberately modest — over-blurring turns these back into the
+ * generic glow blobs this design replaced. The softness comes from the
+ * gradient falloff, not from smearing the whole shape.
+ */
+function Blob({
+  className,
+  gradient,
+  blur,
+  spin = "animate-blob",
+}: {
+  className: string;
+  gradient: string;
+  blur: string;
+  spin?: string;
+}) {
+  return (
+    <div className={`absolute ${className}`}>
+      <div className={`h-full w-full ${spin}`} style={{ filter: `blur(${blur})` }}>
+        <div className="h-full w-full animate-blob-turn" style={{ background: gradient }} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Layer 2+ of THYNACT's ambient background: drifting liquid magenta/violet
+ * blobs over the near-black base, a faint technical grid, and sparse floating
+ * points. Fixed behind the whole app shell so every page shares one
+ * continuous canvas instead of feeling like stacked, disconnected sections.
+ * Layer 1 (the deep base colour) is `body`'s own background-color in
+ * index.css.
+ *
+ * Scroll response: each depth band is driven by the same spring-smoothed
+ * scroll value at a different rate, so the field parallaxes as you scroll and
+ * settles smoothly rather than tracking the wheel 1:1. Everything animates
+ * transform/opacity/filter only — no layout properties — so scrolling stays
+ * cheap. All of it is disabled under prefers-reduced-motion.
  */
 export function AmbientBackground() {
   const reduceMotion = useReducedMotion();
   const { scrollY } = useScroll();
-  const smoothScroll = useSpring(scrollY, { stiffness: 60, damping: 20, mass: 0.5 });
-  // Background layers move slower than the foreground content — classic parallax depth cue.
-  const gridY = useTransform(smoothScroll, (v) => (reduceMotion ? 0 : v * 0.04));
-  const meshY = useTransform(smoothScroll, (v) => (reduceMotion ? 0 : v * 0.08));
+  // Softer spring than a raw scroll binding: the background keeps moving for a
+  // beat after the wheel stops, which is what makes it feel "liquid" instead
+  // of glued to the scrollbar.
+  const smoothScroll = useSpring(scrollY, { stiffness: 48, damping: 22, mass: 0.6 });
+
+  // Depth bands. Larger multiplier = nearer the viewer = moves more.
+  const gridY = useTransform(smoothScroll, (v) => (reduceMotion ? 0 : v * 0.03));
+  const farY = useTransform(smoothScroll, (v) => (reduceMotion ? 0 : v * 0.06));
+  const midY = useTransform(smoothScroll, (v) => (reduceMotion ? 0 : v * 0.14));
+  const nearY = useTransform(smoothScroll, (v) => (reduceMotion ? 0 : v * 0.24));
+  // A little lateral drift as well, so the field does not feel like it is only
+  // sliding on one axis.
+  const midX = useTransform(smoothScroll, (v) => (reduceMotion ? 0 : v * -0.03));
+  const nearX = useTransform(smoothScroll, (v) => (reduceMotion ? 0 : v * 0.04));
 
   const points = useMemo(() => DATA_POINTS, []);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-      <motion.div className="absolute inset-[-64px] bg-technical-grid opacity-60" style={{ y: gridY }} />
+    <div
+      /* The blobs are tuned for a near-black field. At full strength on a light
+         background they wash straight over body text — sidebar labels and card
+         headings were getting lost in the purple. Light mode gets a much
+         quieter version of the same field rather than a different design. */
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.22] dark:opacity-100"
+      aria-hidden
+    >
+      <motion.div className="absolute inset-[-64px] bg-technical-grid opacity-40" style={{ y: gridY }} />
 
-      <motion.div className="absolute inset-0" style={{ y: meshY }}>
-        <div className="absolute left-[-10%] top-[-15%] h-[60vh] w-[60vh] rounded-full bg-ambient-bronze/[0.16] blur-[110px] animate-drift" />
-        <div className="absolute bottom-[-12%] right-[-8%] h-[65vh] w-[65vh] rounded-full bg-ambient-navy/[0.26] blur-[120px] animate-drift-slow" />
+      {/* Far band — the largest, dimmest masses. */}
+      <motion.div className="absolute inset-0" style={{ y: farY }}>
+        <Blob
+          className="left-[-22vh] top-[-18vh] h-[66vh] w-[54vh]"
+          blur="26px"
+          spin="animate-blob-slow"
+          gradient="linear-gradient(155deg, color-mix(in srgb, var(--color-ambient-magenta) 62%, transparent) 0%, color-mix(in srgb, var(--color-ambient-plum) 70%, transparent) 46%, transparent 76%)"
+        />
+        <Blob
+          className="bottom-[-26vh] right-[-16vh] h-[62vh] w-[58vh]"
+          blur="30px"
+          gradient="linear-gradient(200deg, color-mix(in srgb, var(--color-ambient-magenta) 48%, transparent) 0%, color-mix(in srgb, var(--color-ambient-indigo) 46%, transparent) 55%, transparent 80%)"
+        />
+      </motion.div>
 
-        {/* Cinematic light streaks/arcs: a soft blurred halo plus a thin
-            brighter core, rotated diagonally so each reads as a beam of
-            light rather than a blob. The two children share one rotated
-            coordinate space so the core stays centered in its halo. Each
-            pairs a slow position drift (inner div) with a slower, gentle
-            opacity breathe (outer wrapper) so the motion never reads as
-            more than one thing happening at once. */}
-        <div className="absolute inset-0 animate-breathe-slow">
-          <div className="absolute left-[-20%] top-[2%] h-[34vh] w-[160vh] -rotate-[14deg] animate-drift-slow">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-ambient-cream/[0.22] to-transparent blur-[90px]" />
-            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-ambient-cream/60 to-transparent blur-[3px]" />
-          </div>
-        </div>
-        <div className="absolute inset-0 animate-breathe-slow [animation-delay:-4s]">
-          <div className="absolute bottom-[-4%] right-[-24%] h-[30vh] w-[150vh] rotate-[13deg] animate-drift">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-ambient-steel/[0.26] to-transparent blur-[95px]" />
-            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-transparent via-ambient-steel/70 to-transparent blur-[3px]" />
-          </div>
-        </div>
+      {/* Mid band — the hero shapes, the ones you actually read as bodies. */}
+      <motion.div className="absolute inset-0" style={{ y: midY, x: midX }}>
+        <Blob
+          className="right-[-10vh] top-[-14vh] h-[48vh] w-[46vh]"
+          blur="18px"
+          gradient="linear-gradient(165deg, color-mix(in srgb, var(--color-ambient-magenta) 82%, transparent) 0%, color-mix(in srgb, var(--color-ambient-plum) 60%, transparent) 40%, transparent 72%)"
+        />
+        <Blob
+          className="right-[2vh] top-[16vh] h-[54vh] w-[50vh]"
+          blur="20px"
+          spin="animate-blob-slow"
+          gradient="linear-gradient(190deg, color-mix(in srgb, var(--color-ambient-violet) 70%, transparent) 0%, color-mix(in srgb, var(--color-ambient-indigo) 62%, transparent) 44%, transparent 78%)"
+        />
+      </motion.div>
+
+      {/* Near band — smaller, brighter, moves most on scroll. */}
+      <motion.div className="absolute inset-0" style={{ y: nearY, x: nearX }}>
+        <Blob
+          className="bottom-[6vh] left-[-8vh] h-[42vh] w-[38vh]"
+          blur="16px"
+          gradient="linear-gradient(140deg, color-mix(in srgb, var(--color-ambient-magenta) 70%, transparent) 0%, color-mix(in srgb, var(--color-ambient-violet) 52%, transparent) 48%, transparent 78%)"
+        />
+        <Blob
+          className="left-[36vh] top-[52vh] h-[34vh] w-[32vh]"
+          blur="22px"
+          spin="animate-blob-slow"
+          gradient="linear-gradient(210deg, color-mix(in srgb, var(--color-ambient-violet) 58%, transparent) 0%, color-mix(in srgb, var(--color-ambient-indigo) 44%, transparent) 52%, transparent 80%)"
+        />
       </motion.div>
 
       {!reduceMotion && (
@@ -70,7 +145,7 @@ export function AmbientBackground() {
           {points.map((p, i) => (
             <span
               key={i}
-              className="absolute h-1 w-1 rounded-full bg-ambient-cream/30 animate-float"
+              className="absolute h-1 w-1 rounded-full bg-ambient-violet/40 animate-float"
               style={{ left: `${p.x}%`, top: `${p.y}%`, animationDelay: `${p.delay}s` }}
             />
           ))}

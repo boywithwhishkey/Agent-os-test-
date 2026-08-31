@@ -15,12 +15,17 @@
      separate from the semantic accent tokens above (--color-accent-gold
      included) so decoration never gets confused with status/interactive
      color, and can be retuned without touching UI chrome. */
-  --color-ambient-cream: #f5e9dd;
-  --color-ambient-bronze: #a67c52;
-  --color-ambient-navy: #122d70;
-  /* Cooler, greyer blue than --color-ambient-navy — the "steel" counterpoint
+  /* "Infinity" ambient palette. Liquid magenta/violet blobs drifting on a
+     near-black field, reacting to scroll. These are DECORATIVE tokens only —
+     never reuse them for status, and never use --color-accent-red
+     (error/offline) for decoration. They sit close to the existing violet
+     accent family, so the ambient layer and the UI read as one system. */
+  --color-ambient-magenta: #b0309b;
+  --color-ambient-violet: #5b4fd6;
+  --color-ambient-indigo: #3a3f9e;
+  /* Deepest shade — where a blob turns away from the light.
      to the gold/amber glow in the cinematic background arcs/streaks below. */
-  --color-ambient-steel: #33506e;
+  --color-ambient-plum: #2a0f33;
   --color-accent-violet: #8574ff;
   --color-accent-violet-soft: #aa9fff;
   --color-accent-blue: #5bc7ff;
@@ -42,11 +47,30 @@
   --animate-grid-pan: grid-pan 60s linear infinite;
   --animate-float: float 6s ease-in-out infinite;
   --animate-scan: scan 5s ease-in-out infinite;
+  /* Eclipse rim: a slow swell so the ring reads as living light, not a
+     static ring. Scale stays tiny — this sits behind everything. */
+  /* Organic "liquid" morph: animating border-radius is what makes a blob
+     read as a soft body rather than a circle. Paired with a slow rotation so
+     the highlight travels around it. */
+  --animate-blob: blob-morph 22s ease-in-out infinite;
+  --animate-blob-slow: blob-morph 34s ease-in-out infinite reverse;
+  /* Wave bands: long horizontal travel at differing speeds so the layers
+     separate visually instead of moving as one sheet. */
+  --animate-blob-turn: blob-turn 48s linear infinite;
   --animate-ecg-breathe: ecg-breathe 2.2s ease-in-out infinite;
 
   @keyframes pulse-slow {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.45; }
+  }
+  @keyframes blob-morph {
+    0%, 100% { border-radius: 62% 38% 46% 54% / 58% 44% 56% 42%; transform: scale(1); }
+    33%      { border-radius: 42% 58% 62% 38% / 44% 62% 38% 56%; transform: scale(1.06); }
+    66%      { border-radius: 54% 46% 38% 62% / 62% 38% 58% 42%; transform: scale(0.97); }
+  }
+  @keyframes blob-turn {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
   }
   @keyframes shimmer {
     0% { background-position: -400px 0; }
@@ -116,37 +140,28 @@ body {
   color: #14161c;
   -webkit-font-smoothing: antialiased;
   font-family: var(--font-sans);
-  /* Same cream/bronze/navy ambient tokens as dark mode, at much lower
+  /* Same Infinity tokens as dark mode, at much lower
      intensity — light backgrounds go muddy fast, so this is a soft warm
      wash rather than the deep saturated blobs dark mode uses. Without
      this, low-alpha glass surfaces in light mode had nothing but flat
      gray behind them to reveal. */
   background-image:
-    radial-gradient(ellipse 56rem 42rem at 18% -8%, color-mix(in srgb, var(--color-ambient-cream) 55%, transparent), transparent 68%),
-    radial-gradient(ellipse 66rem 50rem at 4% 14%, color-mix(in srgb, var(--color-ambient-bronze) 10%, transparent), transparent 72%),
-    radial-gradient(ellipse 70rem 56rem at 96% 6%, color-mix(in srgb, var(--color-ambient-steel) 6%, transparent), transparent 72%),
-    radial-gradient(ellipse 74rem 62rem at 88% 82%, color-mix(in srgb, var(--color-ambient-navy) 7%, transparent), transparent 75%);
+    radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-magenta) 9%, transparent), transparent 66%),
+    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-violet) 7%, transparent), transparent 70%),
+    radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-indigo) 8%, transparent), transparent 68%);
   background-attachment: fixed;
 }
 .dark body {
-  background-color: #05060a;
-  /* Cinematic gold/amber + blue-steel gradient over the near-black
-     foundation (that solid background-color IS layer 1). An earlier
-     version added a separate solid vignette layer on top of this and it
-     visually cancelled out most of the color underneath — the lesson
-     carried forward here is "no opaque overlay layer", not "no more than
-     three color layers"; this is four color radial-gradients, all
-     low-alpha so they still read as glow, not a flat wash. Intensities
-     tuned to be clearly visible against near-black without going bright
-     or muddy — verified by rendering the app and looking, not guessed.
-     Fixed so it doesn't reflow/tile while the page scrolls. */
+  background-color: #07050e;
+  /* Base wash only. The liquid blobs in AmbientBackground carry the actual
+     colour; these are faint pools so the page never reads as flat black
+     between them. Fixed so it does not reflow while scrolling. */
   background-image:
-    radial-gradient(ellipse 56rem 42rem at 18% -8%, color-mix(in srgb, var(--color-ambient-cream) 16%, transparent), transparent 68%),
-    radial-gradient(ellipse 66rem 50rem at 4% 14%, color-mix(in srgb, var(--color-ambient-bronze) 26%, transparent), transparent 72%),
-    radial-gradient(ellipse 70rem 56rem at 96% 4%, color-mix(in srgb, var(--color-ambient-steel) 22%, transparent), transparent 70%),
-    radial-gradient(ellipse 74rem 62rem at 88% 82%, color-mix(in srgb, var(--color-ambient-navy) 48%, transparent), transparent 75%);
+    radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-magenta) 14%, transparent), transparent 62%),
+    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-plum) 55%, transparent), transparent 68%),
+    radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-indigo) 16%, transparent), transparent 66%);
   background-attachment: fixed;
-  color: #f7f6f2;
+  color: #f4f2f8;
 }
 
 ::selection {
@@ -197,7 +212,7 @@ body {
   /* Even fainter than .border-surface — for glass primitives that separate
      through depth/opacity and only want a whisper of a tonal edge. */
   .border-hairline { border-color: rgba(0,0,0,0.06); }
-  .dark .border-hairline { border-color: rgba(255,255,255,0.06); }
+  .dark .border-hairline { border-color: rgba(255,255,255,0.12); }
 
   .text-content-primary { color: #14161c; }
   .dark .text-content-primary { color: #f7f6f2; }
@@ -230,9 +245,9 @@ body {
   -webkit-backdrop-filter: blur(9px) saturate(130%);
 }
 .dark .glass-ambient {
-  background-color: rgba(16, 19, 28, 0.06);
-  backdrop-filter: blur(9px) saturate(150%);
-  -webkit-backdrop-filter: blur(9px) saturate(150%);
+  background-color: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
 }
 
 .glass-soft {
@@ -242,10 +257,10 @@ body {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.22), 0 1px 2px rgba(20, 22, 28, 0.04);
 }
 .dark .glass-soft {
-  background-color: rgba(16, 19, 28, 0.1);
-  backdrop-filter: blur(16px) saturate(170%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.14), 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .glass-panel {
@@ -255,10 +270,15 @@ body {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.3), 0 8px 24px -12px rgba(20, 22, 28, 0.12);
 }
 .dark .glass-panel {
-  background-color: rgba(16, 19, 28, 0.15);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(30px) saturate(185%);
+  -webkit-backdrop-filter: blur(30px) saturate(185%);
+  /* Bright top edge + darker outer shadow is what sells "pane of glass"
+     rather than "translucent rectangle". */
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.05),
+    0 16px 40px -18px rgba(0, 0, 0, 0.75);
 }
 
 .glass-focus {
@@ -268,10 +288,14 @@ body {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.7), 0 24px 48px -16px rgba(20, 22, 28, 0.22);
 }
 .dark .glass-focus {
-  background-color: rgba(12, 14, 21, 0.4);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+  /* Overlays sit above real page content, so this tier keeps a dark base for
+     legibility and adds the white sheen on top of it. */
+  background-color: rgba(10, 16, 15, 0.55);
+  backdrop-filter: blur(36px) saturate(185%);
+  -webkit-backdrop-filter: blur(36px) saturate(185%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+    0 28px 60px -18px rgba(0, 0, 0, 0.8);
 }
 
 /* One tier deeper than glass-panel: form controls nested inside an
@@ -284,9 +308,10 @@ body {
   -webkit-backdrop-filter: blur(10px) saturate(140%);
 }
 .dark .glass-field {
-  background-color: rgba(16, 19, 28, 0.28);
-  backdrop-filter: blur(10px) saturate(160%);
-  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  background-color: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
 /* ------------------------------------------------------------------ */
