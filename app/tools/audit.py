@@ -14,6 +14,9 @@ class ToolAuditEvent:
     risk: str
     approval_required: bool
     error: str | None = None
+    # Ties an audited execution back to the originating HTTP request. Optional:
+    # executions outside a request (background jobs, tests) genuinely have none.
+    correlation_id: str | None = None
 
 
 class ToolAuditLog(ABC):
@@ -26,6 +29,7 @@ class ToolAuditLog(ABC):
         risk: str,
         approval_required: bool,
         error: str | None = None,
+        correlation_id: str | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -47,6 +51,7 @@ class InMemoryToolAuditLog(ToolAuditLog):
         risk: str,
         approval_required: bool,
         error: str | None = None,
+        correlation_id: str | None = None,
     ) -> None:
         self._events.append(
             ToolAuditEvent(
@@ -56,6 +61,7 @@ class InMemoryToolAuditLog(ToolAuditLog):
                 risk=risk,
                 approval_required=approval_required,
                 error=error,
+                correlation_id=correlation_id,
             )
         )
         if len(self._events) > self.max_events:

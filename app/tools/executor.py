@@ -22,6 +22,7 @@ class ToolExecutor:
         call: ToolCall,
         *,
         approval_id: str | None = None,
+        correlation_id: str | None = None,
     ) -> ToolExecutionResult:
         try:
             tool = self.registry.get(call.tool)
@@ -32,7 +33,7 @@ class ToolExecutor:
                 risk=ToolRisk.HIGH_RISK,
                 error=str(exc),
             )
-            await self._audit(result)
+            await self._audit(result, correlation_id)
             return result
 
         decision = await self.policy.authorize(
@@ -48,7 +49,7 @@ class ToolExecutor:
                 error=decision.error,
                 approval_required=decision.approval_required,
             )
-            await self._audit(result)
+            await self._audit(result, correlation_id)
             return result
 
         try:
@@ -67,14 +68,17 @@ class ToolExecutor:
                 error=f"{type(exc).__name__}: {exc}",
             )
 
-        await self._audit(result)
+        await self._audit(result, correlation_id)
         return result
 
-    async def _audit(self, result: ToolExecutionResult) -> None:
+    async def _audit(
+        self, result: ToolExecutionResult, correlation_id: str | None = None
+    ) -> None:
         await self.audit.record(
             tool=result.tool,
             success=result.success,
             risk=result.risk.value,
             approval_required=result.approval_required,
             error=result.error,
+            correlation_id=correlation_id,
         )

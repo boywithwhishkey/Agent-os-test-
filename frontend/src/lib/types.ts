@@ -224,6 +224,10 @@ export interface ToolAuditEvent {
   risk: string;
   approval_required: boolean;
   error: string | null;
+  /** Ties the execution back to the originating request's X-Correlation-ID.
+   *  Null for events recorded before the correlation column existed, or for
+   *  executions triggered outside an HTTP request. */
+  correlation_id?: string | null;
 }
 
 // --- Runtime ---

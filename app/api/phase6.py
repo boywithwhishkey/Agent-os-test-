@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
 from app.core.auth import require_api_key
@@ -39,8 +39,15 @@ async def list_tools() -> list[dict[str, str]]:
 
 
 @router.post("/execute", response_model=ToolExecutionResult)
-async def execute_tool(payload: ToolExecuteRequest) -> ToolExecutionResult:
-    return await executor.execute(payload.call, approval_id=payload.approval_id)
+async def execute_tool(payload: ToolExecuteRequest, request: Request) -> ToolExecutionResult:
+    # correlation_middleware always sets this; getattr keeps direct unit-test
+    # calls that build a bare Request working.
+    correlation_id = getattr(request.state, "correlation_id", None)
+    return await executor.execute(
+        payload.call,
+        approval_id=payload.approval_id,
+        correlation_id=correlation_id,
+    )
 
 
 @router.post("/approvals", response_model=ApprovalGrant)

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ScrollText, Table2, GanttChartSquare, CheckCircle2, XCircle } from "lucide-react";
+import { ScrollText, Table2, GanttChartSquare, CheckCircle2, XCircle, Copy } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import { Drawer } from "@/components/ui/Drawer";
+import { Button } from "@/components/ui/Button";
 import { JSONViewer } from "@/components/ui/JSONViewer";
 import { useToolAudit } from "@/lib/api/queries";
 import { cn, formatDateTime } from "@/lib/utils";
@@ -173,6 +174,24 @@ export default function Audit() {
               </Badge>
               {selected.approval_required && <Badge tone="amber">Approval required</Badge>}
             </div>
+            {selected.correlation_id && (
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-hairline glass-ambient p-3">
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-wide text-content-muted">Correlation ID</p>
+                  <p className="truncate font-mono text-xs text-content-primary">
+                    {selected.correlation_id}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Copy correlation ID"
+                  onClick={() => navigator.clipboard.writeText(selected.correlation_id ?? "")}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
             {selected.error && (
               <div className="rounded-lg border border-accent-red/25 bg-accent-red/5 p-3 text-sm text-accent-red">
                 {selected.error}

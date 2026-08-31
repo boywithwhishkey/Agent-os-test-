@@ -335,25 +335,29 @@ class PostgresToolAuditLog(ToolAuditLog):
         risk: str,
         approval_required: bool,
         error: str | None = None,
+        correlation_id: str | None = None,
     ) -> None:
         await self.db.execute(
             '''
             INSERT INTO tool_audit_events (
-                timestamp, tool, success, risk, approval_required, error
+                timestamp, tool, success, risk, approval_required, error,
+                correlation_id
             )
-            VALUES (NOW(), $1,$2,$3,$4,$5)
+            VALUES (NOW(), $1,$2,$3,$4,$5,$6)
             ''',
             tool,
             success,
             risk,
             approval_required,
             error,
+            correlation_id,
         )
 
     async def list(self) -> list[dict[str, Any]]:
         rows = await self.db.fetch(
             '''
-            SELECT timestamp, tool, success, risk, approval_required, error
+            SELECT timestamp, tool, success, risk, approval_required, error,
+                   correlation_id
             FROM tool_audit_events
             ORDER BY id ASC
             LIMIT 1000
@@ -369,6 +373,7 @@ class PostgresToolAuditLog(ToolAuditLog):
                 "risk": row["risk"],
                 "approval_required": row["approval_required"],
                 "error": row.get("error"),
+                "correlation_id": row.get("correlation_id"),
             }
             for row in rows
         ]

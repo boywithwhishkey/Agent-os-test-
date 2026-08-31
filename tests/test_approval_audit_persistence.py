@@ -67,8 +67,16 @@ class FakeAuditDatabase(Database):
                 "risk": risk,
                 "approval_required": approval_required,
                 "error": error,
+                "correlation_id": correlation_id,
             }
-            for (tool, success, risk, approval_required, error) in self.inserted
+            for (
+                tool,
+                success,
+                risk,
+                approval_required,
+                error,
+                correlation_id,
+            ) in self.inserted
         ]
 
 
@@ -141,3 +149,43 @@ def test_postgres_tool_backend_requires_database_url(monkeypatch):
     monkeypatch.setattr(settings, "database_url", "")
     with pytest.raises(RuntimeError, match="DATABASE_URL"):
         build_approval_store()
+
+
+@pytest.mark.asyncio
+async def test_in_memory_audit_log_records_correlation_id():
+    log = InMemoryToolAuditLog()
+    await log.record(
+        tool="echo",
+        success=True,
+        risk="read",
+        approval_required=False,
+        correlation_id="corr-123",
+    )
+    events = await log.list()
+    assert events[0]["correlation_id"] == "corr-123"
+
+
+@pytest.mark.asyncio
+async def test_audit_correlation_id_defaults_to_none():
+    # Executions outside an HTTP request legitimately have no correlation id;
+    # the field must stay optional rather than becoming required.
+    log = InMemoryToolAuditLog()
+    await log.record(tool="echo", success=True, risk="read", approval_required=False)
+    events = await log.list()
+    assert events[0]["correlation_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_postgres_audit_log_round_trips_correlation_id():
+    db = FakeAuditDatabase()
+    log = PostgresToolAuditLog(db)
+    await log.record(
+        tool="artifact.write",
+        success=False,
+        risk="write",
+        approval_required=True,
+        error="denied",
+        correlation_id="corr-abc",
+    )
+    events = await log.list()
+    assert events[0]["correlation_id"] == "corr-abc"

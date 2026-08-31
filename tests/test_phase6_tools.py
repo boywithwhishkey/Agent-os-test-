@@ -79,3 +79,48 @@ async def test_path_traversal_is_blocked(tmp_path, monkeypatch):
     )
     assert result.success is False
     assert "escapes artifacts directory" in (result.error or "")
+
+
+@pytest.mark.asyncio
+async def test_executor_threads_correlation_id_into_audit():
+    approvals = InMemoryApprovalStore()
+    audit = InMemoryToolAuditLog()
+    executor = ToolExecutor(build_default_registry(), ToolPolicy(approvals), audit)
+
+    await executor.execute(
+        ToolCall(tool="echo", arguments={"value": "ok"}),
+        correlation_id="corr-exec-1",
+    )
+    events = await audit.list()
+    assert events[-1]["correlation_id"] == "corr-exec-1"
+
+
+@pytest.mark.asyncio
+async def test_correlation_id_audited_on_denied_execution():
+    # A denied write never reaches the handler, but it is still audited — the
+    # correlation id has to survive that early-return path too.
+    approvals = InMemoryApprovalStore()
+    audit = InMemoryToolAuditLog()
+    executor = ToolExecutor(build_default_registry(), ToolPolicy(approvals), audit)
+
+    result = await executor.execute(
+        ToolCall(tool="artifact.write", arguments={"name": "x.txt", "content": "y"}),
+        correlation_id="corr-denied",
+    )
+    events = await audit.list()
+    assert result.success is False
+    assert events[-1]["correlation_id"] == "corr-denied"
+
+
+@pytest.mark.asyncio
+async def test_correlation_id_audited_for_unknown_tool():
+    approvals = InMemoryApprovalStore()
+    audit = InMemoryToolAuditLog()
+    executor = ToolExecutor(build_default_registry(), ToolPolicy(approvals), audit)
+
+    await executor.execute(
+        ToolCall(tool="does.not.exist", arguments={}),
+        correlation_id="corr-missing",
+    )
+    events = await audit.list()
+    assert events[-1]["correlation_id"] == "corr-missing"
