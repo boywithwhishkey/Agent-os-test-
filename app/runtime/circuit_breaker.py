@@ -1,6 +1,7 @@
 import time
 from dataclasses import dataclass
 
+
 @dataclass(slots=True)
 class CircuitState:
     failures: int = 0

@@ -1,5 +1,6 @@
 from app.integrations.base import IntegrationAdapter
 
+
 class ConnectorRegistry:
     def __init__(self) -> None:
         self._adapters: dict[str, IntegrationAdapter] = {}

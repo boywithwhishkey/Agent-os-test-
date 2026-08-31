@@ -1,6 +1,7 @@
 import time
 from collections import deque
 
+
 class SlidingWindowRateLimiter:
     def __init__(self, limit: int = 60, window_seconds: float = 60.0):
         self.limit = limit

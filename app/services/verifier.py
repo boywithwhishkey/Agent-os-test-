@@ -1,4 +1,6 @@
 from app.models.orchestration import AgentJob, AgentResult, VerificationResult
+
+
 class Verifier:
     def verify(self, jobs: list[AgentJob], results: list[AgentResult]) -> VerificationResult:
         received={r.job_id for r in results if r.success}

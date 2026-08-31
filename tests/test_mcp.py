@@ -5,9 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api import phase9
-from app.core.config import settings
 from app.integrations.mcp.client import MCPHttpClient
-from app.integrations.mcp.models import MCPAuthType, MCPServerCreate
+from app.integrations.mcp.models import MCPAuthType
 from app.integrations.mcp.store import MCPServerStore
 from app.main import app
 
@@ -67,7 +66,7 @@ async def test_mcp_client_reports_initialize_failure():
     )
     async with httpx.AsyncClient(transport=transport) as http_client:
         mcp = MCPHttpClient(endpoint="https://mcp.example/rpc", client=http_client)
-        connected, latency_ms, error, capabilities = await mcp.discover()
+        connected, latency_ms, error, _capabilities = await mcp.discover()
 
     assert connected is False
     assert latency_ms is None
@@ -82,7 +81,7 @@ async def test_mcp_client_reports_timeout():
     transport = httpx.MockTransport(handler)
     async with httpx.AsyncClient(transport=transport) as http_client:
         mcp = MCPHttpClient(endpoint="https://mcp.example/rpc", client=http_client)
-        connected, latency_ms, error, capabilities = await mcp.discover()
+        connected, _latency_ms, error, _capabilities = await mcp.discover()
 
     assert connected is False
     assert "timed out" in (error or "").lower()
@@ -96,7 +95,7 @@ async def test_mcp_client_reports_network_error():
     transport = httpx.MockTransport(handler)
     async with httpx.AsyncClient(transport=transport) as http_client:
         mcp = MCPHttpClient(endpoint="https://mcp.example/rpc", client=http_client)
-        connected, latency_ms, error, capabilities = await mcp.discover()
+        connected, _latency_ms, error, _capabilities = await mcp.discover()
 
     assert connected is False
     assert "ConnectError" in (error or "")

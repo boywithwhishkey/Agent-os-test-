@@ -60,7 +60,10 @@ class ToolExecutor:
                 risk=tool.risk,
                 output=output,
             )
-        except Exception as exc:
+        # Deliberately broad: any handler failure becomes a failed, audited
+        # ToolExecutionResult rather than a 500. Narrowing this would let an
+        # unexpected exception escape unaudited.
+        except Exception as exc:  # noqa: BLE001
             result = ToolExecutionResult(
                 tool=tool.name,
                 success=False,

@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
+
 from app.runtime.models import RuntimeExecution
+
 
 class ExecutionStore(ABC):
     @abstractmethod

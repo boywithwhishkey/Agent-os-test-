@@ -74,7 +74,7 @@ class MCPServerRecord:
     capabilities: MCPCapabilities = field(default_factory=MCPCapabilities)
 
     @classmethod
-    def from_create(cls, payload: MCPServerCreate) -> "MCPServerRecord":
+    def from_create(cls, payload: MCPServerCreate) -> MCPServerRecord:
         return cls(
             id=str(uuid4()),
             name=payload.name,

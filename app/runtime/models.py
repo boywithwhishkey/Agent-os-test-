@@ -1,9 +1,12 @@
 from __future__ import annotations
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 from uuid import uuid4
+
 from pydantic import BaseModel, Field
+
 
 class ExecutionStatus(StrEnum):
     PENDING = "pending"
@@ -31,8 +34,8 @@ class RuntimeExecution(BaseModel):
     idempotency_key: str | None = None
     data: Any = None
     error: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 class CircuitBreakerStatus(BaseModel):
     state: str

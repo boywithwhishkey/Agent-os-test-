@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 import os
 
 from app.llm.factory import build_llm_provider
 from app.services.llm_agents import ParallelAgentExecutor, SpecialistJob
 from app.services.llm_verifier import LLMVerifier
+
 
 async def execute_phase3(objective: str, tasks: list[str]) -> dict:
     provider = build_llm_provider()

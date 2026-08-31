@@ -1,6 +1,8 @@
 import hashlib
 import math
+
 from app.embeddings.base import EmbeddingProvider
+
 
 class DeterministicEmbeddingProvider(EmbeddingProvider):
     def __init__(self, dimensions: int = 64):

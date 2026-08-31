@@ -53,7 +53,10 @@ async def echo(arguments: dict[str, Any]) -> Any:
 async def validate_json(arguments: dict[str, Any]) -> Any:
     raw = arguments.get("text")
     if not isinstance(raw, str):
-        raise ValueError("'text' must be a string")
+        # ValueError, not TypeError: app/main.py maps ValueError to HTTP 400,
+        # which is the correct status for bad caller input. TypeError would
+        # reach the generic handler and return 500.
+        raise ValueError("'text' must be a string")  # noqa: TRY004
     return json.loads(raw)
 
 
@@ -76,7 +79,8 @@ async def write_artifact(arguments: dict[str, Any]) -> Any:
     if not isinstance(name, str) or not name.strip():
         raise ValueError("'name' is required")
     if not isinstance(content, str):
-        raise ValueError("'content' must be a string")
+        # See the note in validate_json: ValueError maps to 400 by design.
+        raise ValueError("'content' must be a string")  # noqa: TRY004
     content_bytes = content.encode()
     if len(content_bytes) > MAX_ARTIFACT_BYTES:
         raise ValueError("Artifact exceeds maximum allowed size")
