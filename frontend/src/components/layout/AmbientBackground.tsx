@@ -51,8 +51,8 @@ function Blob({
 }
 
 /**
- * Layer 2+ of THYNACT's ambient background: drifting liquid magenta/violet
- * blobs over the near-black base, a faint technical grid, and sparse floating
+ * Layer 2+ of THYNACT's ambient background: drifting liquid blobs in a
+ * gold/magenta duotone over the near-black base, a faint technical grid, and sparse floating
  * points. Fixed behind the whole app shell so every page shares one
  * continuous canvas instead of feeling like stacked, disconnected sections.
  * Layer 1 (the deep base colour) is `body`'s own background-color in
@@ -88,9 +88,15 @@ export function AmbientBackground() {
     <div
       /* The blobs are tuned for a near-black field. At full strength on a light
          background they wash straight over body text — sidebar labels and card
-         headings were getting lost in the purple. Light mode gets a much
-         quieter version of the same field rather than a different design. */
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.22] dark:opacity-100"
+         headings were getting lost in the purple. Light mode gets a quieter
+         version of the same field rather than a different design.
+
+         Raised from 0.22 once the field became a duotone: at 0.22 the muted
+         gold and the magenta both faded to the same near-neutral grey, so the
+         two hues stopped being distinguishable and the page read colourless.
+         Legibility still holds because the cards are glass over this, not
+         transparent. */
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.34] dark:opacity-100"
       aria-hidden
     >
       <motion.div className="absolute inset-[-64px] bg-technical-grid opacity-40" style={{ y: gridY }} />
@@ -101,12 +107,12 @@ export function AmbientBackground() {
           className="left-[-22vh] top-[-18vh] h-[66vh] w-[54vh]"
           blur="26px"
           spin="animate-blob-slow"
-          gradient="linear-gradient(155deg, color-mix(in srgb, var(--color-ambient-gold) 62%, transparent) 0%, color-mix(in srgb, var(--color-ambient-ink) 70%, transparent) 46%, transparent 76%)"
+          gradient="linear-gradient(155deg, color-mix(in srgb, var(--color-ambient-gold) 66%, transparent) 0%, color-mix(in srgb, var(--color-ambient-magenta) 20%, transparent) 40%, color-mix(in srgb, var(--color-ambient-plum) 62%, transparent) 62%, transparent 80%)"
         />
         <Blob
           className="bottom-[-26vh] right-[-16vh] h-[62vh] w-[58vh]"
           blur="30px"
-          gradient="linear-gradient(200deg, color-mix(in srgb, var(--color-ambient-gold) 48%, transparent) 0%, color-mix(in srgb, var(--color-ambient-slate) 46%, transparent) 55%, transparent 80%)"
+          gradient="linear-gradient(200deg, color-mix(in srgb, var(--color-ambient-magenta) 34%, transparent) 0%, color-mix(in srgb, var(--color-ambient-gold) 50%, transparent) 42%, color-mix(in srgb, var(--color-ambient-slate) 44%, transparent) 66%, transparent 84%)"
         />
       </motion.div>
 
@@ -115,13 +121,13 @@ export function AmbientBackground() {
         <Blob
           className="right-[-10vh] top-[-14vh] h-[48vh] w-[46vh]"
           blur="18px"
-          gradient="linear-gradient(165deg, color-mix(in srgb, var(--color-ambient-gold) 82%, transparent) 0%, color-mix(in srgb, var(--color-ambient-ink) 60%, transparent) 40%, transparent 72%)"
+          gradient="linear-gradient(165deg, color-mix(in srgb, var(--color-ambient-gold) 84%, transparent) 0%, color-mix(in srgb, var(--color-ambient-magenta) 24%, transparent) 38%, color-mix(in srgb, var(--color-ambient-plum) 56%, transparent) 58%, transparent 78%)"
         />
         <Blob
           className="right-[2vh] top-[16vh] h-[54vh] w-[50vh]"
           blur="20px"
           spin="animate-blob-slow"
-          gradient="linear-gradient(190deg, color-mix(in srgb, var(--color-ambient-navy) 70%, transparent) 0%, color-mix(in srgb, var(--color-ambient-slate) 62%, transparent) 44%, transparent 78%)"
+          gradient="linear-gradient(190deg, color-mix(in srgb, var(--color-ambient-magenta) 46%, transparent) 0%, color-mix(in srgb, var(--color-ambient-plum) 58%, transparent) 46%, color-mix(in srgb, var(--color-ambient-navy) 50%, transparent) 66%, transparent 84%)"
         />
       </motion.div>
 
@@ -130,13 +136,13 @@ export function AmbientBackground() {
         <Blob
           className="bottom-[4vh] left-[-20vh] h-[42vh] w-[38vh]"
           blur="20px"
-          gradient="linear-gradient(140deg, color-mix(in srgb, var(--color-ambient-gold) 48%, transparent) 0%, color-mix(in srgb, var(--color-ambient-navy) 44%, transparent) 48%, transparent 78%)"
+          gradient="linear-gradient(140deg, color-mix(in srgb, var(--color-ambient-gold) 54%, transparent) 0%, color-mix(in srgb, var(--color-ambient-magenta) 18%, transparent) 46%, color-mix(in srgb, var(--color-ambient-plum) 44%, transparent) 66%, transparent 84%)"
         />
         <Blob
           className="left-[36vh] top-[52vh] h-[34vh] w-[32vh]"
           blur="22px"
           spin="animate-blob-slow"
-          gradient="linear-gradient(210deg, color-mix(in srgb, var(--color-ambient-navy) 58%, transparent) 0%, color-mix(in srgb, var(--color-ambient-slate) 44%, transparent) 52%, transparent 80%)"
+          gradient="linear-gradient(210deg, color-mix(in srgb, var(--color-ambient-magenta) 40%, transparent) 0%, color-mix(in srgb, var(--color-ambient-gold) 42%, transparent) 44%, color-mix(in srgb, var(--color-ambient-plum) 50%, transparent) 68%, transparent 84%)"
         />
       </motion.div>
 
@@ -145,7 +151,9 @@ export function AmbientBackground() {
           {points.map((p, i) => (
             <span
               key={i}
-              className="absolute h-1 w-1 rounded-full bg-ambient-navy/40 animate-float"
+              className={`absolute h-1 w-1 rounded-full animate-float ${
+                i % 2 === 0 ? "bg-ambient-gold/40" : "bg-ambient-magenta/40"
+              }`}
               style={{ left: `${p.x}%`, top: `${p.y}%`, animationDelay: `${p.delay}s` }}
             />
           ))}

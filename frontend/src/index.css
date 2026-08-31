@@ -8,6 +8,32 @@
     BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
 
+  /* Type scale, nudged up ~1px per step. Done by overriding the SIZE tokens
+     rather than the root font-size on purpose: Tailwind's spacing scale is
+     also rem-based, so raising the root would zoom padding and gaps too and
+     re-flow every layout. Moving only these keeps the geometry identical and
+     changes just the type. */
+  --text-xs: 0.8125rem;   /* 13px */
+  --text-sm: 0.9375rem;   /* 15px */
+  --text-base: 1.0625rem; /* 17px */
+  --text-lg: 1.1875rem;   /* 19px */
+  --text-xl: 1.3125rem;   /* 21px */
+  --text-2xl: 1.5625rem;  /* 25px */
+  --text-3xl: 1.9375rem;  /* 31px */
+  --text-4xl: 2.3125rem;  /* 37px */
+
+  /* Weights, lightened one notch across the board. Space Grotesk is a variable
+     face, so these are real interpolated weights, not synthetic thinning. The
+     ladder keeps its spacing (100 between steps) so hierarchy survives — this
+     makes the site lighter, not flatter.
+
+     The logo lockup does NOT follow these: BrandMark pins literal weights. */
+  --font-weight-light: 300;
+  --font-weight-normal: 350;
+  --font-weight-medium: 450;
+  --font-weight-semibold: 550;
+  --font-weight-bold: 650;
+
   --color-accent-gold: #c8ad6d;
   --color-accent-gold-light: #ead9a6;
   /* Ambient-only palette for the background gradient/glow system — the
@@ -15,12 +41,28 @@
      separate from the semantic accent tokens above (--color-accent-gold
      included) so decoration never gets confused with status/interactive
      color, and can be retuned without touching UI chrome. */
-  /* Ambient palette, retuned to the THYNACT logo: deep navy masses lit by
-     soft gold. The liquid-blob FORM is unchanged — only the colour — because
-     a magenta/violet field fought the navy-and-gold mark everywhere it
-     appeared. DECORATIVE tokens only: never reuse for status, and never use
+  /* Ambient palette: a gold/magenta duotone. Soft dark gold carries the mark's
+     own colour; the magenta is the exact tone from the earlier "Infinity"
+     field, kept because it is what gives the blobs their depth — gold alone
+     read flat and sepia. The two are mixed WITHIN single blobs rather than
+     split across separate gold blobs and pink blobs, so the field reads as one
+     lit body rather than two palettes sharing a canvas.
+
+     The magenta is weighted LOWER than the gold everywhere it is mixed. The
+     two are not balanced at equal percentages: #b0309b is far more saturated
+     than the muted #b98f3d, so matching weights produce a pink field with gold
+     trim rather than a duotone.
+
+     The warm bridge tokens (navy/slate/ink, warm-shifted despite their names)
+     sit between the two hues so gold never meets magenta at a hard edge.
+
+     DECORATIVE tokens only: never reuse for status, and never use
      --color-accent-red (error/offline) for decoration. */
   --color-ambient-gold: #b98f3d;
+  /* Exact tone from the Infinity pass — do not drift it. */
+  --color-ambient-magenta: #b0309b;
+  /* Deep companion to the magenta: where a pink-lit blob turns away. */
+  --color-ambient-plum: #2a0f33;
   --color-ambient-navy: #2b2114;
   --color-ambient-slate: #3a2c1a;
   /* Deepest shade — where a blob turns away from the light.
@@ -143,7 +185,13 @@ body {
   background-color: #f6f6f8;
   color: #14161c;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   font-family: var(--font-sans);
+  font-weight: 350;
+  /* A touch of positive tracking at body sizes: Space Grotesk is set fairly
+     tight by default, and at the lighter weight above it needs the air to stop
+     reading as cramped. */
+  letter-spacing: 0.006em;
   /* Same Infinity tokens as dark mode, at much lower
      intensity — light backgrounds go muddy fast, so this is a soft warm
      wash rather than the deep saturated blobs dark mode uses. Without
@@ -151,7 +199,7 @@ body {
      gray behind them to reveal. */
   background-image:
     radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-gold) 10%, transparent), transparent 66%),
-    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-slate) 8%, transparent), transparent 70%),
+    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-magenta) 5%, transparent), transparent 70%),
     radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-navy) 8%, transparent), transparent 68%);
   background-attachment: fixed;
 }
@@ -162,7 +210,7 @@ body {
      between them. Fixed so it does not reflow while scrolling. */
   background-image:
     radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-gold) 12%, transparent), transparent 62%),
-    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-ink) 65%, transparent), transparent 68%),
+    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-magenta) 11%, transparent), transparent 68%),
     radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-navy) 40%, transparent), transparent 66%);
   background-attachment: fixed;
   color: #f4f2f8;
@@ -336,4 +384,23 @@ body {
     linear-gradient(to right, rgba(200, 173, 109, 0.055) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(200, 173, 109, 0.055) 1px, transparent 1px);
   background-size: 64px 64px;
+}
+
+/* Headings tighten as they grow — the standard optical correction. Without it
+   the enlarged scale above makes big text look loosely spaced while small text
+   looks tight, which is the opposite of what reads well. Scoped to real
+   heading elements so utility-styled text is unaffected. */
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.014em;
+}
+
+/* The all-caps micro-labels (section headers, table headings) are the one
+   place that wants MORE tracking, not less: caps set tight are hard to read at
+   11px, and the extra space is what makes them read as considered rather than
+   shrunken body text. */
+.uppercase {
+  letter-spacing: 0.09em;
 }

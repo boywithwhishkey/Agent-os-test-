@@ -34,9 +34,18 @@ export function Sidebar({
           mobileOpen ? "w-64 translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-hairline px-4">
-          <div className="overflow-hidden">
-            <BrandMark variant={collapsed ? "mark" : "compact"} size="sm" />
+        {/* Taller than the topbar on purpose: the lockup carries the tagline
+            under the wordmark, with the mark spanning both lines. The topbar
+            has no bottom border, so the two not sharing a height is not a
+            visible misalignment. */}
+        <div
+          className={cn(
+            "flex shrink-0 items-center justify-between border-b border-hairline px-4",
+            collapsed ? "h-14" : "h-[76px]"
+          )}
+        >
+          <div className="min-w-0 overflow-hidden">
+            <BrandMark variant={collapsed ? "mark" : "full"} size="md" />
           </div>
           <button
             onClick={onToggle}

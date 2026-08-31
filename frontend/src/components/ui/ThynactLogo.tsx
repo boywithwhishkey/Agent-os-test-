@@ -1,14 +1,31 @@
+import { useId } from "react";
+
 /**
- * The THYNACT monogram: a "T" whose stem is crossed by a rising curve that
- * falls away to the right, forming the apex of an "A". The descending right
- * leg carries the gold gradient — the one place the brand colour appears in
- * the mark itself.
+ * The THYNACT monogram, traced from measurements of the brand lockup rather
+ * than drawn by eye.
  *
- * Drawn as strokes rather than filled paths so it stays crisp at 20px in the
- * sidebar and at 44px in the dashboard hero without needing two assets, and so
- * it can inherit `currentColor` for the dark strokes. That inheritance is why
- * the mark works on both themes from one file: the ink follows the text
- * colour, only the gold is fixed.
+ * Geometry (64-unit box, 1 unit = 1px of the reference at its native size):
+ * a round-capped crossbar, a stem that stops SHORT of the curve below it, and
+ * a single sinuous stroke that sweeps up from the bottom-left, peaks directly
+ * under the stem, and finishes in a short hook to the right.
+ *
+ * Three details are what make it read as this mark rather than a generic one,
+ * and all three were wrong when it was drawn from memory:
+ *
+ * 1. The stem does not touch the curve. The ~4.5-unit gap is deliberate;
+ *    closing it turns the glyph into a solid arch and loses the "T over a
+ *    flourish" reading entirely.
+ * 2. The right hook is SHORT and ends high — at y≈38, well above the
+ *    left tail's y≈60. Extending it to the baseline makes a symmetric arch,
+ *    which is the single biggest way this mark gets redrawn wrong.
+ * 3. The glyph is taller than it is wide (≈47×52), not squat.
+ *
+ * Colour: the T is solid `currentColor`, and only the flourish carries the
+ * gradient — ink at the tail, warming through the brand magenta, resolving to
+ * gold at the hook. Running the gradient across the WHOLE glyph was tried and
+ * rejected: the magenta swallowed the crossbar and the mark stopped reading as
+ * gold-and-pink, becoming simply purple. Anchoring the T in ink also keeps the
+ * mark legible on either theme, since only the ink follows the text colour.
  */
 export function ThynactMark({
   className,
@@ -17,6 +34,14 @@ export function ThynactMark({
   className?: string;
   title?: string;
 }) {
+  // The gradient contains `currentColor`, so it is NOT identical between
+  // instances — it resolves against whichever element it is defined under. A
+  // shared id would silently point every instance at the first gradient in the
+  // document, so two marks in different ink colours on one page would render
+  // with the same ink. useId() emits colons, which are legal in url(#...) but
+  // not in a CSS selector, so they are stripped.
+  const gradientId = `thynact-mark-${useId().replace(/:/g, "")}`;
+
   return (
     <svg
       viewBox="0 0 64 64"
@@ -27,45 +52,41 @@ export function ThynactMark({
       aria-hidden={title ? undefined : true}
     >
       <defs>
-        {/* Unique id is not needed: the gradient is identical everywhere the
-            mark renders, so a shared id is correct and avoids duplicate defs. */}
-        <linearGradient id="thynact-gold" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--color-accent-gold-deep)" />
-          <stop offset="55%" stopColor="var(--color-accent-gold)" />
+        <linearGradient
+          id={gradientId}
+          gradientUnits="userSpaceOnUse"
+          x1="8.4"
+          y1="60.3"
+          x2="40.3"
+          y2="37.9"
+        >
+          <stop offset="0%" stopColor="currentColor" />
+          <stop offset="34%" stopColor="var(--color-ambient-magenta)" />
+          <stop offset="74%" stopColor="var(--color-accent-gold-deep)" />
           <stop offset="100%" stopColor="var(--color-accent-gold-soft)" />
         </linearGradient>
       </defs>
 
-      <g
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {/* Crossbar and stem of the T */}
-        <path d="M13 15 H51" />
-        <path d="M32 15 V36" />
-        {/* Rising left flank of the curve */}
-        <path d="M9 53 C19 53 22 29 33 29" />
+      <g strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        {/* Crossbar */}
+        <path d="M9.7 8 H55.7" stroke="currentColor" />
+        {/* Stem — stops short of the curve, leaving the gap. */}
+        <path d="M32.2 8 V27" stroke="currentColor" />
+        {/* The flourish: long tail out of the bottom-left, peak under the
+            stem, then the short hook right. */}
+        <path
+          d="M8.4 60.3 C15 54 17 48 22 41 C26 35.4 28.5 31.5 32.5 31.5 C36.5 31.5 38.8 34 40.3 37.9"
+          stroke={`url(#${gradientId})`}
+        />
       </g>
-
-      {/* Falling right leg — the gold accent, drawn last so it sits above the
-          dark ink where the two meet at the apex. */}
-      <path
-        d="M33 29 C43 29 45 44 51 53"
-        stroke="url(#thynact-gold)"
-        strokeWidth="3"
-        strokeLinecap="round"
-        fill="none"
-      />
     </svg>
   );
 }
 
 /**
- * Wordmark set in the app's own type at wide tracking, matching the logo
- * lockup. Kept as text rather than an SVG outline so it stays selectable,
- * searchable and legible at small sizes.
+ * Wordmark set in the app's own type at wide tracking, matching the lockup.
+ * Kept as text rather than outlined paths so it stays selectable, searchable
+ * and legible at small sizes.
  */
 export function ThynactWordmark({ className }: { className?: string }) {
   return <span className={className}>THYNACT</span>;

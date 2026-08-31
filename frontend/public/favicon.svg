@@ -1,16 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="THYNACT">
+  <title>THYNACT</title>
+  <!-- Same geometry as ThynactLogo.tsx. On a dark tile because a favicon has no
+       page ink to inherit and must hold up against both light and dark browser
+       chrome, so the T is pinned light rather than following currentColor. -->
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#a8842f"/>
-      <stop offset=".55" stop-color="#d0ad5f"/>
-      <stop offset="1" stop-color="#e3c98a"/>
+    <linearGradient id="fl" gradientUnits="userSpaceOnUse" x1="8.4" y1="60.3" x2="40.3" y2="37.9">
+      <stop offset="0%" stop-color="#eef1f6"/>
+      <stop offset="34%" stop-color="#b0309b"/>
+      <stop offset="74%" stop-color="#a8842f"/>
+      <stop offset="100%" stop-color="#e3c98a"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="14" fill="#0b1220"/>
-  <g stroke="#eef2f8" stroke-width="3" stroke-linecap="round" fill="none">
-    <path d="M15 17 H49"/>
-    <path d="M32 17 V36"/>
-    <path d="M12 50 C21 50 24 30 33 30"/>
+  <g stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"
+     transform="translate(32 32) scale(0.8) translate(-32 -34)">
+    <path d="M9.7 8 H55.7" stroke="#eef1f6"/>
+    <path d="M32.2 8 V27" stroke="#eef1f6"/>
+    <path d="M8.4 60.3 C15 54 17 48 22 41 C26 35.4 28.5 31.5 32.5 31.5 C36.5 31.5 38.8 34 40.3 37.9" stroke="url(#fl)"/>
   </g>
-  <path d="M33 30 C42 30 44 43 49 50" stroke="url(#g)" stroke-width="3" stroke-linecap="round" fill="none"/>
 </svg>
