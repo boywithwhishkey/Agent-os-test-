@@ -38,7 +38,13 @@ export default function WorkflowRuns() {
               placeholder="Paste a workflow run ID"
               onKeyDown={(e) => e.key === "Enter" && setActiveId(lookupId)}
             />
-            <Button variant="secondary" onClick={() => setActiveId(lookupId)}>
+            {/* shrink-0 + nowrap: at 320px the flex row squeezed this button
+                until "Look up" wrapped onto two lines mid-phrase. */}
+            <Button
+              variant="secondary"
+              className="shrink-0 whitespace-nowrap"
+              onClick={() => setActiveId(lookupId)}
+            >
               Look up
             </Button>
           </div>

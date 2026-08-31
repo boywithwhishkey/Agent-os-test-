@@ -43,8 +43,10 @@ describe("Audit", () => {
 
     renderWithProviders(<Audit />);
 
-    const row = await screen.findByText("echo");
-    fireEvent.click(row);
+    // Mobile cards and the desktop table both render (CSS decides which is
+    // visible), so target the first match rather than asserting uniqueness.
+    await screen.findAllByText("echo");
+    fireEvent.click(screen.getAllByText("echo")[0]);
 
     await waitFor(() => expect(screen.getByText("Correlation ID")).toBeInTheDocument());
     expect(screen.getByText("bootstrap-trace-001")).toBeInTheDocument();
@@ -58,8 +60,8 @@ describe("Audit", () => {
 
     renderWithProviders(<Audit />);
 
-    const row = await screen.findByText("json.validate");
-    fireEvent.click(row);
+    await screen.findAllByText("json.validate");
+    fireEvent.click(screen.getAllByText("json.validate")[0]);
 
     await waitFor(() => expect(screen.getAllByText("json.validate").length).toBeGreaterThan(0));
     expect(screen.queryByText("Correlation ID")).not.toBeInTheDocument();

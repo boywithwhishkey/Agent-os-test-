@@ -124,7 +124,36 @@ export default function Audit() {
           ) : view === "timeline" ? (
             <AuditTimeline events={filtered} onSelect={setSelected} />
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              {/* Below sm the five-column table needed horizontal scrolling,
+                  which pushed Approval and When off-screen on a phone — the two
+                  fields you most want when scanning an audit trail. Cards below
+                  sm, the table from sm up. Both render; CSS picks one. */}
+              <ul className="space-y-2 sm:hidden">
+                {filtered.map((event, i) => (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => setSelected(event)}
+                      className="focus-ring glass-ambient w-full rounded-lg border border-hairline p-3 text-left transition-colors hover:bg-surface-hover"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-content-primary">
+                          {event.tool}
+                        </span>
+                        <StatusBadge status={event.success ? "succeeded" : "failed"} />
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-content-muted">
+                        <span className="capitalize">{event.risk.replace("_", " ")}</span>
+                        <span aria-hidden>·</span>
+                        <span>{formatDateTime(event.timestamp)}</span>
+                        {event.approval_required && <Badge tone="amber">Approval</Badge>}
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-hairline text-left text-xs uppercase tracking-wider text-content-muted">
@@ -156,6 +185,7 @@ export default function Audit() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </CardContent>
       </Card>
