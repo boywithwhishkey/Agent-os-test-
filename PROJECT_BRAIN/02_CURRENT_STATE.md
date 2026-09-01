@@ -300,6 +300,70 @@ Production architecture is unchanged and still designed for durable Postgres +
 persistent Key Value. Nothing paid was provisioned. Backend suite: **282
 passing** with real Postgres/Redis.
 
+## BRAND CORRECTED FROM THE APPROVED SHEET + STATUS HONESTY (2026-09-01, latest)
+
+Supersedes the mark geometry recorded below. The operator supplied the approved
+brand sheet as the source of truth alongside a screenshot of the live app.
+
+**The mark had been traced from the wrong thing.** A previous pass measured a
+low-resolution JPEG *of the app's own already-inaccurate rendering* and
+"corrected" the mark toward it, turning the approved arch into a short hook.
+Measured against the sheet itself (mark region x 284-509, y 240-470; crossbar
+y=244 x310-509 at ~8px; stem x=409 y248-335 at ~12px; arch peak ~(423,347),
+left tail to (288,469), right leg to (507,468); gold x490-509 y424-468):
+
+- it is a FULL ARCH whose right leg runs to the baseline, mirroring the left
+  tail — not a hook that stops high
+- the gold occupies the lower third of the RIGHT LEG only
+- the crossbar is measurably lighter than the stem (8px vs 12px)
+
+Rule that follows: **trace the brand sheet, never the app.** The app is
+downstream of the brand and cannot be evidence about it.
+
+**The wordmark is now geometry, not text.** The sheet's "A" has no crossbar —
+it carries a gold dot in its counter, which no font produces. The whole
+identity uses one uniform stroke weight (12px at cap-height 97), so stroked
+paths reproduce it exactly for a few hundred bytes. `tracking` scales only the
+inter-letter gap: the sheet's own spacing (~0.64em) is right at banner width
+and far too wide for a 256px sidebar, so compact placements tighten it rather
+than shrinking the wordmark to illegibility.
+
+New assets: `public/brand/{brand-mark,brand-wordmark,brand-lockup}.svg` (3.1 kB
+total), emitted from the same geometry as the components so they cannot drift,
+plus `apple-touch-icon.png` generated from `favicon.svg` (iOS ignores SVG
+there) and per-scheme `theme-color`.
+
+**Status semantics were dishonest.** Three real defects, all now fixed:
+- `API key needed` (amber) and `API Online` (green) rendered as sibling chips.
+  Both facts were true, but as competing verdicts the amber implied breakage
+  where there was none. Now one compound control — reachability and
+  authorisation are different axes, grouped, with the key half a link because
+  it is the actionable one.
+- Dashboard metrics rendered `—` for both "zero" and "the request failed",
+  turning "not signed in" into what looked like "no data". Now distinguishes
+  loading / unauthorised / offline / unavailable / a real 0.
+- `/health` has always returned `persistence` and `warnings`; **nothing in the
+  UI displayed them**, so an operator on ephemeral storage could not learn that
+  a restart discards their data — while the Privacy page claimed System Health
+  reported exactly that. Both are surfaced now, and a deployment without
+  durable storage no longer shows plain green.
+
+**Consistency:** `MetricCard`/`Badge`/`StatusBadge` still carried `violet` and
+`blue` tones repointed at gold values during the rebrand — names lying about
+what they render. Removed; narrowing the union surfaced every usage at compile
+time.
+
+**Responsive:** at 320px the hero wordmark was clipped to "THYNAC" by an
+overflow-hidden ancestor. Because it was clipped rather than overflowing, no
+horizontal-overflow check could catch it — only opening the PNG did. Verified
+17 routes × 320/390/430/768/1024/1440 dark and 390/768/1440 light = **153
+combinations, zero horizontal overflow**.
+
+Regression: frontend typecheck clean, lint 0 errors / 2 pre-existing warnings,
+65 frontend tests, build clean (JS 417.5 kB, +2.1 kB for the wordmark and
+status component; CSS 57.2 kB, slightly smaller after removing dead tones).
+Backend 282 tests, ruff clean, `validate_deploy_config.py` clean.
+
 ## BRAND: GOLD + MAGENTA DUOTONE, MARK RE-TRACED (2026-08-31, latest)
 
 Supersedes the gold-only pass recorded immediately below. Three changes, all
