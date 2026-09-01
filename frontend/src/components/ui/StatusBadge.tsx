@@ -23,9 +23,9 @@ export type StatusKind =
   | "error"
   | "disabled";
 
-const config: Record<StatusKind, { label: string; tone: "neutral" | "violet" | "blue" | "green" | "red" | "amber"; pulse?: boolean }> = {
+const config: Record<StatusKind, { label: string; tone: "neutral" | "gold" | "green" | "red" | "amber"; pulse?: boolean }> = {
   pending: { label: "Pending", tone: "neutral" },
-  running: { label: "Running", tone: "blue", pulse: true },
+  running: { label: "Running", tone: "gold", pulse: true },
   completed: { label: "Completed", tone: "green" },
   succeeded: { label: "Succeeded", tone: "green" },
   failed: { label: "Failed", tone: "red" },
@@ -39,7 +39,7 @@ const config: Record<StatusKind, { label: string; tone: "neutral" | "violet" | "
   unavailable: { label: "Unavailable", tone: "red" },
   degraded: { label: "Degraded", tone: "amber" },
   connected: { label: "Connected", tone: "green", pulse: true },
-  configured: { label: "Configured", tone: "blue" },
+  configured: { label: "Configured", tone: "gold" },
   needs_setup: { label: "Needs setup", tone: "amber" },
   available: { label: "Available", tone: "neutral" },
   error: { label: "Error", tone: "red" },

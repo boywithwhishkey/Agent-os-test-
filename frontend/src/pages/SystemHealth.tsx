@@ -9,6 +9,7 @@ import {
   Workflow,
   Wrench,
   GitBranch,
+  AlertTriangle,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -110,11 +111,41 @@ export default function SystemHealth() {
                 <Row label="Service">{health.data?.service}</Row>
                 <Row label="Environment">{health.data?.environment}</Row>
                 <Row label="LLM provider">
-                  <Badge tone={health.data?.llm_provider === "mock" ? "amber" : "violet"} className="capitalize">
+                  <Badge tone={health.data?.llm_provider === "mock" ? "amber" : "gold"} className="capitalize">
                     <Brain className="h-3 w-3" /> {health.data?.llm_provider}
                   </Badge>
                 </Row>
+                {/* The backend has always reported these; nothing displayed
+                    them, so an operator running on ephemeral storage had no way
+                    to discover that a restart discards their data. */}
+                {health.data?.persistence && (
+                  <Row label="Storage">
+                    <Badge
+                      tone={health.data.persistence === "durable" ? "green" : "amber"}
+                      className="capitalize"
+                    >
+                      <Database className="h-3 w-3" /> {health.data.persistence}
+                    </Badge>
+                  </Row>
+                )}
               </dl>
+            )}
+            {health.data?.persistence === "ephemeral" && (
+              <p className="mt-3 text-xs leading-relaxed text-content-muted">
+                Tasks, workflows, memory and audit events live in the API
+                process only and are lost when it restarts. Configure PostgreSQL
+                and Redis for durable storage.
+              </p>
+            )}
+            {(health.data?.warnings?.length ?? 0) > 0 && (
+              <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-accent-amber">
+                {health.data?.warnings?.map((w) => (
+                  <li key={w} className="flex gap-1.5">
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                    <span>{w}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </CardContent>
         </Card>

@@ -1,49 +1,43 @@
 import { useId } from "react";
 
 /**
- * The THYNACT monogram, traced from measurements of the brand lockup rather
- * than drawn by eye.
+ * THYNACT brand marks, traced from measurements of the approved brand sheet
+ * rather than drawn by eye. Both are STROKED geometry, not filled outlines:
+ * the whole identity uses one uniform stroke weight (12px at the sheet's
+ * cap-height of 97), so strokes reproduce it exactly, stay crisp at every size,
+ * and keep the assets to a few hundred bytes.
  *
- * Geometry (64-unit box, 1 unit = 1px of the reference at its native size):
- * a round-capped crossbar, a stem running down into the curve below it, and a
- * single sinuous stroke that sweeps up from the bottom-left, peaks directly
- * under the stem, and finishes in a short hook to the right.
+ * Measured from the sheet (mark region x 284-509, y 240-470):
+ *  - crossbar  y=244, x 310-509, ~8px stroke (lighter than the rest)
+ *  - stem      x=409, y 248-335, ~12px stroke
+ *  - arch      peak ~(423,347), left tail to (288,469), right leg to (507,468)
+ *  - gold      x 490-509, y 424-468 — the lower third of the RIGHT LEG only
  *
- * Two details are what make it read as this mark rather than a generic one,
- * and both were wrong when it was drawn from memory:
- *
- * 1. The right hook is SHORT and ends high — at y≈38, well above the
- *    left tail's y≈60. Extending it to the baseline makes a symmetric arch,
- *    which is the single biggest way this mark gets redrawn wrong.
- * 2. The glyph is taller than it is wide (≈47×52), not squat.
- *
- * The stem is CONTINUOUS into the curve's peak. An earlier version broke it
- * with a gap, on the strength of a gap measured in a low-resolution JPEG of
- * the lockup — that gap was compression artefact plus the gradient dimming at
- * the join, not a feature of the mark. The brand sheet has one unbroken line.
- * Do not reintroduce the break.
- *
- * Colour: the T is solid `currentColor`, and only the flourish carries the
- * gradient — ink at the tail, warming through the brand magenta, resolving to
- * gold at the hook. Running the gradient across the WHOLE glyph was tried and
- * rejected: the magenta swallowed the crossbar and the mark stopped reading as
- * gold-and-pink, becoming simply purple. Anchoring the T in ink also keeps the
- * mark legible on either theme, since only the ink follows the text colour.
+ * The arch is a full arch whose right leg runs all the way to the baseline,
+ * mirroring the left tail. An earlier version drew it as a short hook stopping
+ * high, because it was traced from a low-resolution screenshot of the app's own
+ * (already incorrect) rendering instead of from the brand sheet. Trace the
+ * sheet, never the app.
  */
-export function ThynactMark({
-  className,
-  title,
-}: {
-  className?: string;
-  title?: string;
-}) {
-  // The gradient contains `currentColor`, so it is NOT identical between
-  // instances — it resolves against whichever element it is defined under. A
-  // shared id would silently point every instance at the first gradient in the
-  // document, so two marks in different ink colours on one page would render
-  // with the same ink. useId() emits colons, which are legal in url(#...) but
-  // not in a CSS selector, so they are stripped.
-  const gradientId = `thynact-mark-${useId().replace(/:/g, "")}`;
+
+/** Ink→gold stop positions, shared by the mark and the favicon. */
+const GOLD_STOPS = (
+  <>
+    <stop offset="0%" stopColor="currentColor" />
+    <stop offset="48%" stopColor="currentColor" />
+    <stop offset="68%" stopColor="var(--color-accent-gold-deep)" />
+    <stop offset="100%" stopColor="var(--color-accent-gold-soft)" />
+  </>
+);
+
+export function ThynactMark({ className, title }: { className?: string; title?: string }) {
+  // The gradient resolves `currentColor` against its own element, so it is NOT
+  // identical between instances. A shared id would point every instance at the
+  // first gradient in the document, rendering two marks of different ink
+  // colours identically — which is exactly what happened when proofing light
+  // and dark swatches on one page. useId() emits colons; they are legal in
+  // url(#…) but not in a CSS selector, so they are stripped.
+  const gid = `thynact-arch-${useId().replace(/:/g, "")}`;
 
   return (
     <svg
@@ -55,31 +49,28 @@ export function ThynactMark({
       aria-hidden={title ? undefined : true}
     >
       <defs>
-        <linearGradient
-          id={gradientId}
-          gradientUnits="userSpaceOnUse"
-          x1="8.4"
-          y1="60.3"
-          x2="40.3"
-          y2="37.9"
-        >
-          <stop offset="0%" stopColor="currentColor" />
-          <stop offset="34%" stopColor="var(--color-ambient-magenta)" />
-          <stop offset="74%" stopColor="var(--color-accent-gold-deep)" />
-          <stop offset="100%" stopColor="var(--color-accent-gold-soft)" />
+        {/* Horizontal axis spanning only the right leg: everything further left
+            — the apex and the whole left tail — clamps to the first stop and
+            stays ink, so the gold lands on the leg alone, as on the sheet. */}
+        <linearGradient id={gid} gradientUnits="userSpaceOnUse" x1="46" y1="0" x2="59" y2="0">
+          {GOLD_STOPS}
         </linearGradient>
       </defs>
 
-      <g strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-        {/* Crossbar */}
-        <path d="M9.7 8 H55.7" stroke="currentColor" />
-        {/* Stem — runs unbroken into the curve's peak at y=31.5. */}
-        <path d="M32.3 8 V31.5" stroke="currentColor" />
-        {/* The flourish: long tail out of the bottom-left, peak under the
-            stem, then the short hook right. */}
+      <g strokeLinecap="round" strokeLinejoin="round">
+        {/* Crossbar — measurably lighter than the stem on the sheet (8px vs
+            12px). Kept at 2.3 rather than a true-to-scale 1.9 so it survives
+            at favicon and collapsed-sidebar sizes. */}
+        <path d="M10.9 5 H59.1" stroke="currentColor" strokeWidth="2.3" />
+        {/* Stem — runs down into the arch. On the sheet the stem's cap and the
+            arch's crown meet tangentially; overlapping them slightly here
+            guarantees no hairline seam at any raster size. */}
+        <path d="M35.1 5 V30" stroke="currentColor" strokeWidth="2.9" />
+        {/* Arch: left tail, crown, right leg to the baseline. */}
         <path
-          d="M8.4 60.3 C15 54 17 48 22 41 C26 35.4 28.5 31.5 32.5 31.5 C36.5 31.5 38.8 34 40.3 37.9"
-          stroke={`url(#${gradientId})`}
+          d="M5.7 59.5 C11 58.8 16.5 54 19.6 48.8 C22.5 44.5 25.5 38.5 29.7 34.3 C33.5 28.6 42.5 28.6 46.2 34.3 C50.5 39.5 55 48 58.6 59.3"
+          stroke={`url(#${gid})`}
+          strokeWidth="2.9"
         />
       </g>
     </svg>
@@ -87,10 +78,106 @@ export function ThynactMark({
 }
 
 /**
- * Wordmark set in the app's own type at wide tracking, matching the lockup.
- * Kept as text rather than outlined paths so it stays selectable, searchable
- * and legible at small sizes.
+ * The THYNACT wordmark as stroked geometry.
+ *
+ * Built rather than typeset because the sheet's "A" has NO crossbar — it
+ * carries a gold dot in its counter instead, which no font will produce. The
+ * letters are otherwise plain geometric strokes, so drawing them costs little
+ * and matches the sheet exactly.
+ *
+ * Coordinates: cap height 100, baseline y=100, uniform stroke 12, letters
+ * separated by a measured 95-unit gap (the sheet's advances vary 83-102; the
+ * spread is measurement noise on a rasterised sheet, so one value is used).
+ *
+ * `tracking` scales only the inter-letter gap. The sheet's own spacing (~0.64em
+ * equivalent) is beautiful at banner width but too wide for a 256px sidebar, so
+ * compact placements tighten it rather than shrinking the wordmark to
+ * illegibility — per the brand rule that the full horizontal lockup is not
+ * forced into the sidebar.
  */
-export function ThynactWordmark({ className }: { className?: string }) {
-  return <span className={className}>THYNACT</span>;
+export function ThynactWordmark({
+  className,
+  tracking = 1,
+}: {
+  className?: string;
+  tracking?: number;
+}) {
+  const gid = `thynact-a-${useId().replace(/:/g, "")}`;
+  const gap = 95 * tracking;
+
+  // [ink width, render(x) -> paths]
+  const letters: Array<[number, (x: number) => React.ReactNode]> = [
+    // T
+    [87.6, (x) => <path key={`t1${x}`} d={`M${x + 6} 6 H${x + 81.6} M${x + 43.8} 6 V94`} />],
+    // H
+    [
+      96.9,
+      (x) => (
+        <path key={`h${x}`} d={`M${x + 6} 6 V94 M${x + 90.9} 6 V94 M${x + 6} 50 H${x + 90.9}`} />
+      ),
+    ],
+    // Y
+    [
+      92.8,
+      (x) => (
+        <path
+          key={`y${x}`}
+          d={`M${x + 6} 6 L${x + 46.4} 50 L${x + 86.8} 6 M${x + 46.4} 50 V94`}
+        />
+      ),
+    ],
+    // N
+    [
+      107.2,
+      (x) => (
+        <path
+          key={`n${x}`}
+          d={`M${x + 6} 6 V94 M${x + 101.2} 6 V94 M${x + 6} 6 L${x + 101.2} 94`}
+        />
+      ),
+    ],
+    // A — apex and two legs, deliberately no crossbar.
+    [
+      111.3,
+      (x) => (
+        <path key={`a${x}`} d={`M${x + 6} 94 L${x + 55.65} 6 L${x + 105.3} 94`} />
+      ),
+    ],
+    // C
+    [92.8, (x) => <path key={`c${x}`} d={`M${x + 72.8} 16.3 A41 44 0 1 0 ${x + 72.8} 83.7`} />],
+    // T
+    [86.6, (x) => <path key={`t2${x}`} d={`M${x + 6} 6 H${x + 80.6} M${x + 43.3} 6 V94`} />],
+  ];
+
+  let cursor = 0;
+  const placed: React.ReactNode[] = [];
+  let aCenter = 0;
+  letters.forEach(([w, render], i) => {
+    placed.push(render(cursor));
+    if (i === 4) aCenter = cursor + 55.65;
+    cursor += w + (i < letters.length - 1 ? gap : 0);
+  });
+  const total = cursor;
+
+  return (
+    <svg
+      viewBox={`-7 -7 ${total + 14} 114`}
+      fill="none"
+      className={className}
+      role="img"
+      aria-label="THYNACT"
+    >
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="var(--color-accent-gold-deep)" />
+          <stop offset="100%" stopColor="var(--color-accent-gold-soft)" />
+        </linearGradient>
+      </defs>
+      <g stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+        {placed}
+      </g>
+      {/* The gold dot in the A's counter — the sheet's one wordmark accent. */}
+      <circle cx={aCenter} cy="72" r="7" fill={`url(#${gid})`} stroke="none" />
+    </svg>
+  );
 }

@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#07080d" />
+    <!-- iPad/iOS home-screen icon. Apple ignores SVG here, so this PNG is
+         generated from favicon.svg rather than drawn separately, which keeps
+         the two from drifting. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Matched to each theme's real body background so iOS Safari's chrome
+         blends with the page instead of banding against it. -->
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#08060a" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f6f8" />
     <meta name="description" content="THYNACT — Built to Think. Powered to Act." />
     <meta name="apple-mobile-web-app-title" content="THYNACT" />
     <title>THYNACT — Built to Think. Powered to Act.</title>

@@ -37,7 +37,8 @@ describe("App shell", () => {
     expect(within(nav).getByText("Dashboard")).toBeInTheDocument();
     expect(within(nav).getByText("Tasks")).toBeInTheDocument();
     expect(within(nav).getByText("Orchestrate")).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText("API Online")).toBeInTheDocument());
+    // Sentence case, matching the sibling states ("API offline", "Degraded").
+    await waitFor(() => expect(screen.getByText("API online")).toBeInTheDocument());
   });
 
   it("navigates to the Tasks screen when its nav link is clicked", async () => {

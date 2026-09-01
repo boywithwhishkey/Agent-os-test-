@@ -1,50 +1,60 @@
 import { cn } from "@/lib/utils";
-import { ThynactMark } from "./ThynactLogo";
+import { ThynactMark, ThynactWordmark } from "./ThynactLogo";
 
 const TAGLINE = "Built to Think. Powered to Act.";
 
-function Mark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const dims = size === "sm" ? "h-7 w-7" : size === "lg" ? "h-11 w-11" : "h-9 w-9";
-  // The real monogram, with no tile or fill behind it: the mark sits directly
-  // on the ambient background the way it does on the brand sheet, and its dark
-  // ink follows `currentColor` so one asset serves both themes.
+type Size = "sm" | "md" | "lg";
+
+/**
+ * Brand lockups.
+ *
+ * Sizing is expressed as a mark height plus a wordmark WIDTH, because the two
+ * assets have very different aspect ratios and matching them by height alone
+ * puts the wordmark's optical weight wildly out of step with the mark.
+ *
+ * `tracking` tightens only the wordmark's inter-letter gap. The brand sheet's
+ * own spacing is right at banner width but far too wide for a 256px sidebar,
+ * so compact placements tighten it rather than shrinking the wordmark until it
+ * is unreadable — the full horizontal lockup is never forced into the sidebar.
+ */
+const SIZES: Record<
+  Size,
+  { mark: string; word: string; gap: string; tracking: number; tagline: string }
+> = {
+  sm: { mark: "h-7 w-7", word: "w-[104px]", gap: "gap-3", tracking: 0.4, tagline: "text-[10px]" },
+  md: { mark: "h-9 w-9", word: "w-[140px]", gap: "gap-4", tracking: 0.42, tagline: "text-[11px]" },
+  lg: { mark: "h-12 w-12", word: "w-[250px]", gap: "gap-8", tracking: 0.6, tagline: "text-sm" },
+};
+
+function Mark({ size }: { size: Size }) {
   return (
-    <span className={cn("flex shrink-0 items-center justify-center text-content-primary", dims)}>
+    <span className={cn("flex shrink-0 items-center justify-center text-content-primary", SIZES[size].mark)}>
       <ThynactMark className="h-full w-full" />
     </span>
   );
 }
 
-function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const textSize = size === "sm" ? "text-base" : size === "lg" ? "text-2xl" : "text-xl";
+function Wordmark({ size }: { size: Size }) {
   return (
-    <span
-      className={cn(
-        // Weight and tracking are pinned to literal values, NOT the font-medium
-        // / tracking-* tokens. Those tokens were retuned lighter for the rest
-        // of the site; the logo is excluded from that pass by definition, so it
-        // must not follow them when they move again.
-        "font-[450] tracking-[0.2em] text-content-primary",
-        textSize
-      )}
-    >
-      THYNACT
-    </span>
+    <ThynactWordmark
+      // max-w-full + shrink, NOT shrink-0: at 320px the hero lockup is wider
+      // than the viewport, and a fixed-width wordmark was being clipped to
+      // "THYNAC" by an overflow-hidden ancestor. Because it was clipped rather
+      // than overflowing, no horizontal-overflow check could catch it — only
+      // looking at the render did. An SVG with a width and a viewBox scales its
+      // height automatically, so shrinking stays proportional.
+      className={cn("min-w-0 max-w-full text-content-primary", SIZES[size].word)}
+      tracking={SIZES[size].tracking}
+    />
   );
 }
 
 /**
- * The THYNACT brand treatment, in three variants:
- * - "mark": icon only, for a collapsed sidebar
- * - "compact": icon + wordmark on one line
- * - "full": the brand-sheet lockup — icon and wordmark on the first line, and
- *   the tagline on a second line that starts just past the MARK'S MIDPOINT.
- *
- *   That indent is measured, not chosen: on the reference lockup the mark spans
- *   x 35-83 (midpoint 59), the tagline's first glyph starts at x 63, and the
- *   wordmark starts at x 97. So the tagline aligns with neither the mark's left
- *   edge nor the wordmark — it begins under the middle of the mark, at ~58% of
- *   the mark's width. Both of the obvious alternatives are wrong.
+ * - "mark": icon only, for a collapsed sidebar or a tight control
+ * - "compact": mark + wordmark on one line
+ * - "full": adds the product tagline on a second line, starting just past the
+ *   mark's midpoint (measured off the sheet: mark x 35-83, tagline ink from
+ *   x 63 — it aligns with neither the mark's left edge nor the wordmark).
  */
 export function BrandMark({
   variant = "compact",
@@ -52,37 +62,38 @@ export function BrandMark({
   className,
 }: {
   variant?: "mark" | "compact" | "full";
-  size?: "sm" | "md" | "lg";
+  size?: Size;
   className?: string;
 }) {
   if (variant === "mark") return <Mark size={size} />;
 
-  if (variant === "compact") {
-    return (
-      <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
-        <Mark size={size} />
-        <Wordmark size={size} />
-      </div>
-    );
-  }
+  // The sheet sets the mark and wordmark 162px apart against a 226px mark
+  // (~0.7x the mark's width). A flat gap-2.5 let the crossbar collide with the
+  // "T" at hero size, so the gap scales with the mark.
+  const lockup = (
+    <div className={cn("flex min-w-0 items-center", SIZES[size].gap)}>
+      <Mark size={size} />
+      <Wordmark size={size} />
+    </div>
+  );
 
-  // ~58% of each size's mark width, so the tagline starts just past the mark's
-  // midpoint at every size: 28px -> 16, 36px -> 20, 44px -> 24.
-  const taglineIndent = size === "sm" ? "pl-4" : size === "lg" ? "pl-6" : "pl-5";
+  if (variant === "compact") return <div className={cn("min-w-0", className)}>{lockup}</div>;
+
+  // ~58% of the mark's width at each size, so the tagline starts just past the
+  // mark's midpoint: 28px -> 16, 36px -> 20, 48px -> 28.
+  const indent = size === "sm" ? "pl-4" : size === "lg" ? "pl-7" : "pl-5";
 
   return (
     <div className={cn("flex min-w-0 flex-col", className)}>
-      <div className="flex items-center gap-2.5">
-        <Mark size={size} />
-        <Wordmark size={size} />
-      </div>
+      {lockup}
       <span
         className={cn(
-          // Weight is pinned, like the wordmark's: the tagline belongs to the
-          // logo lockup and stays out of the site-wide type tokens.
+          // Weight pinned, not tokenised: the tagline belongs to the lockup and
+          // stays out of the site-wide type scale.
           "truncate font-[350] tracking-[0.01em] text-content-muted",
-          taglineIndent,
-          size === "lg" ? "mt-1 text-sm" : "mt-0.5 text-[11px]"
+          indent,
+          SIZES[size].tagline,
+          size === "lg" ? "mt-1.5" : "mt-1"
         )}
       >
         {TAGLINE}

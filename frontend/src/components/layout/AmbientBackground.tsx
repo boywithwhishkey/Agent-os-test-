@@ -96,7 +96,7 @@ export function AmbientBackground() {
          two hues stopped being distinguishable and the page read colourless.
          Legibility still holds because the cards are glass over this, not
          transparent. */
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.34] dark:opacity-100"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.44] dark:opacity-100"
       aria-hidden
     >
       <motion.div className="absolute inset-[-64px] bg-technical-grid opacity-40" style={{ y: gridY }} />
@@ -112,7 +112,7 @@ export function AmbientBackground() {
         <Blob
           className="bottom-[-26vh] right-[-16vh] h-[62vh] w-[58vh]"
           blur="30px"
-          gradient="linear-gradient(200deg, color-mix(in srgb, var(--color-ambient-magenta) 34%, transparent) 0%, color-mix(in srgb, var(--color-ambient-gold) 50%, transparent) 42%, color-mix(in srgb, var(--color-ambient-slate) 44%, transparent) 66%, transparent 84%)"
+          gradient="linear-gradient(200deg, color-mix(in srgb, var(--color-ambient-magenta) 26%, transparent) 0%, color-mix(in srgb, var(--color-ambient-gold) 50%, transparent) 42%, color-mix(in srgb, var(--color-ambient-slate) 44%, transparent) 66%, transparent 84%)"
         />
       </motion.div>
 
@@ -127,7 +127,7 @@ export function AmbientBackground() {
           className="right-[2vh] top-[16vh] h-[54vh] w-[50vh]"
           blur="20px"
           spin="animate-blob-slow"
-          gradient="linear-gradient(190deg, color-mix(in srgb, var(--color-ambient-magenta) 46%, transparent) 0%, color-mix(in srgb, var(--color-ambient-plum) 58%, transparent) 46%, color-mix(in srgb, var(--color-ambient-navy) 50%, transparent) 66%, transparent 84%)"
+          gradient="linear-gradient(190deg, color-mix(in srgb, var(--color-ambient-magenta) 34%, transparent) 0%, color-mix(in srgb, var(--color-ambient-plum) 58%, transparent) 46%, color-mix(in srgb, var(--color-ambient-navy) 50%, transparent) 66%, transparent 84%)"
         />
       </motion.div>
 
@@ -142,7 +142,7 @@ export function AmbientBackground() {
           className="left-[36vh] top-[52vh] h-[34vh] w-[32vh]"
           blur="22px"
           spin="animate-blob-slow"
-          gradient="linear-gradient(210deg, color-mix(in srgb, var(--color-ambient-magenta) 40%, transparent) 0%, color-mix(in srgb, var(--color-ambient-gold) 42%, transparent) 44%, color-mix(in srgb, var(--color-ambient-plum) 50%, transparent) 68%, transparent 84%)"
+          gradient="linear-gradient(210deg, color-mix(in srgb, var(--color-ambient-magenta) 30%, transparent) 0%, color-mix(in srgb, var(--color-ambient-gold) 42%, transparent) 44%, color-mix(in srgb, var(--color-ambient-plum) 50%, transparent) 68%, transparent 84%)"
         />
       </motion.div>
 

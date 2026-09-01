@@ -385,6 +385,15 @@ export interface HealthResponse {
   llm_provider: string;
   max_parallel: number;
   backends: Record<string, string>;
+  /**
+   * "durable" when the deployment is backed by PostgreSQL/Redis, "ephemeral"
+   * when everything lives in the API process and is lost on restart. The
+   * backend has always returned these two fields; the frontend simply never
+   * declared them, so the UI could not tell an operator that their data is
+   * not being persisted.
+   */
+  persistence?: string;
+  warnings?: string[];
 }
 
 export interface ReadinessResponse {

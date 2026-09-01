@@ -12,6 +12,7 @@ import { ScrollReveal, StaggerGroup, StaggerItem } from "@/components/ui/ScrollR
 import { HeartbeatLine } from "@/components/ui/HeartbeatLine";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 import { useHealth, useReadiness, useTools, useToolAudit } from "@/lib/api/queries";
+import { ApiError } from "@/lib/api/client";
 import { useSessionHistory } from "@/lib/session-history";
 import { formatRelativeTime } from "@/lib/utils";
 
@@ -26,6 +27,39 @@ export default function Dashboard() {
   const executions = useSessionHistory("runtime-execution");
 
   const recentAudit = [...(audit.data ?? [])].reverse().slice(0, 6);
+
+  /**
+   * A metric that failed to load is not the same as a metric that is zero, and
+   * neither is an em dash. These cards previously rendered "—" for both, which
+   * silently turned "you are not signed in" into what looked like "no data" —
+   * the operator had no way to know there was an action to take.
+   *
+   * 0 is a real, meaningful value and must render as 0, so the count is only
+   * substituted when it is genuinely absent.
+   */
+  const metricValue = (q: { isLoading: boolean; isError: boolean; error: unknown; data?: unknown[] }) => {
+    if (q.isLoading) return "…";
+    if (q.isError) {
+      const err = q.error;
+      if (err instanceof ApiError) {
+        if (err.isUnauthorized) return "Sign in";
+        if (err.isNetworkError || err.isTimeout) return "Offline";
+      }
+      return "Unavailable";
+    }
+    return q.data?.length ?? 0;
+  };
+
+  /** Unavailable/auth values are words, not figures — don't style them as data. */
+  const metricTone = (q: { isError: boolean }) => (q.isError ? "amber" : "neutral");
+
+  // Reachable is not the same as healthy: a backend running without durable
+  // storage, or reporting warnings, must not present itself as plain green.
+  const apiDegraded =
+    Boolean(health.data) &&
+    (health.data?.status !== "ok" ||
+      (health.data?.warnings?.length ?? 0) > 0 ||
+      health.data?.persistence === "ephemeral");
 
   return (
     <div className="space-y-10">
@@ -52,10 +86,16 @@ export default function Dashboard() {
         <StaggerItem className="h-full">
           <MetricCard
             label="API status"
-            value={health.isLoading ? "…" : health.data ? "Online" : "Offline"}
-            tone={health.data ? "green" : "red"}
+            value={health.isLoading ? "…" : !health.data ? "Offline" : apiDegraded ? "Degraded" : "Online"}
+            tone={!health.data ? "red" : apiDegraded ? "amber" : "green"}
             icon={<Activity className="h-4 w-4" />}
-            hint={readiness.data ? `${readiness.data.status}` : undefined}
+            hint={
+              health.data
+                ? health.data.persistence === "ephemeral"
+                  ? "Ephemeral storage — data is lost on restart"
+                  : (readiness.data?.status ?? undefined)
+                : undefined
+            }
             graphic={
               <HeartbeatLine state={health.isLoading ? "connecting" : health.data ? "online" : "offline"} width={72} height={18} />
             }
@@ -64,17 +104,19 @@ export default function Dashboard() {
         <StaggerItem className="h-full">
           <MetricCard
             label="Tools available"
-            value={tools.isLoading ? "…" : (tools.data?.length ?? "—")}
-            tone="violet"
+            value={metricValue(tools)}
+            tone={metricTone(tools)}
             icon={<Wrench className="h-4 w-4" />}
+            hint={tools.isError ? "Operator key required to list tools" : undefined}
           />
         </StaggerItem>
         <StaggerItem className="h-full">
           <MetricCard
             label="Audit events"
-            value={audit.isLoading ? "…" : (audit.data?.length ?? "—")}
-            tone="blue"
+            value={metricValue(audit)}
+            tone={metricTone(audit)}
             icon={<ScrollText className="h-4 w-4" />}
+            hint={audit.isError ? "Operator key required to read the audit log" : undefined}
           />
         </StaggerItem>
         <StaggerItem className="h-full">

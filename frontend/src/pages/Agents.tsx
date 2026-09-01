@@ -57,7 +57,7 @@ export default function Agents() {
                 </span>
                 {role}
               </CardTitle>
-              <Badge tone="violet">Orchestration</Badge>
+              <Badge tone="gold">Orchestration</Badge>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-content-secondary">{description}</p>

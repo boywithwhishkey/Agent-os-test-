@@ -113,7 +113,7 @@ export default function Autonomous() {
                 </CardTitle>
                 <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
                   {health.data && (
-                    <Badge tone="violet">
+                    <Badge tone="gold">
                       <Zap className="h-3 w-3" /> Up to {health.data.max_parallel} in parallel
                     </Badge>
                   )}

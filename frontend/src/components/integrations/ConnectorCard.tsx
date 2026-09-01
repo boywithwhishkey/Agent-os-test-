@@ -8,9 +8,11 @@ import { getConnectorIcon } from "./connectorIcons";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { isComingSoon, primaryAction, type UnifiedConnector } from "@/lib/integration-hub";
 
-const typeBadgeTone: Record<string, "violet" | "blue" | "green" | "amber"> = {
-  mcp: "violet",
-  api: "blue",
+// Connector TYPE is a classification, not a status, so it gets the brand tone
+// or a neutral one — never green/red, which the status badges own.
+const typeBadgeTone: Record<string, "gold" | "neutral" | "green" | "amber"> = {
+  mcp: "gold",
+  api: "neutral",
   oauth: "green",
   webhook: "amber",
 };
@@ -69,7 +71,7 @@ export function ConnectorCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge tone={typeBadgeTone[connector.connector_type] ?? "violet"} className="uppercase tracking-wide">
+            <Badge tone={typeBadgeTone[connector.connector_type] ?? "neutral"} className="uppercase tracking-wide">
               {connector.connector_type}
             </Badge>
             {!comingSoon &&

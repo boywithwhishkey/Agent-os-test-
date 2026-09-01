@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, Search, Moon, Sun, Monitor, KeyRound, Settings as SettingsIcon } from "lucide-react";
-import { HealthIndicator } from "./HealthIndicator";
+import { Menu, Search, Moon, Sun, Monitor, Settings as SettingsIcon } from "lucide-react";
+import { ConnectionStatus } from "./ConnectionStatus";
 import { AccountPopover } from "./AccountPopover";
 import { useTheme } from "@/lib/theme";
-import { isApiConfigured } from "@/lib/api/config";
 import { getEnvironmentLabel } from "@/lib/environment";
 import { Button } from "@/components/ui/Button";
 
@@ -17,7 +16,6 @@ export function Topbar({
 }) {
   const { theme, setTheme } = useTheme();
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-  const configured = isApiConfigured();
 
   const environmentLabel =
     typeof window === "undefined" ? null : getEnvironmentLabel(window.location.hostname);
@@ -64,16 +62,9 @@ export function Topbar({
             {environmentLabel}
           </span>
         )}
-        {!configured && (
-          <Link
-            to="/settings"
-            className="hidden items-center gap-1.5 text-[11px] font-medium text-accent-amber transition-opacity duration-200 hover:opacity-80 sm:inline-flex"
-          >
-            <KeyRound className="h-3 w-3" />
-            API key needed
-          </Link>
-        )}
-        <HealthIndicator />
+        {/* Reachability and authorisation are reported together — see
+            ConnectionStatus for why they must not be two competing chips. */}
+        <ConnectionStatus />
 
         <div className="relative">
           <Button variant="ghost" size="icon" onClick={() => setThemeMenuOpen((o) => !o)} aria-label="Change theme">

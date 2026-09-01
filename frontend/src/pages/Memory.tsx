@@ -170,7 +170,7 @@ function MemorySearchPanel() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="truncate text-sm font-medium text-content-primary">{record.key}</p>
-                        <Badge tone="violet" className="capitalize">
+                        <Badge tone="gold" className="capitalize">
                           {record.scope}
                         </Badge>
                       </div>

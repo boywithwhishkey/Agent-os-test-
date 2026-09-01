@@ -198,8 +198,8 @@ body {
      this, low-alpha glass surfaces in light mode had nothing but flat
      gray behind them to reveal. */
   background-image:
-    radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-gold) 10%, transparent), transparent 66%),
-    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-magenta) 5%, transparent), transparent 70%),
+    radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-gold) 14%, transparent), transparent 66%),
+    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-magenta) 8%, transparent), transparent 70%),
     radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-navy) 8%, transparent), transparent 68%);
   background-attachment: fixed;
 }
@@ -210,7 +210,7 @@ body {
      between them. Fixed so it does not reflow while scrolling. */
   background-image:
     radial-gradient(ellipse 60rem 44rem at 88% -8%, color-mix(in srgb, var(--color-ambient-gold) 12%, transparent), transparent 62%),
-    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-magenta) 11%, transparent), transparent 68%),
+    radial-gradient(ellipse 54rem 46rem at 4% 22%, color-mix(in srgb, var(--color-ambient-magenta) 8%, transparent), transparent 68%),
     radial-gradient(ellipse 64rem 40rem at 22% 104%, color-mix(in srgb, var(--color-ambient-navy) 40%, transparent), transparent 66%);
   background-attachment: fixed;
   color: #f4f2f8;

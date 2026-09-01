@@ -14,23 +14,23 @@ export function MetricCard({
   label: string;
   value: ReactNode;
   icon?: ReactNode;
-  tone?: "neutral" | "violet" | "blue" | "green" | "red" | "amber";
+  tone?: "neutral" | "gold" | "green" | "red" | "amber";
   hint?: string;
   /** Optional small visual under the hint — e.g. a HeartbeatLine for the API status metric. */
   graphic?: ReactNode;
 }) {
   const toneStyles: Record<string, string> = {
     neutral: "text-content-primary",
-    violet: "text-accent-gold",
-    blue: "text-accent-gold-soft",
+    // "violet"/"blue" survived the gold rebrand as names pointing at gold
+    // values — a trap for the next reader. Renamed to what they actually are.
+    gold: "text-accent-gold",
     green: "text-accent-green",
     red: "text-accent-red",
     amber: "text-accent-amber",
   };
   const glowStyles: Record<string, string> = {
     neutral: "bg-content-primary/[0.03]",
-    violet: "bg-accent-gold/[0.06]",
-    blue: "bg-accent-gold-soft/[0.06]",
+    gold: "bg-accent-gold/[0.06]",
     green: "bg-accent-green/[0.06]",
     red: "bg-accent-red/[0.06]",
     amber: "bg-accent-amber/[0.06]",
