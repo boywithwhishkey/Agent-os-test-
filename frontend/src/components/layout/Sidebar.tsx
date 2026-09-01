@@ -29,7 +29,7 @@ export function Sidebar({
       )}
       <aside
         className={cn(
-          "glass-soft fixed inset-y-0 left-0 z-50 flex flex-col border-r border-hairline transition-[width] duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
+          "glass-soft fixed inset-y-0 left-0 z-50 flex flex-col border-r border-hairline transition-[width] duration-200 lg:sticky lg:top-0 lg:h-screen lg:h-dvh lg:translate-x-0",
           collapsed ? "lg:w-[68px]" : "lg:w-64",
           mobileOpen ? "w-64 translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -56,7 +56,9 @@ export function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
+        {/* Bottom padding clears the iOS home indicator so the last nav item
+            stays tappable in the mobile drawer. */}
+        <nav className="flex-1 space-y-5 overflow-y-auto px-3 pt-4 pb-[max(env(safe-area-inset-bottom),1rem)]">
           {navGroups.map((group) => (
             <div key={group.label}>
               {!collapsed && (

@@ -29,7 +29,11 @@ export function AppShell() {
     // through. An earlier version had bg-surface-canvas on this element,
     // which is fully opaque and was silently hiding the entire ambient
     // background system behind it; caught by actually rendering the app.
-    <div className="relative flex min-h-screen overflow-x-hidden">
+    // min-h-screen stays as the fallback and min-h-dvh wins where supported:
+    // on iOS Safari 100vh counts the collapsing browser chrome, so a vh-only
+    // shell is taller than the visible viewport and the page jiggles as the
+    // toolbar hides. dvh tracks the viewport that is actually visible.
+    <div className="relative flex min-h-screen min-h-dvh overflow-x-hidden">
       <AmbientBackground />
       <Sidebar
         collapsed={collapsed}
