@@ -42,7 +42,11 @@ export default function Dashboard() {
     if (q.isError) {
       const err = q.error;
       if (err instanceof ApiError) {
+        // "Sign in" is only right for 401. A 503 means the SERVER is missing a
+        // dependency (e.g. no operator key configured at all), which no amount
+        // of signing in would fix.
         if (err.isUnauthorized) return "Sign in";
+        if (err.isForbidden) return "No access";
         if (err.isNetworkError || err.isTimeout) return "Offline";
       }
       return "Unavailable";
@@ -52,6 +56,18 @@ export default function Dashboard() {
 
   /** Unavailable/auth values are words, not figures — don't style them as data. */
   const metricTone = (q: { isError: boolean }) => (q.isError ? "amber" : "neutral");
+
+  /** Says what to actually do, which differs per failure kind. */
+  const metricHint = (q: { isError: boolean; error: unknown }, action: string) => {
+    if (!q.isError) return undefined;
+    const err = q.error;
+    if (err instanceof ApiError) {
+      if (err.isUnauthorized) return `Operator key required to ${action}`;
+      if (err.isForbidden) return `This key is not permitted to ${action}`;
+      if (err.isUnavailable) return err.detail;
+    }
+    return undefined;
+  };
 
   // Reachable is not the same as healthy: a backend running without durable
   // storage, or reporting warnings, must not present itself as plain green.
@@ -107,7 +123,7 @@ export default function Dashboard() {
             value={metricValue(tools)}
             tone={metricTone(tools)}
             icon={<Wrench className="h-4 w-4" />}
-            hint={tools.isError ? "Operator key required to list tools" : undefined}
+            hint={metricHint(tools, "list tools")}
           />
         </StaggerItem>
         <StaggerItem className="h-full">
@@ -116,7 +132,7 @@ export default function Dashboard() {
             value={metricValue(audit)}
             tone={metricTone(audit)}
             icon={<ScrollText className="h-4 w-4" />}
-            hint={audit.isError ? "Operator key required to read the audit log" : undefined}
+            hint={metricHint(audit, "read the audit log")}
           />
         </StaggerItem>
         <StaggerItem className="h-full">

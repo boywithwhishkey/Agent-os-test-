@@ -5,7 +5,17 @@ from app.queue.base import JobQueue, QueueJob
 
 
 class RedisJobQueue(JobQueue):
-    def __init__(self, url: str, prefix: str = "agent-os") -> None:
+    def __init__(self, url: str, prefix: str) -> None:
+        """`prefix` is REQUIRED on purpose.
+
+        It used to default to "agent-os" — the bare prefix WITHOUT the
+        environment suffix — so any caller that constructed the queue directly
+        rather than via from_settings() silently got an un-namespaced key
+        space shared by every environment. Nothing wrote through such an
+        instance, but the default made a production/staging job collision a
+        one-line mistake away. Callers must now state the namespace, and
+        settings.queue_namespace is the only correct source for it.
+        """
         self.url = url
         self.prefix = prefix
         self._client = None

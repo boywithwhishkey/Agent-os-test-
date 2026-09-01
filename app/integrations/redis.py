@@ -27,7 +27,9 @@ class RedisAdapter(IntegrationAdapter):
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:
         own_queue = self._queue is None
-        queue = self._queue or RedisJobQueue(self.redis_url)
+        # Namespaced like every other queue instance. This adapter only PINGs,
+        # but it must not be the one place that models an un-namespaced queue.
+        queue = self._queue or RedisJobQueue(self.redis_url, settings.queue_namespace)
 
         started = time.perf_counter()
         try:

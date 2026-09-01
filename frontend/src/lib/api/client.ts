@@ -3,15 +3,23 @@ import { getApiBaseUrl, getApiKey } from "./config";
 export class ApiError extends Error {
   status: number;
   detail: string;
+  /** Machine-readable reason from the API, when it sends one. */
+  code: string | null;
   correlationId: string | null;
   isNetworkError: boolean;
   isTimeout: boolean;
+  /** 401 only: the caller needs to supply a credential. */
   isUnauthorized: boolean;
+  /** 403: authenticated, but not permitted. */
+  isForbidden: boolean;
+  /** 503: a dependency the server needs is unavailable. NOT an auth failure. */
+  isUnavailable: boolean;
   isNotFound: boolean;
 
   constructor(opts: {
     status: number;
     detail: string;
+    code?: string | null;
     correlationId: string | null;
     isNetworkError?: boolean;
     isTimeout?: boolean;
@@ -20,10 +28,17 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = opts.status;
     this.detail = opts.detail;
+    this.code = opts.code ?? null;
     this.correlationId = opts.correlationId;
     this.isNetworkError = opts.isNetworkError ?? false;
     this.isTimeout = opts.isTimeout ?? false;
-    this.isUnauthorized = opts.status === 401 || opts.status === 503;
+    // 503 used to be folded in here, so a server with NO operator key
+    // configured told the user to "Sign in" — the one action that could never
+    // help, because no credential exists to supply. The three states are now
+    // distinct and the UI routes them to three different messages.
+    this.isUnauthorized = opts.status === 401;
+    this.isForbidden = opts.status === 403;
+    this.isUnavailable = opts.status === 503;
     this.isNotFound = opts.status === 404;
   }
 }
@@ -115,13 +130,19 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
+    const body = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+    // Guard against an object detail: String({...}) yields "[object Object]",
+    // which would surface to the user as the entire error message.
+    const rawDetail = body && "detail" in body ? body.detail : undefined;
     const detail =
-      (parsed && typeof parsed === "object" && "detail" in parsed
-        ? String((parsed as { detail: unknown }).detail)
-        : undefined) || response.statusText || "Request failed";
+      (typeof rawDetail === "string" ? rawDetail : undefined) ||
+      response.statusText ||
+      "Request failed";
+    const code = body && typeof body.code === "string" ? body.code : null;
     throw new ApiError({
       status: response.status,
       detail,
+      code,
       correlationId: responseCorrelationId,
     });
   }

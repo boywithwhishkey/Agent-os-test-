@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.orchestration import router as orchestration_router
 from app.api.phase5 import router as phase5_router
@@ -99,6 +100,25 @@ async def correlation_middleware(request: Request, call_next):
     return response
 
 
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
+    """Flatten structured HTTPException details onto the response body.
+
+    Routes that need a machine-readable reason raise with a dict detail
+    ({"detail": ..., "code": ...}). FastAPI's default handler would nest that
+    under another "detail" key, so clients reading `body.detail` as a string
+    would render "[object Object]". Spreading it keeps the wire shape flat and
+    identical to before for every plain-string detail, so this is backward
+    compatible for the many routes that raise those.
+
+    `exc.headers` is forwarded so 401s keep their WWW-Authenticate challenge.
+    """
+    content = exc.detail if isinstance(exc.detail, dict) else {"detail": exc.detail}
+    return JSONResponse(status_code=exc.status_code, content=content, headers=exc.headers)
+
+
 @app.exception_handler(KeyError)
 async def key_error_handler(request: Request, exc: KeyError) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": str(exc).strip("'")})
@@ -180,13 +200,32 @@ def health() -> dict:
 @app.get("/ready", tags=["system"])
 async def readiness() -> JSONResponse:
     checks = await check_readiness()
-    # "unconfigured" is NOT healthy here: check_readiness only adds a check when
-    # the corresponding backend has been explicitly selected, so an unconfigured
-    # dependency means the deployment is misconfigured and cannot serve.
-    healthy = all(value == "ok" for value in checks.values())
+
+    # Two different questions, deliberately answered separately:
+    #
+    #   the BODY says whether the deployment is fully durable and healthy;
+    #   the HTTP STATUS says whether the orchestrator should route traffic here.
+    #
+    # Conflating them is how /ready came to claim "ready" for an all-in-memory
+    # service. But making ephemeral storage a 503 unconditionally would take the
+    # currently-live production service down the moment AGENT_OS_APP_ENV is set
+    # to production — before its database exists. So ephemeral degrades the body
+    # and is only fatal once durability was explicitly demanded.
+    hard_failures = {
+        name: value
+        for name, value in checks.items()
+        if value in {"unavailable", "unconfigured"}
+    }
+    if settings.require_durable_persistence and checks.get("persistence") != "durable":
+        hard_failures["persistence"] = checks.get("persistence", "unknown")
+
+    fully_ready = all(value in {"ok", "durable"} for value in checks.values())
     return JSONResponse(
-        status_code=200 if healthy else 503,
-        content={"status": "ready" if healthy else "degraded", "checks": checks},
+        status_code=503 if hard_failures else 200,
+        content={
+            "status": "ready" if fully_ready else "degraded",
+            "checks": checks,
+        },
     )
 
 

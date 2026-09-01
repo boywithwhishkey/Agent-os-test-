@@ -300,6 +300,107 @@ Production architecture is unchanged and still designed for durable Postgres +
 persistent Key Value. Nothing paid was provisioned. Backend suite: **282
 passing** with real Postgres/Redis.
 
+## API AUTH CONTRACT + PRODUCTION DURABILITY AUDIT (2026-09-01, latest)
+
+### Corrections to reported state
+
+Two premises turned out to be wrong when measured:
+
+- **Production does NOT return 503 for unauthenticated callers.** `/api/v1/tools`
+  and `/api/v1/tools/audit` return **401** on api.thynact.com. The 503 seen in
+  the browser console was from the LOCAL dev API, which runs without
+  `AGENT_OS_API_KEY`.
+- The 503 therefore never meant "you are unauthenticated". It is raised by
+  `require_api_key` when **the server itself has no key configured**, i.e. when
+  no credential could authenticate. The frontend's
+  `isUnauthorized = status === 401 || status === 503` collapsed the two, so a
+  misconfigured server told the operator to "Sign in" — the one action that
+  cannot help.
+
+### Status contract (fixed)
+
+- **401** no/invalid credential. Now carries `WWW-Authenticate: ApiKey
+  realm="THYNACT"` (RFC 7235 §3.1 requires a challenge) plus a machine-readable
+  `code` (`authentication_required` / `authentication_invalid`). The challenge
+  and `detail` are byte-identical for both, so they are not a key-guessing
+  oracle.
+- **403** authenticated but not permitted. **Not reachable today** — auth is a
+  single shared operator key with no scopes or roles. The response shape
+  supports it so a permission model can be added without redesigning the
+  contract. No permission model was invented.
+- **503** kept for "server has no operator key" (`auth_not_configured`) and for
+  the two pre-existing correct uses in `phase9` (provider / OAuth not
+  configured). Not globally replaced.
+- Key comparison moved to `secrets.compare_digest`; a plain `!=` leaks how many
+  leading characters matched via timing.
+- A `StarletteHTTPException` handler flattens dict details onto the body, so the
+  wire shape stays `{"detail": ..., "code": ...}` and is **unchanged** for the
+  many routes raising a plain string. Without it FastAPI nests the dict and the
+  client renders "[object Object]".
+
+Protected surface, discovered empirically (FastAPI's lazy routers defeat
+introspection): `/api/v1/tools`, `/api/v1/tools/audit`, `/api/v1/runtime/status`.
+`/api/v1/integrations` and `/api/v1/integrations/mcp/servers` are deliberately
+public catalogue routes; a test now asserts they never echo credential values.
+
+### /ready was lying
+
+`check_readiness()` only added an entry for an explicitly-selected backend, so
+an all-in-memory deployment produced an **empty dict** — and `all(...)` over an
+empty dict is vacuously true. `/ready` answered
+`200 {"status":"ready","checks":{}}` for a service that loses every write on
+restart. It now always reports the persistence posture, and the body
+("degraded") is separated from the HTTP status (still 200) so that flipping
+`AGENT_OS_APP_ENV` to production cannot take the live service down before its
+database exists. Ephemeral becomes a 503 only under
+`AGENT_OS_REQUIRE_DURABLE_PERSISTENCE`.
+
+Render's `healthCheckPath` is `/health`, not `/ready`, and `/health` is
+unchanged — so none of this can affect the live health check.
+
+### Production environment
+
+`AGENT_OS_APP_ENV` is unset, so the default `development` applies. Consequences,
+all measured: `/docs`, `/redoc`, `/openapi.json` are **publicly served** (the
+code already closes them in production — only the variable is missing);
+`persistence_warnings()` stays silent because it fires only for production-like
+environments; and the Redis namespace would be `agent-os:development`. No
+production value is hardcoded and none is inferred from hostname.
+
+### Durability — LOCAL_REAL_VALIDATED, not PRODUCTION_VALIDATED
+
+All 7 migrations applied to a **fresh** PostgreSQL 16 database, re-run confirmed
+idempotent. Verified: 9 tables, 1 real `vector` column, HNSW index, pgvector
+0.6.0, `deployment_environment` stamped. The environment guard refuses a
+`production` app against a `development` database and `scripts/migrate.py`
+**exits 1** (verified with the real exit code, not through a pipe).
+
+New `tests/test_durability_real_postgres.py` writes through real asyncpg,
+destroys the pool and every store object, rebuilds, and reads back — tasks,
+audit events (including `correlation_id`) and memory (through real pgvector
+search) all survive. Every other "persistence" test in the suite uses a
+FakeDatabase and proves only that SQL is issued.
+
+**Nothing here has been run against Render.** Production still has no
+`DATABASE_URL`.
+
+### Redis namespacing
+
+One client construction site; all keys go through `RedisJobQueue._key()` using
+`{AGENT_OS_QUEUE_PREFIX}:{AGENT_OS_APP_ENV}`. No bypass exists. The
+constructor's `prefix` previously **defaulted to the bare, environment-less
+"agent-os"**, so a direct construction shared one key space across all
+environments; `app/integrations/redis.py` was doing exactly that (harmlessly —
+it only PINGs). `prefix` is now required.
+
+Circuit-breaker state, rate-limit counters and the runtime idempotency index
+have **no durable implementation** and reset on restart even with a database
+attached. Recorded in `docs/PRODUCTION_DURABILITY.md` so the matrix is not
+misread as "everything is durable".
+
+Tests: **315 backend** (was 282), 68 frontend (was 65), ruff clean, deploy-config
+clean, typecheck/lint/build clean.
+
 ## BRAND CORRECTED FROM THE APPROVED SHEET + STATUS HONESTY (2026-09-01, latest)
 
 Supersedes the mark geometry recorded below. The operator supplied the approved

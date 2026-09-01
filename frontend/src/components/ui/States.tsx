@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Inbox, Loader2, WifiOff, Clock, Lock, SearchX } from "lucide-react";
+import { AlertTriangle, Inbox, Loader2, WifiOff, Clock, Lock, SearchX, ServerCog } from "lucide-react";
 import { Button } from "./Button";
 import { ApiError } from "@/lib/api/client";
 import { DEFAULT_BASE_URL, getApiBaseUrl, setApiBaseUrl } from "@/lib/api/config";
@@ -95,9 +95,51 @@ function AuthRequiredState({ description }: { description: string }) {
   );
 }
 
+// The server itself has no operator key configured, so NO credential the user
+// could supply would work. Sending them to the Settings page — which is what
+// this used to do, because 503 was folded into isUnauthorized — is actively
+// misleading: the fix is on the deployment, not on them.
+function ServiceUnconfiguredState({ description }: { description: string }) {
+  return (
+    <div className="glass-soft flex flex-wrap items-center gap-3 rounded-xl border border-accent-amber/25 px-4 py-3.5 text-sm">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-amber/10 text-accent-amber">
+        <ServerCog className="h-3.5 w-3.5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block font-medium text-content-primary">
+          Service temporarily unavailable
+        </span>
+        <span className="block text-xs text-content-muted">{description}</span>
+      </span>
+    </div>
+  );
+}
+
+function ForbiddenState({ description }: { description: string }) {
+  return (
+    <div className="glass-soft flex flex-wrap items-center gap-3 rounded-xl border border-accent-red/25 px-4 py-3.5 text-sm">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-red/10 text-accent-red">
+        <Lock className="h-3.5 w-3.5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block font-medium text-content-primary">Permission denied</span>
+        <span className="block text-xs text-content-muted">{description}</span>
+      </span>
+    </div>
+  );
+}
+
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+  // Three distinct states that were previously one. Order matters only in that
+  // each is mutually exclusive by status code.
   if (error instanceof ApiError && error.isUnauthorized) {
     return <AuthRequiredState description={error.detail} />;
+  }
+  if (error instanceof ApiError && error.isForbidden) {
+    return <ForbiddenState description={error.detail} />;
+  }
+  if (error instanceof ApiError && error.isUnavailable) {
+    return <ServiceUnconfiguredState description={error.detail} />;
   }
 
   const { title, description, icon } = describeError(error);

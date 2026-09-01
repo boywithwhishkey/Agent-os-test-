@@ -95,10 +95,20 @@ async def test_worker_moves_exhausted_job_to_dead_letter():
 
 
 @pytest.mark.asyncio
-async def test_readiness_is_healthy_with_default_in_memory_backends():
+async def test_readiness_reports_ephemeral_persistence_for_in_memory_backends():
+    """Default in-memory backends add no dependency checks, but MUST still
+    report the persistence posture.
+
+    This previously asserted `checks == {}`, which encoded the bug: /ready
+    computed health with `all(...)` over that empty dict, which is vacuously
+    true, so an all-in-memory deployment answered `200 {"status": "ready"}`
+    while losing every write on restart.
+    """
     checks = await check_readiness()
 
-    assert checks == {}
+    assert checks == {"persistence": "ephemeral"}
+    assert "database" not in checks
+    assert "queue" not in checks
 
 
 @pytest.mark.asyncio
@@ -115,7 +125,10 @@ async def test_readiness_reports_unavailable_database(monkeypatch):
 
     checks = await check_readiness()
 
-    assert checks == {"database": "unavailable"}
+    assert checks["database"] == "unavailable"
+    # The persistence posture is reported alongside dependency checks, never
+    # instead of them.
+    assert checks["persistence"] == "partial"
 
 
 class FakeMigrationDatabase(Database):
