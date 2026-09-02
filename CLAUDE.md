@@ -69,6 +69,22 @@ Key facts that bite if forgotten:
   `uv run python scripts/migrate.py` applies `migrations/*.sql` idempotently
   under an advisory lock. **Never edit an applied migration** — add a forward one.
 - **GitHub:** `gh` CLI is absent in Claude cloud; use the GitHub MCP tools.
+- **Infrastructure: MCP first, dashboard last.** When a trusted MCP server for a
+  provider is connected (Render, Replit, GitHub), it is the primary interface —
+  do not hand the operator dashboard instructions for work a tool can perform.
+  Order: **inspect existing state → act via MCP → verify against the live
+  provider → only then request a manual action**, and only for something the
+  MCP demonstrably cannot do. An accepted tool call is *not* evidence of
+  success: always re-read the real provider state (or the live URL) afterwards.
+  Never record credentials, connection strings or MCP secrets in git or
+  PROJECT_BRAIN.
+
+  Known Render MCP limits, verified 2026-09-02 (re-test before assuming they
+  still hold): it does **not** expose Postgres/Key Value connection strings, so
+  `DATABASE_URL`/`REDIS_URL` cannot be wired by tool; and
+  `query_render_postgres` cannot connect to Render Postgres because it does not
+  negotiate TLS ("SSL/TLS required"), so schema cannot be verified through it
+  either. Env vars, service/datastore creation, deploys and logs all work.
 
 ---
 

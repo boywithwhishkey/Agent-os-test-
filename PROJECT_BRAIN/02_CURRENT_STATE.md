@@ -300,6 +300,68 @@ Production architecture is unchanged and still designed for durable Postgres +
 persistent Key Value. Nothing paid was provisioned. Backend suite: **282
 passing** with real Postgres/Redis.
 
+## PRODUCTION ENVIRONMENT CUTOVER — DONE; DURABILITY BLOCKED AT ONE STEP (2026-09-02, latest)
+
+Performed through the Render MCP against workspace `tea-da691mgn74is739iod9g`.
+Production API service is `srv-da693fbtqb8s738b834g` (docker, free plan,
+oregon, autoDeploy from `main`).
+
+### RESOLVED — supersedes the earlier "production reports development" entries
+
+`AGENT_OS_APP_ENV=production` is **set and live**. Verified against the real
+host, not the tool result:
+
+- `/health` → `environment: production`
+- `/health` now emits the warning it was previously silent about:
+  *"production is running with in-memory backends (…); this state is lost on
+  every restart"*
+- `/docs`, `/redoc`, `/openapi.json` → **404** (were 200). The public route
+  surface is closed.
+- `/live` 200, `/ready` 200, `app.thynact.com` 200, auth contract unchanged
+  (401 + `authentication_required`). **No downtime.**
+
+### Created (free plan — nothing billable)
+
+| Resource | ID | Plan | Region | Note |
+|---|---|---|---|---|
+| PostgreSQL 16 | `dpg-dabo2bqfngtc73eogac0-a` | free | oregon | **expires 2026-10-02** |
+| Key Value 8.1.4 | `red-dabo2eifngtc73eoghkg` | free | oregon | `persistenceMode: off` |
+
+Both `available`. Region matches the API service.
+
+### STILL TRUE — production persistence is ephemeral
+
+`DATABASE_URL` and `REDIS_URL` are **not** set, so all seven stores remain
+`memory` and `/ready` correctly reports `degraded` / `persistence: ephemeral`.
+Migrations have **not** been applied to the Render database, and it carries
+**no environment stamp**. Nothing about production durability is validated.
+
+### The blocker is a verified MCP limitation, not a missing decision
+
+- No Render MCP tool exposes a Postgres or Key Value connection string
+  (`get_postgres` / `get_key_value` return metadata only), so `DATABASE_URL`
+  and `REDIS_URL` cannot be set by tool.
+- `query_render_postgres` cannot connect at all: *"FATAL: SSL/TLS required"* —
+  the tool does not negotiate TLS, which Render mandates. So the schema cannot
+  be verified through MCP either.
+- `update_environment_variables` takes literal values only; Render's
+  `fromDatabase` reference exists only in Blueprints, and putting the live
+  production service under Blueprint control is explicitly rejected by §9 of
+  CLAUDE.md.
+
+### Free tier is not production durability — decide before 2026-10-02
+
+- Free Postgres is **deleted 30 days after creation** (`expiresAt`
+  2026-10-02). Cheapest paid Postgres plan in the MCP enum: `basic_256mb`.
+- Free Key Value runs with `persistenceMode: off` — no Redis-side persistence,
+  so queued jobs do not survive a Redis restart even once wired. Cheapest paid
+  Key Value plan in the MCP enum: `starter`.
+- **The MCP does not expose pricing**, so no price is recorded here rather than
+  guessing one.
+
+Linking the free pair is still worth doing: it costs nothing and proves the
+whole cutover end-to-end, with 30 days of real durability.
+
 ## API AUTH CONTRACT + PRODUCTION DURABILITY AUDIT (2026-09-01, latest)
 
 ### Corrections to reported state
