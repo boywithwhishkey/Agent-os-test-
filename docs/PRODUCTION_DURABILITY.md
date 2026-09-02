@@ -97,7 +97,17 @@ Redis is attached.
 Ordering matters. Steps 1-2 are safe at any time; step 6 is the only one that
 can take the service down if performed early.
 
+0. **Before switching any backend, run the preflight** — it checks every
+   precondition together rather than letting them fail one at a time at
+   request time:
+   `uv run python scripts/cutover_preflight.py`
+   It exits 1 and names the blocker for: no `DATABASE_URL`, unreachable
+   database, pgvector unavailable, migrations not applied, and a database
+   stamped for a different environment.
+
 1. **Set `AGENT_OS_APP_ENV=production`** on the Render API service.
+   **DONE 2026-09-02** — verified live: `/health` reports production and
+   `/docs`, `/redoc`, `/openapi.json` return 404.
    Immediately: `/docs`, `/redoc`, `/openapi.json` close; `/health` reports
    `environment: production` and starts emitting the ephemeral-storage warning;
    the Redis namespace becomes `agent-os:production`. Nothing goes down —

@@ -185,8 +185,29 @@ class Settings(BaseSettings):
                 f"{self.app_env} is running with in-memory backends "
                 f"({', '.join(ephemeral)}); this state is lost on every restart"
             )
-        if self.memory_backend in {"postgres", "postgres_pgvector"} and not self.database_url:
-            warnings.append("a postgres backend is selected but DATABASE_URL is empty")
+        # Every postgres-selecting backend, not just memory_backend. Checking
+        # one of six meant a cutover that set AGENT_OS_TASK_BACKEND=postgres and
+        # forgot DATABASE_URL reported NO warning, then failed at request time
+        # with an opaque "DATABASE_URL is required" from deep inside a store
+        # factory. Naming the offenders makes the fix obvious.
+        if not self.database_url:
+            needs_database = sorted(
+                name
+                for name, backend in {
+                    "memory": self.memory_backend,
+                    "task": self.task_backend,
+                    "workflow": self.workflow_backend,
+                    "workflow_definition": self.workflow_definition_backend,
+                    "runtime": self.runtime_backend,
+                    "tool": self.tool_backend,
+                }.items()
+                if backend in {"postgres", "postgres_pgvector"}
+            )
+            if needs_database:
+                warnings.append(
+                    "a postgres backend is selected for "
+                    f"{', '.join(needs_database)} but DATABASE_URL is empty"
+                )
         if self.queue_backend == "redis" and not self.redis_url:
             warnings.append("the redis queue backend is selected but REDIS_URL is empty")
         return warnings

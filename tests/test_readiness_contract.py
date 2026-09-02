@@ -120,3 +120,30 @@ def test_redis_queue_requires_an_explicit_namespace():
 
     prefix = inspect.signature(RedisJobQueue.__init__).parameters["prefix"]
     assert prefix.default is inspect.Parameter.empty
+
+
+def test_all_postgres_backends_are_checked_against_database_url(monkeypatch):
+    """Only memory_backend used to be checked, so a cutover that switched five
+    of the six stores to postgres and forgot DATABASE_URL reported no warning
+    at all, then failed at request time from inside a store factory."""
+    monkeypatch.setattr(settings, "database_url", "")
+    monkeypatch.setattr(settings, "memory_backend", "memory")
+    monkeypatch.setattr(settings, "task_backend", "postgres")
+    monkeypatch.setattr(settings, "tool_backend", "postgres")
+
+    warnings = settings.persistence_warnings()
+    offenders = [w for w in warnings if "DATABASE_URL is empty" in w]
+
+    assert offenders, "a postgres backend without DATABASE_URL produced no warning"
+    # The warning must name which ones, or it does not help anyone fix it.
+    assert "task" in offenders[0]
+    assert "tool" in offenders[0]
+
+
+def test_no_database_warning_when_every_backend_is_in_memory(monkeypatch):
+    monkeypatch.setattr(settings, "database_url", "")
+    for field in ("memory_backend", "task_backend", "tool_backend",
+                  "workflow_backend", "workflow_definition_backend", "runtime_backend"):
+        monkeypatch.setattr(settings, field, "memory")
+
+    assert not [w for w in settings.persistence_warnings() if "DATABASE_URL is empty" in w]

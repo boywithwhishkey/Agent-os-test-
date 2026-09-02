@@ -139,3 +139,21 @@ keep the `ambient-*` tokens (decorative) and `--color-accent-red`
 - Optimizing frontend bundle size (`Workflows` chunk is ~195KB / 63KB
   gzipped, `index` chunk ~390KB / 124KB gzipped) — not currently a
   reported problem, revisit only if load-time becomes a concern.
+
+
+## Free-tier production infrastructure — decide before 2026-10-02
+
+Deferred, not forgotten: the production datastores created on 2026-09-02 are
+free-plan and are **not** production durability on their own.
+
+- `dpg-dabo2bqfngtc73eogac0-a` (PostgreSQL 16) has `expiresAt: 2026-10-02`.
+  Render deletes free databases 30 days after creation. Cheapest paid plan in
+  the Render MCP enum is `basic_256mb`.
+- `red-dabo2eifngtc73eoghkg` (Key Value) runs `persistenceMode: off`, so it has
+  no Redis-side persistence at all: queued jobs do not survive a Redis restart
+  even once `REDIS_URL` is wired. Cheapest paid plan in the enum is `starter`.
+
+The Render MCP does **not** expose pricing, so no figures are recorded here
+rather than guessing them. This is a billing decision and is deliberately left
+to the operator; the free pair is still worth wiring up first because it proves
+the whole cutover end to end at zero cost.

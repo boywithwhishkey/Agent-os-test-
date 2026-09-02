@@ -33,10 +33,20 @@ time, highest first.
    redirect and webhook callback URLs, and therefore every OAuth connector
    including Google. Until it exists, mark OAuth work `STABLE_DOMAIN_REQUIRED`
    and do not repeat the tunnel → callback → restart loop.
-2. **Provision production Postgres + Redis** and set `DATABASE_URL` /
-   `REDIS_URL` on Render (paid-infrastructure decision — needs explicit
-   approval; do not provision without it). The code path is now proven, so this
-   is purely a provisioning + env-var step.
+2. **RESOLVED IN PART (2026-09-02).** Production Postgres and Key Value are
+   **provisioned** on Render's free plan via MCP — `dpg-dabo2bqfngtc73eogac0-a`
+   (PostgreSQL 16, oregon, **expires 2026-10-02**) and
+   `red-dabo2eifngtc73eoghkg` (Key Value 8.1.4, oregon,
+   `persistenceMode: off`). Nothing billable was created.
+
+   **The one remaining step is pasting `DATABASE_URL`** (and optionally
+   `REDIS_URL`) into the production service's environment. The Render MCP
+   exposes no connection string for either resource and env vars accept literal
+   values only, so this specific step cannot be automated — see CLAUDE.md for
+   the verified tool limits. Once it is set, run
+   `uv run python scripts/cutover_preflight.py` before switching any
+   `AGENT_OS_*_BACKEND`; it refuses a database that is unmigrated, missing
+   pgvector, or stamped for the wrong environment.
 3. Provide a scoped `AGENT_OS_API_KEY` value if authenticated live smoke tests
    against `api.thynact.com` are wanted.
 4. Optional connector credentials, each unlocking exactly one connector:
