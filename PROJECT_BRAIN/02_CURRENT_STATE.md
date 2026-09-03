@@ -1742,6 +1742,61 @@ code-level review, not a rendered/visual one. Findings:
   Workflows React Flow canvas, which cannot be assessed by reading code —
   that remains genuinely blocked on browser tooling.
 
+## ABOUT PAGE + CONNECTOR MARKETPLACE (2026-09-03, latest)
+
+Both shipped to `claude/thynact-env-audit-fjinfj` (`3e6d260`, `4cdc328`) and
+pushed. **NOT deployed to production** — the fast-forward of `main` was denied
+by the environment's permission classifier, so `origin/main` is still at
+`b429dc5`. This is the one outstanding manual action; nothing about the code is
+blocked.
+
+### About THYNACT — `/about`, LIVE_VALIDATED locally
+
+- `frontend/src/pages/About.tsx` + `frontend/src/components/about/ReasoningFlow.tsx`.
+- The INTENT → THINK → PLAN → VERIFY → ACT → RESULT chain, with CONTROL as a
+  labelled enclosure around PLAN/VERIFY/ACT. Built from layout primitives, not
+  a fixed-viewBox SVG, so it reflows from one row (>=1280px) to a vertical
+  stack without scaling labels into illegibility. It stacks below `xl` rather
+  than `lg` because at 1024px the row clipped RESULT against the sidebar —
+  found by rendering, not by reading.
+- Forward-looking content is confined to one section badged "Direction" and is
+  never presented as shipped. `About.test.tsx` asserts both the shipped and
+  direction badges, and asserts CONTROL *contains* the governed nodes (a
+  diagram that merely printed the word would pass a naive text assertion).
+- Reachable from the account menu and the command palette, deliberately **not**
+  the sidebar. `nav.ts` gained `secondaryNavItems` / `searchableNavItems`.
+- Fully keyed EN + HI; a test walks the English `pages.about` catalogue and
+  fails on any key without a Hindi counterpart.
+- Rendered and inspected at 390/768/1024/1280/1440, dark and light, EN and HI.
+
+### Connector marketplace — over the EXISTING registry, no new catalog entries
+
+- Search + status filters + category filters + category-grouped results in
+  `Integrations.tsx`; grouping helpers in `lib/integration-hub.ts`.
+- **Status buckets are derived from what the backend really reports.** The
+  critical mapping: `ConnectorEntry` reserves `available` for catalog-only
+  records with no adapter (`app/integrations/models.py`), so it maps to
+  **not_built**, never to anything that reads as usable. `configured` is its
+  own bucket (`needs_verification`) — credentials present is not proof they
+  work. Both pinned by tests in `integration-hub.test.ts`.
+- **Duplication removed:** "Ready to connect" previously listed every
+  implemented-but-unconnected connector, all of which browse now covers. It is
+  scoped to `needs_verification` — the ones whose next action is one tap on
+  Test. 13 duplicate cards gone at the default filter.
+- Filter chips carry live counts and disable at zero; counts are computed
+  against the other axis' current selection. Protocol chips were dropped —
+  `connector_type` is already in the search haystack.
+- `ConnectorCard` and `ConnectorDrawer` were English-only; both are now fully
+  keyed EN + HI including action labels. `primaryAction()` no longer returns
+  display text — it returns the kind, so it stays the single place deciding
+  what the action IS while the locale decides what it is called.
+- Verified against the real local catalog: **28 connectors, 13 needs-setup, 15
+  not-built, 0 connected** (no credentials configured locally). Rendered at 390
+  and 1440 in EN and HI.
+
+Tests after this work: **106 frontend** (was 95). Typecheck, lint (0 errors)
+and build clean.
+
 ## Per-subsystem status
 
 | Subsystem | Status | Notes |

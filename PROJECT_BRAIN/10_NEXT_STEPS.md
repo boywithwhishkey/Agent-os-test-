@@ -23,6 +23,28 @@ CLOSED; do not re-litigate them.
 - ~~Environment rediscovery each session~~ — `scripts/bootstrap_claude_cloud.sh`
   + `scripts/project_doctor.sh`.
 
+## OPEN RIGHT NOW (2026-09-03)
+
+**Production deploy of the About page + connector marketplace is pending.**
+`claude/thynact-env-audit-fjinfj` is at `4cdc328`; `origin/main` is still at
+`b429dc5`. The fast-forward was denied by the environment's permission
+classifier, not by any code or test problem — everything is validated and
+pushed. Merging `main` IS a production deploy on both Cloudflare Pages and
+Render, so it needs the operator's go-ahead in this environment.
+
+Not started from the 90-section marketplace/UX brief, in the order they are
+worth doing:
+
+1. **Custom connector wizard** — untrusted by default, unknown capabilities
+   DENY, no plaintext secrets in localStorage / logs / PROJECT_BRAIN / audit
+   payloads / git / connector metadata returned to the UI.
+2. **AI provider management surface** — the catalog already carries Anthropic,
+   Gemini and OpenAI entries; this is a management view over what exists, not
+   a new registry.
+3. **Backend security tests** for the connector paths.
+4. **Privacy page long-form prose is still English only** — deliberate, and
+   flagged for human legal review before it is translated.
+
 ## Manual actions only the operator can take
 
 Everything else below can be done by an agent. Ranked — ask for **one** at a
