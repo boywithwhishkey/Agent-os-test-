@@ -19,60 +19,67 @@ import {
   FileLock2,
 } from "lucide-react";
 
+/**
+ * Navigation is defined by translation KEYS, never by display strings. Routes
+ * (`to`) are internal identifiers and are deliberately not translated — a
+ * localised UI must not change its URLs.
+ */
 export interface NavItem {
-  label: string;
+  /** Translation key, e.g. "nav.items.dashboard". */
+  labelKey: string;
   to: string;
   icon: LucideIcon;
 }
 export interface NavGroup {
-  label: string;
+  /** Translation key, e.g. "nav.groups.overview". */
+  labelKey: string;
   items: NavItem[];
 }
 
 export const navGroups: NavGroup[] = [
   {
-    label: "Overview",
+    labelKey: "nav.groups.overview",
     items: [
-      { label: "Dashboard", to: "/", icon: LayoutDashboard },
-      { label: "Product Overview", to: "/overview", icon: Sparkles },
+      { labelKey: "nav.items.dashboard", to: "/", icon: LayoutDashboard },
+      { labelKey: "nav.items.productOverview", to: "/overview", icon: Sparkles },
     ],
   },
   {
-    label: "Execution",
+    labelKey: "nav.groups.execution",
     items: [
-      { label: "Tasks", to: "/tasks", icon: ListTodo },
-      { label: "Orchestrate", to: "/orchestrate", icon: Workflow },
-      { label: "Autonomous Runs", to: "/autonomous", icon: Bot },
-      { label: "Agents", to: "/agents", icon: Users },
+      { labelKey: "nav.items.tasks", to: "/tasks", icon: ListTodo },
+      { labelKey: "nav.items.orchestrate", to: "/orchestrate", icon: Workflow },
+      { labelKey: "nav.items.autonomousRuns", to: "/autonomous", icon: Bot },
+      { labelKey: "nav.items.agents", to: "/agents", icon: Users },
     ],
   },
   {
-    label: "Workflows",
+    labelKey: "nav.groups.workflows",
     items: [
-      { label: "Workflows", to: "/workflows", icon: GitBranch },
-      { label: "Workflow Runs", to: "/workflows/runs", icon: History },
-      { label: "Approvals", to: "/approvals", icon: ShieldCheck },
+      { labelKey: "nav.items.workflows", to: "/workflows", icon: GitBranch },
+      { labelKey: "nav.items.workflowRuns", to: "/workflows/runs", icon: History },
+      { labelKey: "nav.items.approvals", to: "/approvals", icon: ShieldCheck },
     ],
   },
   {
-    label: "Knowledge",
-    items: [{ label: "Memory", to: "/memory", icon: Brain }],
+    labelKey: "nav.groups.knowledge",
+    items: [{ labelKey: "nav.items.memory", to: "/memory", icon: Brain }],
   },
   {
-    label: "Operations",
+    labelKey: "nav.groups.operations",
     items: [
-      { label: "Runtime", to: "/runtime", icon: Server },
-      { label: "Tools", to: "/tools", icon: Wrench },
-      { label: "Integrations", to: "/integrations", icon: Plug },
-      { label: "Audit Logs", to: "/audit", icon: ScrollText },
+      { labelKey: "nav.items.runtime", to: "/runtime", icon: Server },
+      { labelKey: "nav.items.tools", to: "/tools", icon: Wrench },
+      { labelKey: "nav.items.integrations", to: "/integrations", icon: Plug },
+      { labelKey: "nav.items.auditLogs", to: "/audit", icon: ScrollText },
     ],
   },
   {
-    label: "System",
+    labelKey: "nav.groups.system",
     items: [
-      { label: "Health", to: "/system-health", icon: HeartPulse },
-      { label: "Settings", to: "/settings", icon: Settings },
-      { label: "Privacy & Policy", to: "/privacy", icon: FileLock2 },
+      { labelKey: "nav.items.health", to: "/system-health", icon: HeartPulse },
+      { labelKey: "nav.items.settings", to: "/settings", icon: Settings },
+      { labelKey: "nav.items.privacy", to: "/privacy", icon: FileLock2 },
     ],
   },
 ];

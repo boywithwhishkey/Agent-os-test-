@@ -13,10 +13,12 @@ import { HeartbeatLine } from "@/components/ui/HeartbeatLine";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 import { useHealth, useReadiness, useTools, useToolAudit } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
+import { useI18n, useT } from "@/lib/i18n";
 import { useSessionHistory } from "@/lib/session-history";
 import { formatRelativeTime } from "@/lib/utils";
 
 export default function Dashboard() {
+  const { t } = useI18n();
   const health = useHealth();
   const readiness = useReadiness();
   const tools = useTools();
@@ -45,11 +47,11 @@ export default function Dashboard() {
         // "Sign in" is only right for 401. A 503 means the SERVER is missing a
         // dependency (e.g. no operator key configured at all), which no amount
         // of signing in would fix.
-        if (err.isUnauthorized) return "Sign in";
-        if (err.isForbidden) return "No access";
-        if (err.isNetworkError || err.isTimeout) return "Offline";
+        if (err.isUnauthorized) return t("common.signIn");
+        if (err.isForbidden) return t("common.noAccess");
+        if (err.isNetworkError || err.isTimeout) return t("common.offline");
       }
-      return "Unavailable";
+      return t("common.unavailable");
     }
     return q.data?.length ?? 0;
   };
@@ -62,9 +64,15 @@ export default function Dashboard() {
     if (!q.isError) return undefined;
     const err = q.error;
     if (err instanceof ApiError) {
-      if (err.isUnauthorized) return `Operator key required to ${action}`;
-      if (err.isForbidden) return `This key is not permitted to ${action}`;
-      if (err.isUnavailable) return err.detail;
+      if (err.isUnauthorized) return t("dashboard.keyRequiredToList", { action });
+      if (err.isForbidden) return t("dashboard.notPermittedTo", { action });
+      // Same rule as ErrorState: localise by the API's machine code, never by
+      // translating its prose.
+      if (err.isUnavailable) {
+        return err.code
+          ? t(`errorCodes.${err.code}` as Parameters<typeof t>[0]) || err.detail
+          : err.detail;
+      }
     }
     return undefined;
   };
@@ -101,14 +109,14 @@ export default function Dashboard() {
       <StaggerGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StaggerItem className="h-full">
           <MetricCard
-            label="API status"
-            value={health.isLoading ? "…" : !health.data ? "Offline" : apiDegraded ? "Degraded" : "Online"}
+            label={t("dashboard.apiStatus")}
+            value={health.isLoading ? "…" : !health.data ? t("dashboard.offline") : apiDegraded ? t("dashboard.degraded") : t("dashboard.online")}
             tone={!health.data ? "red" : apiDegraded ? "amber" : "green"}
             icon={<Activity className="h-4 w-4" />}
             hint={
               health.data
                 ? health.data.persistence === "ephemeral"
-                  ? "Ephemeral storage — data is lost on restart"
+                  ? t("dashboard.ephemeralHint")
                   : (readiness.data?.status ?? undefined)
                 : undefined
             }
@@ -119,29 +127,29 @@ export default function Dashboard() {
         </StaggerItem>
         <StaggerItem className="h-full">
           <MetricCard
-            label="Tools available"
+            label={t("dashboard.toolsAvailable")}
             value={metricValue(tools)}
             tone={metricTone(tools)}
             icon={<Wrench className="h-4 w-4" />}
-            hint={metricHint(tools, "list tools")}
+            hint={metricHint(tools, t("dashboard.actionListTools"))}
           />
         </StaggerItem>
         <StaggerItem className="h-full">
           <MetricCard
-            label="Audit events"
+            label={t("dashboard.auditEvents")}
             value={metricValue(audit)}
             tone={metricTone(audit)}
             icon={<ScrollText className="h-4 w-4" />}
-            hint={metricHint(audit, "read the audit log")}
+            hint={metricHint(audit, t("dashboard.actionReadAudit"))}
           />
         </StaggerItem>
         <StaggerItem className="h-full">
           <MetricCard
-            label="This session"
+            label={t("dashboard.thisSession")}
             value={tasks.length + workflowRuns.length + executions.length}
             tone="amber"
             icon={<ListChecks className="h-4 w-4" />}
-            hint="Tasks, runs & executions started here"
+            hint={t("dashboard.sessionHint")}
           />
         </StaggerItem>
       </StaggerGroup>
@@ -149,23 +157,23 @@ export default function Dashboard() {
       <ScrollReveal className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Recent audit activity</CardTitle>
+            <CardTitle>{t("dashboard.recentAudit")}</CardTitle>
             <Link to="/audit">
               <Button variant="ghost" size="sm">
-                View all <ArrowUpRight className="h-3.5 w-3.5" />
+                {t("common.viewAll")} <ArrowUpRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
           </CardHeader>
           <CardContent>
             {audit.isLoading ? (
-              <LoadingState label="Loading audit events…" />
+              <LoadingState label={t("states.loading")} />
             ) : audit.isError ? (
               <ErrorState error={audit.error} onRetry={() => audit.refetch()} />
             ) : recentAudit.length === 0 ? (
               <EmptyState
                 icon={<ScrollText className="h-5 w-5" />}
-                title="No audit events yet"
-                description="Tool executions and approval checks will show up here."
+                title={t("dashboard.noAuditYet")}
+                description={t("dashboard.auditHint")}
               />
             ) : (
               <ul className="divide-y divide-white/5">
@@ -185,12 +193,12 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Quick actions</CardTitle>
+            <CardTitle>{t("dashboard.quickActions")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <QuickAction to="/orchestrate" icon={<Workflow className="h-4 w-4" />} label="Start orchestration" />
-            <QuickAction to="/autonomous" icon={<Bot className="h-4 w-4" />} label="Run autonomous objective" />
-            <QuickAction to="/tasks" icon={<ListChecks className="h-4 w-4" />} label="Create a task" />
+            <QuickAction to="/orchestrate" icon={<Workflow className="h-4 w-4" />} label={t("dashboard.startOrchestration")} />
+            <QuickAction to="/autonomous" icon={<Bot className="h-4 w-4" />} label={t("dashboard.runAutonomous")} />
+            <QuickAction to="/tasks" icon={<ListChecks className="h-4 w-4" />} label={t("dashboard.createTask")} />
           </CardContent>
         </Card>
       </ScrollReveal>
@@ -198,12 +206,12 @@ export default function Dashboard() {
       <ScrollReveal delay={0.05}>
         <Card>
           <CardHeader>
-            <CardTitle>Session activity</CardTitle>
+            <CardTitle>{t("dashboard.sessionActivity")}</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <SessionList title="Tasks" entries={tasks} to="/tasks" />
-            <SessionList title="Workflow runs" entries={workflowRuns} to="/workflows/runs" />
-            <SessionList title="Runtime executions" entries={executions} to="/runtime" />
+            <SessionList title={t("dashboard.tasks")} entries={tasks} to="/tasks" />
+            <SessionList title={t("dashboard.workflowRuns")} entries={workflowRuns} to="/workflows/runs" />
+            <SessionList title={t("dashboard.runtimeExecutions")} entries={executions} to="/runtime" />
           </CardContent>
         </Card>
       </ScrollReveal>
@@ -224,11 +232,12 @@ function QuickAction({ to, icon, label }: { to: string; icon: ReactNode; label: 
 }
 
 function SessionList({ title, entries, to }: { title: string; entries: { id: string; label: string; createdAt: string }[]; to: string }) {
+  const t = useT();
   return (
     <div>
       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{title}</p>
       {entries.length === 0 ? (
-        <p className="text-sm text-content-muted">Nothing yet this session.</p>
+        <p className="text-sm text-content-muted">{t("states.nothingYet")}</p>
       ) : (
         <ul className="space-y-1.5">
           {entries.slice(0, 4).map((entry) => (
@@ -239,7 +248,7 @@ function SessionList({ title, entries, to }: { title: string; entries: { id: str
         </ul>
       )}
       <Link to={to} className="mt-2 inline-block text-xs font-medium text-accent-gold hover:underline">
-        View
+        {t("dashboard.view")}
       </Link>
     </div>
   );

@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, Search, Moon, Sun, Monitor, Settings as SettingsIcon } from "lucide-react";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { AccountPopover } from "./AccountPopover";
 import { useTheme } from "@/lib/theme";
 import { getEnvironmentLabel } from "@/lib/environment";
 import { Button } from "@/components/ui/Button";
+import { useT } from "@/lib/i18n";
 
 export function Topbar({
   onOpenMobileNav,
@@ -15,6 +17,7 @@ export function Topbar({
   onOpenCommandPalette: () => void;
 }) {
   const { theme, setTheme } = useTheme();
+  const t = useT();
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
 
   const environmentLabel =
@@ -29,7 +32,7 @@ export function Topbar({
       <button
         onClick={onOpenMobileNav}
         className="focus-ring shrink-0 rounded-md p-2 text-content-secondary hover:bg-surface-hover lg:hidden"
-        aria-label="Open navigation"
+        aria-label={t("nav.openNavigation")}
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -38,11 +41,11 @@ export function Topbar({
 
       <button
         onClick={onOpenCommandPalette}
-        aria-label="Search or jump to…"
+        aria-label={t("topbar.searchPlaceholder")}
         className="focus-ring group flex shrink-0 items-center justify-center gap-2 rounded-lg p-2 text-sm text-content-muted transition-colors duration-200 hover:bg-white/[0.05] hover:text-content-secondary sm:flex-1 sm:max-w-md sm:justify-start sm:px-3 sm:py-1.5"
       >
         <Search className="h-4 w-4 shrink-0 sm:h-3.5 sm:w-3.5" />
-        <span className="hidden truncate text-left sm:inline">Search or jump to…</span>
+        <span className="hidden truncate text-left sm:inline">{t("topbar.searchPlaceholder")}</span>
         <kbd className="hidden font-mono text-[10px] text-content-muted/70 transition-opacity duration-200 group-hover:opacity-100 sm:inline">
           ⌘K
         </kbd>
@@ -55,7 +58,7 @@ export function Topbar({
             are about to act on. Nothing renders in production. */}
         {environmentLabel && (
           <span
-            title={`Non-production deployment (${environmentLabel})`}
+            title={t("topbar.nonProduction", { environment: environmentLabel })}
             className="hidden items-center gap-1.5 text-[11px] font-medium tracking-wide text-accent-amber sm:inline-flex"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-accent-amber animate-pulse-slow" />
@@ -66,8 +69,12 @@ export function Topbar({
             ConnectionStatus for why they must not be two competing chips. */}
         <ConnectionStatus />
 
+        {/* Beside the theme control: both are "how the product presents
+            itself to me" preferences, so they belong together. */}
+        <LanguageSwitcher className="hidden sm:inline-flex" />
+
         <div className="relative">
-          <Button variant="ghost" size="icon" onClick={() => setThemeMenuOpen((o) => !o)} aria-label="Change theme">
+          <Button variant="ghost" size="icon" onClick={() => setThemeMenuOpen((o) => !o)} aria-label={t("theme.change")}>
             {themeIcon}
           </Button>
           {themeMenuOpen && (

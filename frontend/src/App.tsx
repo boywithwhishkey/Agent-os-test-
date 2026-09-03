@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/lib/theme";
+import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppShell } from "@/components/layout/AppShell";
@@ -41,7 +42,8 @@ export function App() {
   return (
     <ErrorBoundary>
       <MotionConfig reducedMotion="user">
-      <ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>
             <BrowserRouter>
@@ -78,7 +80,8 @@ export function App() {
             </BrowserRouter>
           </ToastProvider>
         </QueryClientProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </I18nProvider>
       </MotionConfig>
     </ErrorBoundary>
   );

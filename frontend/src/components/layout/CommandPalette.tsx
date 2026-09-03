@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, CornerDownLeft } from "lucide-react";
 import { allNavItems } from "@/lib/nav";
+import { useT, type TranslationKey } from "@/lib/i18n";
+import { en } from "@/lib/i18n/locales/en";
 import { Input } from "@/components/ui/Input";
 import { BrandMark } from "@/components/ui/BrandMark";
 
@@ -11,12 +13,30 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const navigate = useNavigate();
+  const t = useT();
+
+  // Flattened English labels, so search works in English whatever the active
+  // language is. Built once — it never changes.
+  const en_labels = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const [key, value] of Object.entries(en.nav.items)) {
+      out[`nav.items.${key}`] = String(value).toLowerCase();
+    }
+    return out;
+  }, []);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return allNavItems;
-    return allNavItems.filter((item) => item.label.toLowerCase().includes(q));
-  }, [query]);
+    // Match the CURRENT language and the English label, so an operator can
+    // search "settings" while the UI is in Hindi, or "सेटिंग्स" while it is in
+    // English. Route identifiers are searchable too and never translated.
+    return allNavItems.filter((item) => {
+      const localised = t(item.labelKey as TranslationKey).toLowerCase();
+      const english = en_labels[item.labelKey] ?? "";
+      return localised.includes(q) || english.includes(q) || item.to.toLowerCase().includes(q);
+    });
+  }, [query, t, en_labels]);
 
   useEffect(() => {
     if (!open) {
@@ -104,7 +124,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   >
                     <span className="flex items-center gap-2.5">
                       <item.icon className="h-4 w-4" />
-                      {item.label}
+                      {t(item.labelKey as TranslationKey)}
                     </span>
                     {i === activeIndex && <CornerDownLeft className="h-3.5 w-3.5" />}
                   </button>

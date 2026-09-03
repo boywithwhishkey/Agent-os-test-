@@ -5,6 +5,7 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { HeartbeatLine, type HeartbeatState } from "@/components/ui/HeartbeatLine";
 import { isApiConfigured } from "@/lib/api/config";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 /**
  * One status control covering two INDEPENDENT axes:
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
  * durable storage cannot present itself as fully healthy.
  */
 export function ConnectionStatus() {
+  const t = useT();
   const { data, isError, isLoading } = useHealth();
   const configured = isApiConfigured();
 
@@ -43,12 +45,12 @@ export function ConnectionStatus() {
       : "offline";
 
   const label = isLoading
-    ? "Connecting"
+    ? t("topbar.connecting")
     : !reachable
-      ? "API offline"
+      ? t("topbar.apiOffline")
       : degraded
-        ? "Degraded"
-        : "API online";
+        ? t("topbar.degraded")
+        : t("topbar.apiOnline");
 
   const tone =
     state === "online"
@@ -58,13 +60,13 @@ export function ConnectionStatus() {
         : "text-accent-red";
 
   const tooltip = isLoading
-    ? "Checking the API…"
+    ? t("topbar.checkingApi")
     : !reachable
-      ? "The API could not be reached. Check the base URL in Settings."
+      ? t("topbar.apiUnreachable")
       : [
           `${data?.service ?? "API"} · ${data?.environment ?? "unknown"}`,
           data?.persistence === "ephemeral"
-            ? "Storage is ephemeral — data is lost when the API restarts."
+            ? t("topbar.storageEphemeral")
             : null,
           ...(data?.warnings ?? []),
         ]
@@ -91,7 +93,7 @@ export function ConnectionStatus() {
             className="focus-ring inline-flex items-center gap-1 rounded px-1 py-1 text-[11px] font-medium text-content-muted transition-colors duration-200 hover:text-accent-gold"
           >
             <KeyRound className="h-3 w-3" />
-            <span className="hidden sm:inline">Key needed</span>
+            <span className="hidden sm:inline">{t("topbar.keyNeeded")}</span>
           </Link>
         </>
       )}

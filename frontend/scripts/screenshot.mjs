@@ -177,9 +177,13 @@ const context = await browser.newContext({
 // is read from the environment and never written to disk or committed — use a
 // local dev key, never a production one.
 await context.addInitScript(
-  ({ t, baseUrl, apiKey }) => {
+  ({ t, baseUrl, apiKey, locale }) => {
     try {
       localStorage.setItem("agent-os:theme", t);
+      // Seeded before first paint so the app boots straight into the language
+      // under test — screenshotting an English first paint would hide exactly
+      // the language-flash problem this is meant to check.
+      if (locale) localStorage.setItem("agent-os:language", locale);
       if (baseUrl) sessionStorage.setItem("agent-os:api-base-url", baseUrl);
       if (apiKey) sessionStorage.setItem("agent-os:api-key", apiKey);
     } catch {
@@ -187,6 +191,7 @@ await context.addInitScript(
     }
   },
   {
+    locale: process.env.THYNACT_SCREENSHOT_LOCALE || "",
     t: theme,
     baseUrl: process.env.THYNACT_SCREENSHOT_API_BASE_URL || "",
     apiKey: process.env.THYNACT_SCREENSHOT_API_KEY || "",

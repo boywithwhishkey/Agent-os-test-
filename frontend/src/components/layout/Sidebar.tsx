@@ -3,6 +3,8 @@ import { ChevronsLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { navGroups } from "@/lib/nav";
 import { BrandMark } from "@/components/ui/BrandMark";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useT, type TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({
@@ -17,6 +19,7 @@ export function Sidebar({
   onCloseMobile: () => void;
 }) {
   const location = useLocation();
+  const t = useT();
 
   return (
     <>
@@ -50,7 +53,7 @@ export function Sidebar({
           <button
             onClick={onToggle}
             className="focus-ring hidden rounded-md p-1 text-content-muted hover:bg-surface-hover hover:text-content-primary lg:block"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
           >
             <ChevronsLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
           </button>
@@ -60,10 +63,10 @@ export function Sidebar({
             stays tappable in the mobile drawer. */}
         <nav className="flex-1 space-y-5 overflow-y-auto px-3 pt-4 pb-[max(env(safe-area-inset-bottom),1rem)]">
           {navGroups.map((group) => (
-            <div key={group.label}>
+            <div key={group.labelKey}>
               {!collapsed && (
                 <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-content-muted">
-                  {group.label}
+                  {t(group.labelKey as TranslationKey)}
                 </p>
               )}
               <div className="space-y-0.5">
@@ -86,7 +89,7 @@ export function Sidebar({
                           ? "text-accent-gold"
                           : "text-content-primary hover:bg-surface-hover hover:text-content-primary"
                       )}
-                      title={collapsed ? item.label : undefined}
+                      title={collapsed ? t(item.labelKey as TranslationKey) : undefined}
                     >
                       {isActive && (
                         <motion.span
@@ -96,7 +99,7 @@ export function Sidebar({
                         />
                       )}
                       <item.icon className="relative z-10 h-4 w-4 shrink-0" />
-                      {!collapsed && <span className="relative z-10 truncate">{item.label}</span>}
+                      {!collapsed && <span className="relative z-10 truncate">{t(item.labelKey as TranslationKey)}</span>}
                     </NavLink>
                   );
                 })}
@@ -104,6 +107,17 @@ export function Sidebar({
             </div>
           ))}
         </nav>
+
+        {/* Language lives in the topbar from 640px up, where there is room for
+            it beside the theme control. Below that the topbar is already full,
+            so it moves here into the mobile drawer — one tap from the menu
+            button, not buried in Settings. `sm:hidden` keeps exactly one
+            instance visible at any width. */}
+        {!collapsed && (
+          <div className="shrink-0 border-t border-hairline px-3 py-3 sm:hidden">
+            <LanguageSwitcher className="w-full justify-center" />
+          </div>
+        )}
       </aside>
     </>
   );
