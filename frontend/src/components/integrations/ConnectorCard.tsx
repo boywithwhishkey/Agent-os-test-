@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useT } from "@/lib/i18n";
 import { Clock, Gauge, Settings2, PlayCircle, LogIn, Sparkles as SparklesIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -30,6 +31,7 @@ export function ConnectorCard({
   onTest?: () => void;
   testing?: boolean;
 }) {
+  const t = useT();
   const Icon = getConnectorIcon(connector.icon);
   const isIntegrated = variant === "integrated";
   const comingSoon = isComingSoon(connector);
@@ -101,27 +103,30 @@ export function ConnectorCard({
           <div className="mt-auto flex flex-wrap gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
             {showTestButton && (
               <Button variant="outline" size="sm" onClick={onTest} loading={testing}>
-                <PlayCircle className="h-3.5 w-3.5" /> Test
+                <PlayCircle className="h-3.5 w-3.5" /> {t("pages.integrations.actions.test")}
               </Button>
             )}
             {action.kind === "manage" && (
               <Button variant="ghost" size="sm" onClick={onSelect}>
-                <Settings2 className="h-3.5 w-3.5" /> Manage
+                <Settings2 className="h-3.5 w-3.5" /> {t("pages.integrations.actions.manage")}
               </Button>
             )}
             {action.kind === "connect" && (
               <Button variant="secondary" size="sm" onClick={onSelect}>
-                <LogIn className="h-3.5 w-3.5" /> {action.label}
+                <LogIn className="h-3.5 w-3.5" /> {t("pages.integrations.actions.connect", { name: connector.name })}
               </Button>
             )}
             {action.kind === "configure" && (
               <Button variant="secondary" size="sm" onClick={onSelect}>
-                <Settings2 className="h-3.5 w-3.5" /> {action.label}
+                <Settings2 className="h-3.5 w-3.5" />{" "}
+                {connector.connector_type === "webhook"
+                  ? t("pages.integrations.actions.configureWebhook")
+                  : t("pages.integrations.actions.configure")}
               </Button>
             )}
             {action.kind === "coming_soon" && (
               <Button variant="ghost" size="sm" onClick={onSelect}>
-                <SparklesIcon className="h-3.5 w-3.5" /> Learn more
+                <SparklesIcon className="h-3.5 w-3.5" /> {t("pages.integrations.actions.learnMore")}
               </Button>
             )}
           </div>

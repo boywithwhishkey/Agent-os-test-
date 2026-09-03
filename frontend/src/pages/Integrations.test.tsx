@@ -205,4 +205,44 @@ describe("Integrations page", () => {
 
     expect(await screen.findByText(/connected to github/i)).toBeInTheDocument();
   });
+
+  it("groups the marketplace by category and never lists a not-built connector as available", async () => {
+    const notBuilt = {
+      ...n8nNeedsSetup,
+      id: "salesforce",
+      name: "Salesforce",
+      category: "data",
+      implemented: false,
+      status: "available",
+      popular: false,
+    };
+    stubFetch({ catalog: [n8nNeedsSetup, notBuilt] });
+
+    renderWithProviders(<Integrations />);
+
+    const browse = (await screen.findByRole("heading", { name: /browse connectors/i })).closest("section")!;
+
+    // Both real categories are present as group headings.
+    expect(await within(browse).findByRole("heading", { name: /^automation/i })).toBeInTheDocument();
+    expect(within(browse).getByRole("heading", { name: /^data/i })).toBeInTheDocument();
+
+    // The catalog-only entry sits under "Not built yet", never a bucket that
+    // implies an operator could switch it on.
+    const notBuiltChip = within(browse).getByRole("button", { name: /not built yet/i });
+    fireEvent.click(notBuiltChip);
+    expect(within(browse).getByText("Salesforce")).toBeInTheDocument();
+    expect(within(browse).queryByText("n8n")).not.toBeInTheDocument();
+    expect(within(browse).getByText(/no adapter behind these/i)).toBeInTheDocument();
+  });
+
+  it("disables a status filter that would lead to an empty grid", async () => {
+    stubFetch({ catalog: [n8nNeedsSetup] });
+
+    renderWithProviders(<Integrations />);
+
+    const browse = (await screen.findByRole("heading", { name: /browse connectors/i })).closest("section")!;
+    // Nothing is connected in this fixture, so the chip must not invite a tap.
+    expect(await within(browse).findByRole("button", { name: /^connected 0$/i })).toBeDisabled();
+    expect(within(browse).getByRole("button", { name: /^needs setup 1$/i })).toBeEnabled();
+  });
 });

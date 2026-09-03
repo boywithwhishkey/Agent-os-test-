@@ -1,4 +1,4 @@
-import type { ConnectorEntry, MCPServer } from "./types";
+import type { ConnectorCategory, ConnectorEntry, MCPServer } from "./types";
 
 export interface UnifiedConnector extends ConnectorEntry {
   /** Present only when this entry is a user-configured MCP server, not a
@@ -66,15 +66,21 @@ export function isComingSoon(connector: UnifiedConnector): boolean {
 
 export type PrimaryAction =
   | { kind: "manage" }
-  | { kind: "connect"; label: string }
-  | { kind: "configure"; label: string }
+  | { kind: "connect" }
+  | { kind: "configure" }
   | { kind: "test" }
   | { kind: "coming_soon" };
 
-/** The one primary call-to-action for a connector card/drawer, driven by
- * its real connector_type and live status — never generic "Configure"
- * wording for an OAuth connector, and never a working-looking CTA for a
- * Coming Soon one. */
+/**
+ * The one primary call-to-action for a connector card/drawer, driven by its
+ * real connector_type and live status — never a working-looking CTA for a
+ * Coming Soon connector, and never generic "Configure" wording where the real
+ * action is an OAuth handshake.
+ *
+ * Returns the KIND only. Wording lives in the locale catalogue, so this stays
+ * the single place that decides what the action IS while the UI decides what
+ * it is called.
+ */
 export function primaryAction(connector: UnifiedConnector): PrimaryAction {
   if (isComingSoon(connector)) return { kind: "coming_soon" };
   if (connector.status === "connected") return { kind: "manage" };
@@ -82,14 +88,7 @@ export function primaryAction(connector: UnifiedConnector): PrimaryAction {
   if (connector.status === "configured" || connector.status === "error") return { kind: "test" };
 
   // needs_setup: the connector has no credentials/authorization yet.
-  switch (connector.connector_type) {
-    case "oauth":
-      return { kind: "connect", label: `Connect ${connector.name}` };
-    case "webhook":
-      return { kind: "configure", label: "Configure webhook" };
-    default:
-      return { kind: "configure", label: "Configure" };
-  }
+  return connector.connector_type === "oauth" ? { kind: "connect" } : { kind: "configure" };
 }
 
 export function matchesSearch(connector: UnifiedConnector, query: string): boolean {
@@ -140,4 +139,81 @@ export function matchesFilter(connector: UnifiedConnector, filter: FilterChip): 
     default:
       return connector.category === filter;
   }
+}
+
+/**
+ * Marketplace grouping.
+ *
+ * These four buckets are derived from what the backend actually reports, not
+ * from a tidier taxonomy someone would prefer. Two things about the real data
+ * shape the result and are easy to get wrong:
+ *
+ * - `available` does NOT mean "ready to use". `ConnectorEntry` reserves it for
+ *   catalog-only entries with no adapter behind them (see
+ *   app/integrations/models.py), so it maps to NOT BUILT YET. A marketplace
+ *   that showed those under "Available" would be advertising software that
+ *   does not exist.
+ * - `configured` is not `connected`. Credentials being present is not proof
+ *   they work, so it gets its own bucket — the operator's next action there is
+ *   to verify, not to enter anything.
+ */
+export type StatusBucket = "connected" | "needs_verification" | "needs_setup" | "not_built";
+
+export const STATUS_BUCKETS: StatusBucket[] = [
+  "connected",
+  "needs_verification",
+  "needs_setup",
+  "not_built",
+];
+
+export function statusBucket(connector: UnifiedConnector): StatusBucket {
+  if (!connector.implemented) return "not_built";
+  if (connector.status === "connected") return "connected";
+  if (connector.status === "configured" || connector.status === "error") return "needs_verification";
+  return "needs_setup";
+}
+
+/** Category browse order — most-used first, `other` last, so the marketplace
+ * opens on the things operators actually reach for. */
+export const CATEGORY_ORDER: ConnectorCategory[] = [
+  "ai",
+  "automation",
+  "productivity",
+  "google",
+  "developer",
+  "data",
+  "other",
+];
+
+export interface CategoryGroup {
+  category: ConnectorCategory;
+  connectors: UnifiedConnector[];
+}
+
+/**
+ * Groups connectors by category in CATEGORY_ORDER, dropping empty groups.
+ * Within a group, working connectors come before not-built ones and popular
+ * before the rest — so a group never opens with something nobody can use.
+ */
+export function groupByCategory(connectors: UnifiedConnector[]): CategoryGroup[] {
+  const rank = (c: UnifiedConnector) => (isComingSoon(c) ? 2 : 0) + (c.popular ? 0 : 1);
+  return CATEGORY_ORDER.map((category) => ({
+    category,
+    connectors: connectors
+      .filter((c) => c.category === category)
+      .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name)),
+  })).filter((group) => group.connectors.length > 0);
+}
+
+/** How many connectors sit in each bucket — for the filter chips, so an
+ * operator can see what a filter holds before spending a tap on it. */
+export function bucketCounts(connectors: UnifiedConnector[]): Record<StatusBucket, number> {
+  const counts: Record<StatusBucket, number> = {
+    connected: 0,
+    needs_verification: 0,
+    needs_setup: 0,
+    not_built: 0,
+  };
+  for (const c of connectors) counts[statusBucket(c)] += 1;
+  return counts;
 }

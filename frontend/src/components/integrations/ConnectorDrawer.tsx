@@ -20,6 +20,7 @@ import { Input, Label, Textarea, FieldError } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { JSONViewer } from "@/components/ui/JSONViewer";
 import { getConnectorIcon } from "./connectorIcons";
+import { useT } from "@/lib/i18n";
 import { AuthRequiredBanner } from "./AuthRequiredBanner";
 import {
   useExecuteIntegration,
@@ -85,6 +86,7 @@ export function ConnectorDrawer({
   const oauthDisconnect = useOAuthDisconnect();
   const { push } = useToast();
   const authed = isApiConfigured();
+  const t = useT();
 
   if (!connector) return null;
   const Icon = getConnectorIcon(connector.icon);
@@ -109,7 +111,7 @@ export function ConnectorDrawer({
       payload = payloadText.trim() ? JSON.parse(payloadText) : {};
       setPayloadError(undefined);
     } catch {
-      setPayloadError("Payload must be valid JSON");
+      setPayloadError(t("pages.integrations.detail.payloadInvalid"));
       return;
     }
     execute.mutate({ provider: connector.id, request: { workflow, payload } });
@@ -172,48 +174,46 @@ export function ConnectorDrawer({
 
         {!connector.implemented ? (
           <div className="rounded-lg border border-hairline bg-surface-hover p-3 text-sm text-content-secondary">
-            Catalog only — this connector isn't built yet. It describes what THYNACT could
-            support; no credentials are collected and no connection is possible until it's
-            implemented.
+            {t("pages.integrations.detail.catalogOnly")}
           </div>
         ) : connector.status === "needs_setup" ? (
           <div className="rounded-lg border border-hairline bg-surface-hover p-3 text-sm text-content-secondary">
-            Requires setup. This connector needs{" "}
+            {t("pages.integrations.detail.requiresSetupPrefix")}{" "}
             {connector.requires.map((name, i) => (
               <span key={name}>
                 {i > 0 && ", "}
                 <code className="font-mono text-xs">{name}</code>
               </span>
             ))}{" "}
-            configured on the backend before it can connect.
+            {t("pages.integrations.detail.requiresSetupSuffix")}
           </div>
         ) : null}
 
         <dl>
-          <Row label="Auth type">
+          <Row label={t("pages.integrations.detail.authType")}>
             <span className="capitalize">{connector.auth_type.replace("_", " ")}</span>
           </Row>
           {connector.implemented && (
             <>
-              <Row label="Last check">
+              <Row label={t("pages.integrations.detail.lastCheck")}>
                 <span className="inline-flex items-center gap-1">
                   <Clock className="h-3 w-3" /> {formatRelativeTime(connector.last_check)}
                 </span>
               </Row>
               {connector.last_check_latency_ms != null && (
-                <Row label="Latency">
+                <Row label={t("pages.integrations.detail.latency")}>
                   <span className="inline-flex items-center gap-1">
                     <Gauge className="h-3 w-3" /> {Math.round(connector.last_check_latency_ms)} ms
                   </span>
                 </Row>
               )}
               {connector.last_check_error && (
-                <Row label="Last error">
+                <Row label={t("pages.integrations.detail.lastError")}>
                   <span className="text-accent-red">{connector.last_check_error}</span>
                 </Row>
               )}
               {!isMcp && (
-                <Row label="Last execution">
+                <Row label={t("pages.integrations.detail.lastExecution")}>
                   {connector.last_execution ? (
                     <span className="inline-flex items-center gap-1">
                       {connector.last_execution_success ? (
@@ -224,14 +224,14 @@ export function ConnectorDrawer({
                       {formatDateTime(connector.last_execution)}
                     </span>
                   ) : (
-                    "Never"
+                    t("pages.integrations.detail.never")
                   )}
                 </Row>
               )}
             </>
           )}
           {connector.documentation_url && (
-            <Row label="Docs">
+            <Row label={t("pages.integrations.detail.docs")}>
               <a
                 href={connector.documentation_url}
                 target="_blank"
@@ -247,7 +247,9 @@ export function ConnectorDrawer({
         {connector.capabilities.length > 0 && !isMcp && (
           <div>
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-content-muted">
-              {connector.implemented ? "Capabilities" : "Planned capabilities"}
+              {connector.implemented
+                ? t("pages.integrations.detail.capabilities")
+                : t("pages.integrations.detail.plannedCapabilities")}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {connector.capabilities.map((cap) => (
@@ -265,12 +267,12 @@ export function ConnectorDrawer({
               const caps = connector.mcpServer.capabilities ?? { tools: [], resources: [], prompts: [] };
               return (
                 <>
-                  <CapabilityGroup icon={Wrench} title="Tools" items={caps.tools} />
-                  <CapabilityGroup icon={FileTextIcon} title="Resources" items={caps.resources} />
-                  <CapabilityGroup icon={MessageCircle} title="Prompts" items={caps.prompts} />
+                  <CapabilityGroup icon={Wrench} title={t("pages.integrations.detail.tools")} items={caps.tools} />
+                  <CapabilityGroup icon={FileTextIcon} title={t("pages.integrations.detail.resources")} items={caps.resources} />
+                  <CapabilityGroup icon={MessageCircle} title={t("pages.integrations.detail.prompts")} items={caps.prompts} />
                   {caps.tools.length === 0 && caps.resources.length === 0 && caps.prompts.length === 0 && (
                     <p className="text-xs text-content-muted">
-                      No capabilities discovered yet — run "Test connection" to refresh.
+                      {t("pages.integrations.detail.noCapabilitiesYet")}
                     </p>
                   )}
                 </>
@@ -288,35 +290,35 @@ export function ConnectorDrawer({
                 loading={oauthAuthorize.isPending}
                 disabled={!authed || connector.status === "needs_setup"}
               >
-                <LogIn className="h-3.5 w-3.5" /> Connect {connector.name}
+                <LogIn className="h-3.5 w-3.5" /> {t("pages.integrations.actions.connect", { name: connector.name })}
               </Button>
             ) : (
               <Button size="sm" onClick={runTest} loading={testing} disabled={!authed || connector.status === "needs_setup"}>
-                <PlayCircle className="h-3.5 w-3.5" /> Test connection
+                <PlayCircle className="h-3.5 w-3.5" /> {t("pages.integrations.actions.testConnection")}
               </Button>
             )}
             {(isMcp || (isOAuth && connector.status === "connected")) && (
               <Button size="sm" variant="danger" onClick={() => setConfirmDelete(true)} disabled={!authed}>
-                <Trash2 className="h-3.5 w-3.5" /> Disconnect
+                <Trash2 className="h-3.5 w-3.5" /> {t("pages.integrations.actions.disconnect")}
               </Button>
             )}
           </div>
         )}
         {testError && (
           <p className="text-xs text-accent-red">
-            {testError instanceof ApiError ? testError.detail : "Test connection failed"}
+            {testError instanceof ApiError ? testError.detail : t("pages.integrations.actions.testFailed")}
           </p>
         )}
 
         {connector.id === "n8n" && connector.configured && (
           <div className="space-y-3 border-t border-hairline pt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Execute a workflow</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">{t("pages.integrations.detail.executeWorkflow")}</p>
             <div>
-              <Label htmlFor="drawer-workflow">Webhook workflow</Label>
+              <Label htmlFor="drawer-workflow">{t("pages.integrations.detail.webhookWorkflow")}</Label>
               <Input id="drawer-workflow" value={workflow} onChange={(e) => setWorkflow(e.target.value)} placeholder="deploy-notify" />
             </div>
             <div>
-              <Label htmlFor="drawer-payload">Payload (JSON)</Label>
+              <Label htmlFor="drawer-payload">{t("pages.integrations.detail.payloadJson")}</Label>
               <Textarea
                 id="drawer-payload"
                 value={payloadText}
@@ -327,12 +329,12 @@ export function ConnectorDrawer({
               <FieldError>{payloadError}</FieldError>
             </div>
             <Button size="sm" onClick={runExecute} loading={execute.isPending} disabled={!authed || !workflow}>
-              <PlayCircle className="h-3.5 w-3.5" /> Execute
+              <PlayCircle className="h-3.5 w-3.5" /> {t("pages.integrations.actions.execute")}
             </Button>
             {execute.data && (
               <>
                 <div className="flex items-center gap-2">
-                  <Badge tone={execute.data.success ? "green" : "red"}>{execute.data.success ? "Success" : "Failed"}</Badge>
+                  <Badge tone={execute.data.success ? "green" : "red"}>{execute.data.success ? t("pages.integrations.detail.success") : t("pages.integrations.detail.failed")}</Badge>
                   {execute.data.status_code && <Badge tone="neutral">HTTP {execute.data.status_code}</Badge>}
                 </div>
                 <JSONViewer data={execute.data} collapsedByDefault={false} />
@@ -346,13 +348,17 @@ export function ConnectorDrawer({
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={isOAuth ? confirmDisconnectOAuth : confirmRemoveMcp}
-        title={isOAuth ? `Disconnect ${connector.name}?` : "Disconnect this MCP server?"}
+        title={
+          isOAuth
+            ? t("pages.integrations.detail.disconnectNamed", { name: connector.name })
+            : t("pages.integrations.detail.disconnectMcp")
+        }
         description={
           isOAuth
-            ? "This forgets the stored account connection. You can reauthorize at any time."
-            : "This removes the server configuration. This cannot be undone."
+            ? t("pages.integrations.detail.disconnectOAuthBody")
+            : t("pages.integrations.detail.disconnectMcpBody")
         }
-        confirmLabel="Disconnect"
+        confirmLabel={t("pages.integrations.actions.disconnect")}
         danger
         loading={isOAuth ? oauthDisconnect.isPending : deleteMcp.isPending}
       />

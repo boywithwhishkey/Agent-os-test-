@@ -3,6 +3,9 @@ import {
   isConnected,
   isReadyToConnect,
   isComingSoon,
+  statusBucket,
+  bucketCounts,
+  groupByCategory,
   primaryAction,
   matchesFilter,
 } from "./integration-hub";
@@ -80,20 +83,17 @@ describe("connector state classification", () => {
 });
 
 describe("primaryAction", () => {
-  it("OAuth connectors awaiting authorization get a 'Connect <Provider>' CTA, never generic API-key wording", () => {
+  it("OAuth connectors awaiting authorization get a connect action, not a configure one", () => {
+    // The distinction matters: an OAuth connector is not something an
+    // operator fills in a form for, so it must never fall through to the
+    // generic configure wording.
     const notion = connector({ name: "Notion", connector_type: "oauth", auth_type: "oauth2", status: "needs_setup" });
-    const action = primaryAction(notion);
-    expect(action).toEqual({ kind: "connect", label: "Connect Notion" });
+    expect(primaryAction(notion)).toEqual({ kind: "connect" });
   });
 
-  it("webhook connectors awaiting configuration get 'Configure webhook'", () => {
-    const action = primaryAction(connector({ connector_type: "webhook", status: "needs_setup" }));
-    expect(action).toEqual({ kind: "configure", label: "Configure webhook" });
-  });
-
-  it("API-key connectors awaiting configuration get plain 'Configure'", () => {
-    const action = primaryAction(connector({ connector_type: "api", status: "needs_setup" }));
-    expect(action).toEqual({ kind: "configure", label: "Configure" });
+  it("non-OAuth connectors awaiting configuration get a configure action", () => {
+    expect(primaryAction(connector({ connector_type: "webhook", status: "needs_setup" }))).toEqual({ kind: "configure" });
+    expect(primaryAction(connector({ connector_type: "api", status: "needs_setup" }))).toEqual({ kind: "configure" });
   });
 
   it("a configured-but-unverified or errored connector gets a Test action", () => {
@@ -130,5 +130,64 @@ describe("matchesFilter", () => {
     expect(matchesFilter(connector({ connector_type: "oauth" }), "oauth")).toBe(true);
     expect(matchesFilter(connector({ connector_type: "webhook" }), "webhook")).toBe(true);
     expect(matchesFilter(connector({ connector_type: "oauth" }), "webhook")).toBe(false);
+  });
+});
+
+describe("statusBucket", () => {
+  it("treats `available` as NOT BUILT, never as ready to use", () => {
+    // The single most consequential mapping on the marketplace: the backend
+    // reserves `available` for catalog-only entries with no adapter behind
+    // them. Reading it as "available to use" would advertise software that
+    // does not exist.
+    expect(statusBucket(connector({ implemented: false, status: "available" }))).toBe("not_built");
+  });
+
+  it("keeps `configured` out of the connected bucket", () => {
+    // Credentials being present is not proof they work.
+    expect(statusBucket(connector({ status: "configured", configured: true }))).toBe("needs_verification");
+    expect(statusBucket(connector({ status: "error" }))).toBe("needs_verification");
+    expect(statusBucket(connector({ status: "connected" }))).toBe("connected");
+  });
+
+  it("puts a built connector awaiting credentials in needs_setup", () => {
+    expect(statusBucket(connector({ status: "needs_setup" }))).toBe("needs_setup");
+    expect(statusBucket(connector({ status: "disabled" }))).toBe("needs_setup");
+  });
+
+  it("assigns every connector to exactly one bucket", () => {
+    const all = (["connected", "configured", "needs_setup", "available", "error", "disabled"] as const).map((status) =>
+      connector({ status, implemented: status !== "available" })
+    );
+    const counts = bucketCounts(all);
+    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(all.length);
+  });
+});
+
+describe("groupByCategory", () => {
+  it("orders groups by CATEGORY_ORDER and drops empty ones", () => {
+    const groups = groupByCategory([
+      connector({ id: "d", category: "data" }),
+      connector({ id: "a", category: "ai" }),
+    ]);
+    expect(groups.map((g) => g.category)).toEqual(["ai", "data"]);
+  });
+
+  it("never opens a group with something nobody can use", () => {
+    // A not-built entry must not lead its category just because it sorts
+    // first alphabetically — the first card in a group sets the expectation
+    // for the whole group.
+    const groups = groupByCategory([
+      connector({ id: "aaa", name: "Aaa", category: "ai", implemented: false, status: "available" }),
+      connector({ id: "zzz", name: "Zzz", category: "ai", status: "needs_setup" }),
+    ]);
+    expect(groups[0].connectors[0].id).toBe("zzz");
+  });
+
+  it("puts popular working connectors ahead of the rest within a group", () => {
+    const groups = groupByCategory([
+      connector({ id: "plain", name: "Plain", category: "ai", status: "needs_setup" }),
+      connector({ id: "star", name: "Star", category: "ai", status: "needs_setup", popular: true }),
+    ]);
+    expect(groups[0].connectors.map((c) => c.id)).toEqual(["star", "plain"]);
   });
 });

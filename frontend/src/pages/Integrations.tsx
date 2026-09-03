@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { Plug, Sparkles, Plus, Clock3 } from "lucide-react";
+import { Plug, Plus, Clock3 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState, ErrorState } from "@/components/ui/States";
@@ -17,36 +17,55 @@ import { useToast } from "@/components/ui/Toast";
 import { useConnectorCatalog, useMCPServers, useTestIntegration, useTestMCPServer } from "@/lib/api/queries";
 import { isApiConfigured } from "@/lib/api/config";
 import {
-  matchesFilter,
   matchesSearch,
   mcpServerToConnector,
   isConnected,
-  isReadyToConnect,
-  isComingSoon,
-  type FilterChip,
+  bucketCounts,
+  groupByCategory,
+  CATEGORY_ORDER,
+  statusBucket,
+  STATUS_BUCKETS,
+  type StatusBucket,
   type UnifiedConnector,
 } from "@/lib/integration-hub";
+import type { ConnectorCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// `value` is the machine filter token and never changes; `labelKey` is what the
-// user reads. Protocol names (MCP, API, OAuth, Webhook, AI) stay as-is — they
-// are technical identifiers, not copy.
-const FILTERS: { value: FilterChip; label?: string; labelKey?: string }[] = [
-  { value: "all", labelKey: "pages.integrations.all" },
-  { value: "connected", labelKey: "pages.integrations.connected" },
-  { value: "ready", labelKey: "pages.integrations.readyToConnect" },
-  { value: "coming_soon", labelKey: "pages.integrations.comingSoon" },
-  { value: "mcp", label: "MCP" },
-  { value: "api", label: "API" },
-  { value: "oauth", label: "OAuth" },
-  { value: "webhook", label: "Webhook" },
-  { value: "ai", label: "AI" },
-  { value: "automation", label: "Automation" },
-  { value: "developer", label: "Developer" },
-  { value: "productivity", label: "Productivity" },
-  { value: "data", label: "Data" },
-  { value: "google", label: "Google" },
-];
+/**
+ * One filter chip. Carries its own count so an operator can see what a filter
+ * holds before spending a tap on it — a chip that leads to an empty grid is a
+ * wasted interaction, and on mobile it is a wasted scroll back as well.
+ */
+function Chip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={count === 0}
+      aria-pressed={active}
+      className={cn(
+        "focus-ring flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors max-sm:h-9",
+        count === 0 && "cursor-not-allowed opacity-40",
+        active
+          ? "border-accent-gold/40 bg-accent-gold/10 text-accent-gold"
+          : "glass-ambient border-hairline text-content-muted hover:text-content-primary"
+      )}
+    >
+      {label}
+      <span className={cn("tabular-nums", active ? "text-accent-gold/70" : "text-content-muted/70")}>{count}</span>
+    </button>
+  );
+}
 
 export default function Integrations() {
   const t = useT();
@@ -58,7 +77,8 @@ export default function Integrations() {
   const { push } = useToast();
 
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<FilterChip>("all");
+  const [bucket, setBucket] = useState<StatusBucket | "all">("all");
+  const [category, setCategory] = useState<ConnectorCategory | "all">("all");
   const [selected, setSelected] = useState<UnifiedConnector | null>(null);
   const [addMcpOpen, setAddMcpOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -91,18 +111,43 @@ export default function Integrations() {
   // A connector is always exactly one of these three states — never a mix
   // (see CLAUDE.md's Integration Hub product rule).
   const connected = useMemo(() => allConnectors.filter(isConnected), [allConnectors]);
-  const readyToConnect = useMemo(() => allConnectors.filter(isReadyToConnect), [allConnectors]);
-  const popular = useMemo(
-    () => allConnectors.filter((c) => c.popular && (isConnected(c) || isReadyToConnect(c))),
+  // Scoped to connectors whose credentials are already in place, so the
+  // operator's next action here is one tap on Test. Everything else that is
+  // built but unconfigured lives in the browse section below under "Needs
+  // setup" — listing all of it twice was 13 duplicate cards of scrolling.
+  const readyToConnect = useMemo(
+    () => allConnectors.filter((c) => statusBucket(c) === "needs_verification"),
     [allConnectors]
   );
+  // Marketplace browse state. Counts are computed against the OTHER axis'
+  // current selection, so a chip's number is what that chip would actually
+  // show — not a catalog-wide total that turns out to be empty once clicked.
+  const searched = useMemo(() => allConnectors.filter((c) => matchesSearch(c, search)), [allConnectors, search]);
+
+  const counts = useMemo(
+    () => bucketCounts(searched.filter((c) => category === "all" || c.category === category)),
+    [searched, category]
+  );
+
+  const categoryCounts = useMemo(() => {
+    const out = new Map<ConnectorCategory, number>();
+    for (const c of searched) {
+      if (bucket !== "all" && statusBucket(c) !== bucket) continue;
+      out.set(c.category, (out.get(c.category) ?? 0) + 1);
+    }
+    return out;
+  }, [searched, bucket]);
 
   const filtered = useMemo(
-    () => allConnectors.filter((c) => matchesSearch(c, search) && matchesFilter(c, filter)),
-    [allConnectors, search, filter]
+    () =>
+      searched.filter(
+        (c) =>
+          (bucket === "all" || statusBucket(c) === bucket) && (category === "all" || c.category === category)
+      ),
+    [searched, bucket, category]
   );
-  const filteredWorking = useMemo(() => filtered.filter((c) => !isComingSoon(c)), [filtered]);
-  const filteredComingSoon = useMemo(() => filtered.filter(isComingSoon), [filtered]);
+
+  const groups = useMemo(() => groupByCategory(filtered), [filtered]);
 
   const isLoading = catalog.isLoading || mcpServers.isLoading;
   const isError = catalog.isError;
@@ -170,6 +215,9 @@ export default function Integrations() {
               <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-content-muted">
                 <Clock3 className="h-3.5 w-3.5 text-accent-amber" /> {t("pages.integrations.readyToConnect")}
               </h2>
+              <p className="text-sm text-content-secondary">
+                {t("pages.integrations.buckets.needs_verification.hint")}
+              </p>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <AnimatePresence>
                   {readyToConnect.map((connector) => (
@@ -190,90 +238,120 @@ export default function Integrations() {
             </section>
           )}
 
-          {/* Popular */}
-          {!isLoading && popular.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-content-muted">
-                <Sparkles className="h-3.5 w-3.5 text-accent-gold" /> Popular integrations
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {popular.map((connector) => (
-                  <ConnectorCard key={connector.id} connector={connector} onSelect={() => setSelected(connector)} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* All integrations */}
+          {/* Browse — the marketplace proper. Grouped by category rather than
+              repeating the two sections above, and every group is drawn from
+              the real registry: there are no cards here with nothing behind
+              them. Status is a filter, and each bucket says plainly what it
+              means. */}
           <ScrollReveal>
-          <section className="space-y-4">
-            <div className="flex flex-col gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">{t("common.allIntegrations")}</h2>
-              <SearchInput value={search} onChange={setSearch} placeholder={t("pages.integrations.searchPlaceholder")} className="w-full sm:max-w-md" />
+            <section className="space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">
+                  {t("pages.integrations.browseTitle")}
+                </h2>
+                <p className="max-w-2xl text-sm text-content-secondary">{t("pages.integrations.browseBody")}</p>
+              </div>
+
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder={t("pages.integrations.searchPlaceholder")}
+                className="w-full sm:max-w-md"
+              />
+
+              {/* Two axes, one row each. Protocol chips were removed:
+                  connector_type is already in the search haystack, so typing
+                  "oauth" filters by it — a third chip row cost more attention
+                  on mobile than it bought. */}
               <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f.value}
-                    onClick={() => setFilter(f.value)}
-                    className={cn(
-                      "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                      filter === f.value
-                        ? "border-accent-gold/40 bg-accent-gold/10 text-accent-gold"
-                        : "glass-ambient border-hairline text-content-muted hover:text-content-primary"
-                    )}
-                  >
-                    {/* Translated chrome where we have a key; protocol names
-                        (MCP, API, OAuth) keep their literal label. */}
-                    {f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : f.label}
-                  </button>
+                <Chip
+                  label={t("pages.integrations.allStatuses")}
+                  count={searched.filter((c) => category === "all" || c.category === category).length}
+                  active={bucket === "all"}
+                  onClick={() => setBucket("all")}
+                />
+                {STATUS_BUCKETS.map((b) => (
+                  <Chip
+                    key={b}
+                    label={t(`pages.integrations.buckets.${b}.label` as Parameters<typeof t>[0])}
+                    count={counts[b]}
+                    active={bucket === b}
+                    onClick={() => setBucket(b)}
+                  />
                 ))}
               </div>
-            </div>
 
-            {isLoading ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
+              <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+                <Chip
+                  label={t("pages.integrations.allCategories")}
+                  count={[...categoryCounts.values()].reduce((a, b) => a + b, 0)}
+                  active={category === "all"}
+                  onClick={() => setCategory("all")}
+                />
+                {CATEGORY_ORDER.filter((cat) => (categoryCounts.get(cat) ?? 0) > 0).map((cat) => (
+                  <Chip
+                    key={cat}
+                    label={t(`pages.integrations.categories.${cat}` as Parameters<typeof t>[0])}
+                    count={categoryCounts.get(cat) ?? 0}
+                    active={category === cat}
+                    onClick={() => setCategory(cat)}
+                  />
+                ))}
               </div>
-            ) : filtered.length === 0 ? (
-              <EmptyState
-                icon={<Plug className="h-5 w-5" />}
-                title={t("pages.integrations.noMatchTitle")}
-                description={t("pages.integrations.noMatchBody")}
-              />
-            ) : (
-              <>
-                {filteredWorking.length > 0 && (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    <AnimatePresence>
-                      {filteredWorking.map((connector) => (
-                        <ConnectorCard key={connector.id} connector={connector} onSelect={() => setSelected(connector)} />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                )}
 
-                {filteredComingSoon.length > 0 && (
-                  <div className="space-y-3 border-t border-hairline pt-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-                      Coming soon — no adapter built yet
-                    </h3>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                      <AnimatePresence>
-                        {filteredComingSoon.map((connector) => (
-                          <ConnectorCard key={connector.id} connector={connector} onSelect={() => setSelected(connector)} />
-                        ))}
-                      </AnimatePresence>
+              {/* What the selected status actually means, in one line. The
+                  honest states are only useful if the operator knows what they
+                  claim — especially "not built yet", which must never read as
+                  something they could turn on. */}
+              {bucket !== "all" && (
+                <p className="text-xs text-content-muted">
+                  {t(`pages.integrations.buckets.${bucket}.hint` as Parameters<typeof t>[0])}
+                </p>
+              )}
+
+              {isLoading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </div>
+              ) : groups.length === 0 ? (
+                <EmptyState
+                  icon={<Plug className="h-5 w-5" />}
+                  title={t("pages.integrations.noMatchTitle")}
+                  description={t("pages.integrations.noMatchBody")}
+                />
+              ) : (
+                <div className="space-y-6">
+                  {groups.map((group) => (
+                    <div key={group.category} className="space-y-3">
+                      <h3 className="flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wide text-content-muted">
+                        {t(`pages.integrations.categories.${group.category}` as Parameters<typeof t>[0])}
+                        <span className="tabular-nums text-content-muted/70">{group.connectors.length}</span>
+                      </h3>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        <AnimatePresence>
+                          {group.connectors.map((connector) => (
+                            <ConnectorCard
+                              key={connector.id}
+                              connector={connector}
+                              onSelect={() => setSelected(connector)}
+                            />
+                          ))}
+                        </AnimatePresence>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-            <p className="text-xs text-content-muted">
-              Showing {filtered.length} of {allConnectors.length} integrations
-            </p>
-          </section>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-xs text-content-muted">
+                {t("pages.integrations.showingCount", {
+                  shown: filtered.length,
+                  total: allConnectors.length,
+                })}
+              </p>
+            </section>
           </ScrollReveal>
         </>
       )}
