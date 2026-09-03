@@ -189,6 +189,8 @@ export const en = {
     overview: {
       title: "Product Overview",
       heroTitle: "An agent platform that thinks first, then acts under your control.",
+      heroBody:
+        "THYNACT plans, delegates, verifies and executes — with every consequential action gated by policy, recorded in an audit trail, and traceable back to the request that caused it.",
       whatItDoes: "What it does",
       everyItemLinks: "Every item links to the live surface",
       howItStaysTrustworthy: "How it stays trustworthy",
@@ -198,6 +200,59 @@ export const en = {
       browseConnectors: "Browse connectors",
       connectors: "Connectors",
       viewIntegrations: "View integrations",
+      pillars: {
+        reason: {
+          title: "Reason before it acts",
+          body: "Every request is routed by complexity, confidence and risk. Simple asks stay on a fast deterministic path; only work that genuinely needs planning or multiple specialists pays for it.",
+          action: "Orchestrate",
+        },
+        threeRole: {
+          title: "Three-role orchestration",
+          body: "Researcher, builder and reviewer run as a coordinated plan with a real parallelism limit, so complex objectives are decomposed and checked rather than answered in one pass.",
+          action: "Autonomous runs",
+        },
+        workflow: {
+          title: "Durable workflow engine",
+          body: "A visual DAG builder with dependency validation, retries, timeouts, conditions and approval gates. Runs are persisted and can be resumed past a pause.",
+          action: "Build a workflow",
+        },
+        tools: {
+          title: "Governed tool execution",
+          body: "Tools carry a risk level. Read tools run freely; write and high-risk tools require a single-use approval grant that cannot be self-issued by the model.",
+          action: "Tool registry",
+        },
+        memory: {
+          title: "Semantic + lexical memory",
+          body: "Hybrid retrieval over pgvector with real relevance scoring — semantic similarity, lexical match and an importance weight — not a keyword search wearing a new name.",
+          action: "Search memory",
+        },
+        runtime: {
+          title: "Runtime you can see",
+          body: "Circuit breakers, sliding-window rate limits, bounded retries and idempotency keys, each with live state you can inspect instead of inferring from logs.",
+          action: "Runtime status",
+        },
+      },
+      governance: {
+        authority: {
+          title: "Model intelligence is not authority",
+          body: "Capability never implies permission. Send, publish, delete, purchase, refund, spend, deploy and admin changes pass through policy and, where required, explicit approval.",
+        },
+        audited: {
+          title: "Every execution is audited",
+          body: "Tool runs record the tool, risk, outcome, approval requirement and the correlation ID of the request that caused them — so any action traces back to its origin.",
+        },
+        untrusted: {
+          title: "Untrusted content stays data",
+          body: "Text returned by emails, web pages, documents, connectors or MCP tools is treated as data, never as instructions. An unknown MCP tool is denied by default.",
+        },
+        honest: {
+          title: "Honest capability states",
+          body: "A connector is not \"working\" because an adapter or a card exists. Each one reports live-validated, credential-required or not-implemented — and nothing is inflated.",
+        },
+      },
+      connectorsBody:
+        "Providers are reached through a broker that prefers official MCP, then verified MCP, then a managed connector, then a native adapter. The Integrations page shows each one's real state — connected, credential required, or not implemented — rather than a count that flatters the product.",
+      mcpFirst: "MCP-first, not MCP-only",
     },
     tasks: {
       title: "Tasks",

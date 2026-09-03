@@ -1,9 +1,11 @@
+import { useEffect, useRef, useState } from "react";
 import { Menu, Search } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { AccountPopover } from "./AccountPopover";
 import { getEnvironmentLabel } from "@/lib/environment";
 import { useT } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 export function Topbar({
   onOpenMobileNav,
@@ -14,6 +16,23 @@ export function Topbar({
 }) {
   const t = useT();
 
+  // The header only needs a backdrop once content is behind it. A 1px sentinel
+  // above it reports that via IntersectionObserver, so there is no scroll
+  // listener and no per-frame work — the observer fires twice per page, at the
+  // moments the state actually changes.
+  const sentinel = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setScrolled(!entry.isIntersecting),
+      { rootMargin: "0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   const environmentLabel =
     typeof window === "undefined" ? null : getEnvironmentLabel(window.location.hostname);
 
@@ -21,7 +40,22 @@ export function Topbar({
   // ambient background runs straight through the top of the page, and each
   // control carries its own (minimal) affordance instead of sitting in a box.
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-1.5 bg-transparent px-3 sm:gap-3 sm:px-4">
+    <>
+      {/* Sentinel: sits in normal flow above the sticky header. */}
+      <div ref={sentinel} aria-hidden className="h-px w-full" />
+      <header
+        className={cn(
+          "sticky top-0 z-30 flex h-14 items-center gap-1.5 px-3 sm:gap-3 sm:px-4",
+          "transition-colors duration-200",
+          // Chrome-less over the hero, glass once content is behind it. Before
+          // the sticky positioning was fixed the header never actually stayed
+          // put, so this collision could not happen and the bar could stay
+          // fully transparent.
+          scrolled
+            ? "border-b border-hairline bg-surface-canvas/88 backdrop-blur-xl"
+            : "border-b border-transparent bg-transparent"
+        )}
+      >
       <button
         onClick={onOpenMobileNav}
         className="focus-ring shrink-0 rounded-md p-2 text-content-secondary hover:bg-surface-hover lg:hidden"
@@ -67,8 +101,9 @@ export function Topbar({
             header was carrying six targets on a 320px screen, and these two
             are the ones people actually reach for. */}
         <LanguageSwitcher />
-        <ThemeSwitcher className="hidden xs:inline-flex" />
+        <ThemeSwitcher />
       </div>
-    </header>
+      </header>
+    </>
   );
 }

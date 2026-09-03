@@ -55,7 +55,12 @@ export function AppShell() {
     // on iOS Safari 100vh counts the collapsing browser chrome, so a vh-only
     // shell is taller than the visible viewport and the page jiggles as the
     // toolbar hides. dvh tracks the viewport that is actually visible.
-    <div className="relative flex min-h-screen min-h-dvh overflow-x-hidden">
+    // overflow-x-CLIP, not hidden. `overflow-x: hidden` computes overflow-y to
+    // `auto`, which makes this div a scroll container — and the sticky topbar
+    // then sticks to THIS box rather than the viewport. Since the box is as
+    // tall as its content, the header simply scrolled away on every page.
+    // `clip` still clips horizontally but creates no scroll container.
+    <div className="relative flex min-h-screen min-h-dvh overflow-x-clip">
       <AmbientBackground />
       <Sidebar
         collapsed={collapsed}
