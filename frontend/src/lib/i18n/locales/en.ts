@@ -183,6 +183,31 @@ export const en = {
     workflowRuns: "Workflow runs",
     runtimeExecutions: "Runtime executions",
     view: "View",
+    heroLead: "Your control centre",
+    heroBody:
+      "Give THYNACT an objective and it plans, verifies and executes — every consequential step gated by policy and written to the audit trail.",
+    heroPrimary: "Start orchestration",
+    heroSecondary: "See what it does",
+    exploreTitle: "Explore",
+    explore: {
+      overview: {
+        title: "Product Overview",
+        body: "Every capability that is live today, each one linking to the surface that runs it.",
+      },
+      integrations: {
+        title: "Connectors",
+        body: "Browse the connector catalogue and see what is connected, waiting on setup, or not built yet.",
+      },
+      about: {
+        title: "About THYNACT",
+        body: "Why it exists, how work moves through it, and what it holds to.",
+      },
+      health: {
+        title: "System Health",
+        body: "Live status straight from the backend, including storage durability.",
+      },
+    },
+    sessionEmptyHint: "Anything you start in this tab appears here.",
   },
 
   pages: {

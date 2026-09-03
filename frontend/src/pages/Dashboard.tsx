@@ -1,11 +1,25 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Activity, Wrench, ScrollText, ListChecks, Workflow, Bot, ArrowUpRight } from "lucide-react";
+import {
+  Activity,
+  Wrench,
+  ScrollText,
+  ListChecks,
+  Workflow,
+  Bot,
+  ArrowUpRight,
+  ArrowRight,
+  Sparkles,
+  Plug,
+  Info,
+  HeartPulse,
+} from "lucide-react";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { GlassSurface } from "@/components/ui/GlassSurface";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState, LoadingState, ErrorState } from "@/components/ui/States";
 import { ScrollReveal, StaggerGroup, StaggerItem } from "@/components/ui/ScrollReveal";
@@ -89,7 +103,7 @@ export default function Dashboard() {
     <div className="space-y-10">
       {/* System identity — deliberately not a bordered card. It emerges
           straight out of the ambient canvas behind the app shell. */}
-      <div className="relative -mx-4 overflow-hidden px-4 py-7 sm:-mx-6 sm:px-6 sm:py-10 lg:-mx-8 lg:px-8">
+      <div className="relative -mx-4 px-4 py-7 sm:-mx-6 sm:px-6 sm:py-10 lg:-mx-8 lg:px-8">
         <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-ambient-gold/[0.14] blur-[100px] animate-float" aria-hidden />
         <div className="relative overflow-hidden">
           <span className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-ambient-navy/60 to-transparent" aria-hidden />
@@ -101,6 +115,30 @@ export default function Dashboard() {
           >
             <motion.div variants={staggerItem}>
               <BrandMark variant="full" size="lg" />
+            </motion.div>
+            {/* The mark alone left this screen without a sentence explaining
+                what it is or an obvious first move. Added below it rather than
+                in place of anything. */}
+            <motion.p variants={staggerItem} className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-accent-gold/80">
+              {t("dashboard.heroLead")}
+            </motion.p>
+            <motion.p variants={staggerItem} className="mt-2 max-w-2xl text-sm leading-relaxed text-content-secondary sm:text-base">
+              {t("dashboard.heroBody")}
+            </motion.p>
+            {/* Full-width below `sm`: wrapped to two lines at 390px the
+                buttons came out two different widths, which reads as ragged
+                rather than as a pair. */}
+            <motion.div variants={staggerItem} className="mt-5 flex flex-wrap gap-2.5 max-sm:flex-col">
+              <Link to="/orchestrate" className="max-sm:w-full">
+                <Button size="lg" className="max-sm:w-full">
+                  {t("dashboard.heroPrimary")} <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/overview" className="max-sm:w-full">
+                <Button variant="outline" size="lg" className="max-sm:w-full">
+                  {t("dashboard.heroSecondary")}
+                </Button>
+              </Link>
             </motion.div>
           </motion.div>
         </div>
@@ -215,9 +253,51 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </ScrollReveal>
+
+      <ScrollReveal delay={0.05}>
+        <section className="space-y-3 pb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-content-muted">
+            {t("dashboard.exploreTitle")}
+          </h2>
+          <StaggerGroup className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {EXPLORE.map((item) => (
+              <StaggerItem key={item.key} className="h-full">
+                <Link to={item.to} className="focus-ring group block h-full rounded-2xl">
+                  <GlassSurface
+                    hairline
+                    className="flex h-full flex-col gap-2.5 p-4 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-accent-gold/35"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-hairline bg-accent-gold/[0.08] text-accent-gold">
+                      <item.icon className="h-4 w-4" />
+                    </span>
+                    <p className="text-sm font-semibold text-content-primary">
+                      {t(`dashboard.explore.${item.key}.title` as Parameters<typeof t>[0])}
+                    </p>
+                    <p className="flex-1 text-xs leading-relaxed text-content-secondary">
+                      {t(`dashboard.explore.${item.key}.body` as Parameters<typeof t>[0])}
+                    </p>
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-accent-gold opacity-0 transition-opacity group-hover:opacity-100">
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
+                  </GlassSurface>
+                </Link>
+              </StaggerItem>
+            ))}
+          </StaggerGroup>
+        </section>
+      </ScrollReveal>
     </div>
   );
 }
+
+// Keys and routes, never display copy. Ordered by how often a session actually
+// needs them.
+const EXPLORE = [
+  { key: "overview", to: "/overview", icon: Sparkles },
+  { key: "integrations", to: "/integrations", icon: Plug },
+  { key: "about", to: "/about", icon: Info },
+  { key: "health", to: "/system-health", icon: HeartPulse },
+] as const;
 
 function QuickAction({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
   return (
@@ -237,7 +317,10 @@ function SessionList({ title, entries, to }: { title: string; entries: { id: str
     <div>
       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">{title}</p>
       {entries.length === 0 ? (
-        <p className="text-sm text-content-muted">{t("states.nothingYet")}</p>
+        <div className="rounded-lg border border-dashed border-hairline px-3 py-3.5">
+          <p className="text-sm text-content-muted">{t("states.nothingYet")}</p>
+          <p className="mt-0.5 text-xs text-content-muted/70">{t("dashboard.sessionEmptyHint")}</p>
+        </div>
       ) : (
         <ul className="space-y-1.5">
           {entries.slice(0, 4).map((entry) => (

@@ -55,4 +55,30 @@ describe("App shell", () => {
 
     expect(await screen.findByRole("heading", { name: "Tasks" })).toBeInTheDocument();
   });
+
+  it("gives the dashboard a first move and a way into the rest of the product", async () => {
+    // The dashboard used to be the brand mark, four metrics and half a screen
+    // of empty canvas. These are the additions that fill it; if one is dropped
+    // the home screen goes back to having no obvious next step.
+    // jsdom's URL persists between tests and the previous one navigates away.
+    window.history.pushState({}, "", "/");
+    mockBackend();
+    const { App } = await import("./App");
+    render(<App />);
+
+    // Two now point there — the hero call to action and the quick action.
+    const starts = await screen.findAllByRole("link", { name: /start orchestration/i });
+    expect(starts.length).toBeGreaterThanOrEqual(2);
+    expect(starts.every((l) => l.getAttribute("href") === "/orchestrate")).toBe(true);
+
+    for (const [name, href] of [
+      [/product overview/i, "/overview"],
+      [/connectors/i, "/integrations"],
+      [/about thynact/i, "/about"],
+      [/system health/i, "/system-health"],
+    ] as const) {
+      const links = await screen.findAllByRole("link", { name });
+      expect(links.some((l) => l.getAttribute("href") === href)).toBe(true);
+    }
+  });
 });
