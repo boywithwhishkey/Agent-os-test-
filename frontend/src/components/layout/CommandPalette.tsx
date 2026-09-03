@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, CornerDownLeft } from "lucide-react";
-import { allNavItems } from "@/lib/nav";
+import { searchableNavItems } from "@/lib/nav";
 import { useT, type TranslationKey } from "@/lib/i18n";
 import { en } from "@/lib/i18n/locales/en";
 import { Input } from "@/components/ui/Input";
@@ -27,11 +27,11 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return allNavItems;
+    if (!q) return searchableNavItems;
     // Match the CURRENT language and the English label, so an operator can
     // search "settings" while the UI is in Hindi, or "सेटिंग्स" while it is in
     // English. Route identifiers are searchable too and never translated.
-    return allNavItems.filter((item) => {
+    return searchableNavItems.filter((item) => {
       const localised = t(item.labelKey as TranslationKey).toLowerCase();
       const english = en_labels[item.labelKey] ?? "";
       return localised.includes(q) || english.includes(q) || item.to.toLowerCase().includes(q);

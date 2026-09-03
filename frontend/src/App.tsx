@@ -12,6 +12,7 @@ import { LoadingState } from "@/components/ui/States";
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Overview = lazy(() => import("@/pages/Overview"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
+const About = lazy(() => import("@/pages/About"));
 const Tasks = lazy(() => import("@/pages/Tasks"));
 const Orchestrate = lazy(() => import("@/pages/Orchestrate"));
 const Autonomous = lazy(() => import("@/pages/Autonomous"));
@@ -59,6 +60,7 @@ export function App() {
                     <Route index element={<Dashboard />} />
                     <Route path="overview" element={<Overview />} />
                     <Route path="privacy" element={<Privacy />} />
+                    <Route path="about" element={<About />} />
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="orchestrate" element={<Orchestrate />} />
                     <Route path="autonomous" element={<Autonomous />} />

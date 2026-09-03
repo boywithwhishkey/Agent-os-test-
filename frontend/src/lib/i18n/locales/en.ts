@@ -378,6 +378,78 @@ export const en = {
       apiKeyLabel: "API key (X-API-Key)",
       clear: "Clear",
     },
+    about: {
+      title: "About THYNACT",
+      navLabel: "About THYNACT",
+      heroStatement:
+        "Intelligence should do more than answer. It should move work forward — safely.",
+      whyTitle: "Why THYNACT exists",
+      whyBody:
+        "Most AI stops at an answer. The gap between a good answer and finished work is where real systems live: credentials, permissions, side effects, and the question of who authorised what. THYNACT is built to close that gap without pretending the gap was never there.",
+      thinkTitle: "Think",
+      thinkBody:
+        "Understand the request, route it by complexity and risk, recall what matters, plan only when planning earns its cost, and verify before acting.",
+      actTitle: "Act",
+      actBody:
+        "Reach real services through a governed broker, execute, automate and schedule — and record every step so the result can be traced back to the request that caused it.",
+      controlTitle: "Control",
+      controlBody:
+        "Permission, approval, identity and tenant boundaries sit around every consequential action. Capability never quietly becomes authority.",
+      flowTitle: "How work moves through THYNACT",
+      flowBody:
+        "Consequential steps pass through control. Everything else takes the fast path.",
+      flow: {
+        intent: "Intent",
+        think: "Think",
+        plan: "Plan",
+        verify: "Verify",
+        act: "Act",
+        result: "Result",
+        control: "Control",
+      },
+      principlesTitle: "What it holds to",
+      principles: {
+        fast: {
+          title: "Fast by default",
+          body: "Simple work stays simple. Planning, retrieval and multi-agent execution are opt-in costs, never the default path.",
+        },
+        real: {
+          title: "Real over mock",
+          body: "\"Working\" means validated through real execution against a real provider — not that an adapter, a card or a passing mock exists.",
+        },
+        authority: {
+          title: "Intelligence is not authority",
+          body: "Sending, publishing, deleting, spending and deploying pass through policy and, where required, an approval the model cannot issue to itself.",
+        },
+        neutral: {
+          title: "Provider neutral",
+          body: "Models and tools are replaceable infrastructure. Core reasoning speaks in canonical capabilities, never a vendor's API names.",
+        },
+        continuity: {
+          title: "Built for continuity",
+          body: "Memory, workflows and durable state are designed to outlive a session, so work can be resumed rather than restarted.",
+        },
+        governed: {
+          title: "Governed action",
+          body: "Every tool run is recorded with its outcome and the correlation ID of the request behind it. An audit trail that can be quietly rewritten is not one.",
+        },
+      },
+      visionTitle: "Where it is going",
+      visionBody:
+        "Stated as direction, not as shipped capability. What is live today is visible on the Product Overview and System Health pages.",
+      vision: {
+        surfaces: "More surfaces — mobile and voice alongside the web control centre",
+        connectors: "Broader connector coverage across business systems",
+        automation: "Richer scheduled and event-driven automation",
+        multimodal: "Multimodal understanding where it genuinely helps the work",
+      },
+      ctaTitle: "Ready when you are",
+      ctaBody: "Connect a service, or give THYNACT an objective and watch it work.",
+      ctaPrimary: "Open the dashboard",
+      ctaSecondary: "Browse connectors",
+      shipped: "Available today",
+      direction: "Direction",
+    },
     notFound: {
       title: "Page not found",
       description: "This screen doesn't exist, or it moved.",

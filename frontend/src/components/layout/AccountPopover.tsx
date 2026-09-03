@@ -3,7 +3,7 @@ import { useT } from "@/lib/i18n";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { CircleUserRound, KeyRound, LogOut, Plug, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
+import { CircleUserRound, Info, KeyRound, LogOut, Plug, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useToast } from "@/components/ui/Toast";
 import { ConnectionStatus } from "./ConnectionStatus";
@@ -138,6 +138,13 @@ export function AccountPopover() {
           className="focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary"
         >
           <Plug className="h-4 w-4" /> {t("common.connections")}
+        </Link>
+        <Link
+          to="/about"
+          onClick={() => setOpen(false)}
+          className="focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary"
+        >
+          <Info className="h-4 w-4" /> {t("pages.about.navLabel")}
         </Link>
         {configured && (
           <button

@@ -17,6 +17,7 @@ import {
   Settings,
   Sparkles,
   FileLock2,
+  Info,
 } from "lucide-react";
 
 /**
@@ -84,4 +85,17 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
+/**
+ * Reachable, but deliberately not in the sidebar: primary navigation is for
+ * work, and an "About" entry sitting beside Approvals would cost an operator
+ * attention on every single visit to buy a page they read once. These items
+ * live in the account menu and stay findable through the command palette.
+ */
+export const secondaryNavItems: NavItem[] = [
+  { labelKey: "pages.about.navLabel", to: "/about", icon: Info },
+];
+
 export const allNavItems: NavItem[] = navGroups.flatMap((g) => g.items);
+
+/** Everything addressable from the command palette, sidebar or otherwise. */
+export const searchableNavItems: NavItem[] = [...allNavItems, ...secondaryNavItems];
