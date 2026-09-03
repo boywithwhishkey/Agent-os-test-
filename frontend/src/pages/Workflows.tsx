@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useT } from "@/lib/i18n";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -52,6 +53,7 @@ export default function Workflows() {
 }
 
 function WorkflowEditor() {
+  const t = useT();
   const { resolvedTheme } = useTheme();
   const [name, setName] = useState("New workflow");
   const [contextText, setContextText] = useState("{}");
@@ -210,7 +212,7 @@ function WorkflowEditor() {
       <Card>
         <CardContent className="grid gap-3 pt-5 sm:grid-cols-3">
           <div className="sm:col-span-1">
-            <Label htmlFor="wf-name">Workflow name</Label>
+            <Label htmlFor="wf-name">{t("pages.workflows.workflowName")}</Label>
             <Input id="wf-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="sm:col-span-2">

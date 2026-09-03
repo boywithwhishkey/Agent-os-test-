@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { I18nProvider, useI18n, resolveLocale, enabledLocales, LOCALES } from "./index";
+import { I18nProvider, useI18n, resolveLocale, enabledLocales, LOCALES, applyDocumentLocale } from "./index";
 import { en } from "./locales/en";
 import { hi } from "./locales/hi";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
@@ -269,5 +269,103 @@ describe("LanguageSwitcher", () => {
 
     expect(localStorage.getItem("agent-os:theme")).toBe("light");
     expect(localStorage.getItem(STORAGE_KEY)).toBe("hi");
+  });
+});
+
+
+describe("future-language extensibility", () => {
+  /**
+   * The point of the registry is that a third language needs no component
+   * change. This proves the switcher renders whatever the registry declares
+   * rather than being hardcoded to two branches — WITHOUT enabling a third
+   * production locale, by mutating the registry object for the duration of the
+   * test only.
+   */
+  it("renders a newly registered locale without touching the component", () => {
+    const before = screen.queryAllByRole("radio").length;
+    expect(before).toBe(0);
+
+    // A hypothetical Spanish entry, registered the way a real one would be.
+    (LOCALES as Record<string, (typeof LOCALES)["en"]>).es = {
+      code: "es",
+      label: "Spanish",
+      nativeLabel: "Español",
+      shortLabel: "ES",
+      direction: "ltr",
+      intlLocale: "es",
+      enabled: true,
+    };
+    try {
+      render(
+        <I18nProvider>
+          <LanguageSwitcher />
+        </I18nProvider>
+      );
+      expect(screen.getAllByRole("radio")).toHaveLength(3);
+      expect(screen.getByRole("radio", { name: /Español/ })).toBeInTheDocument();
+    } finally {
+      delete (LOCALES as Record<string, unknown>).es;
+    }
+  });
+
+  it("hides a registered but disabled locale from users", () => {
+    (LOCALES as Record<string, (typeof LOCALES)["en"]>).pt = {
+      code: "pt",
+      label: "Portuguese",
+      nativeLabel: "Português",
+      shortLabel: "PT",
+      direction: "ltr",
+      intlLocale: "pt",
+      // Translations still in progress — must never reach the UI.
+      enabled: false,
+    };
+    try {
+      render(
+        <I18nProvider>
+          <LanguageSwitcher />
+        </I18nProvider>
+      );
+      expect(screen.queryByRole("radio", { name: /Português/ })).not.toBeInTheDocument();
+      expect(screen.getAllByRole("radio")).toHaveLength(2);
+    } finally {
+      delete (LOCALES as Record<string, unknown>).pt;
+    }
+  });
+
+  it("applies dir=rtl for a future right-to-left locale", () => {
+    // English and Hindi are both LTR, so nothing else exercises this. It proves
+    // the document plumbing reads direction from the registry rather than
+    // assuming LTR everywhere.
+    (LOCALES as Record<string, (typeof LOCALES)["en"]>).ar = {
+      code: "ar",
+      label: "Arabic",
+      nativeLabel: "العربية",
+      shortLabel: "AR",
+      direction: "rtl",
+      intlLocale: "ar",
+      enabled: true,
+    };
+    try {
+      applyDocumentLocale("ar");
+      expect(document.documentElement.getAttribute("dir")).toBe("rtl");
+      expect(document.documentElement.getAttribute("lang")).toBe("ar");
+    } finally {
+      delete (LOCALES as Record<string, unknown>).ar;
+      applyDocumentLocale("en");
+    }
+  });
+});
+
+describe("page copy is translated, not just navigation", () => {
+  it.each([
+    ["pages.settings.title", "सेटिंग्स"],
+    ["pages.integrations.searchPlaceholder", "इंटीग्रेशन खोजें…"],
+    ["pages.audit.tableView", "तालिका दृश्य"],
+    ["pages.memory.deleteTitle", "यह मेमोरी हटाएँ?"],
+    ["pages.tools.executing", "चल रहा है…"],
+  ])("%s is Hindi", (key, expected) => {
+    const read = (o: unknown) =>
+      key.split(".").reduce<never>((n, p) => (n as never)?.[p as never], o as never) as unknown;
+    expect(read(hi)).toBe(expected);
   });
 });

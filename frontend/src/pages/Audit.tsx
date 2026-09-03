@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { motion } from "framer-motion";
 import { ScrollText, Table2, GanttChartSquare, CheckCircle2, XCircle, Copy } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -58,6 +59,7 @@ function AuditTimeline({ events, onSelect }: { events: ToolAuditEvent[]; onSelec
 }
 
 export default function Audit() {
+  const t = useT();
   const audit = useToolAudit();
   const [search, setSearch] = useState("");
   const [outcome, setOutcome] = useState<"all" | "success" | "failed">("all");
@@ -76,7 +78,7 @@ export default function Audit() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Audit Logs" description="Every tool execution and approval check, most recent first." />
+      <PageHeader title={t("pages.audit.title")} description={t("pages.audit.description")} />
 
       <Card>
         <CardHeader className="flex-col items-stretch gap-3 sm:flex-row sm:items-center">
@@ -84,16 +86,16 @@ export default function Audit() {
             <ScrollText className="h-4 w-4 text-accent-gold" /> Events
           </CardTitle>
           <div className="flex flex-1 flex-wrap gap-2 sm:justify-end">
-            <SearchInput value={search} onChange={setSearch} placeholder="Filter by tool…" className="max-w-xs" />
+            <SearchInput value={search} onChange={setSearch} placeholder={t("pages.audit.filterPlaceholder")} className="max-w-xs" />
             <Select value={outcome} onChange={(e) => setOutcome(e.target.value as typeof outcome)} className="w-36">
-              <option value="all">All outcomes</option>
-              <option value="success">Success</option>
-              <option value="failed">Failed</option>
+              <option value="all">{t("common.allOutcomes")}</option>
+              <option value="success">{t("common.success")}</option>
+              <option value="failed">{t("common.failed")}</option>
             </Select>
             <div className="glass-ambient flex rounded-lg border border-hairline p-0.5">
               <button
                 onClick={() => setView("table")}
-                aria-label="Table view"
+                aria-label={t("pages.audit.tableView")}
                 className={cn(
                   "rounded-md p-1.5 transition-colors",
                   view === "table" ? "bg-accent-gold/10 text-accent-gold" : "text-content-muted hover:text-content-primary"
@@ -103,7 +105,7 @@ export default function Audit() {
               </button>
               <button
                 onClick={() => setView("timeline")}
-                aria-label="Timeline view"
+                aria-label={t("pages.audit.timelineView")}
                 className={cn(
                   "rounded-md p-1.5 transition-colors",
                   view === "timeline" ? "bg-accent-gold/10 text-accent-gold" : "text-content-muted hover:text-content-primary"
@@ -120,7 +122,7 @@ export default function Audit() {
           ) : audit.isError ? (
             <ErrorState error={audit.error} onRetry={() => audit.refetch()} />
           ) : filtered.length === 0 ? (
-            <EmptyState icon={<ScrollText className="h-5 w-5" />} title="No matching audit events" />
+            <EmptyState icon={<ScrollText className="h-5 w-5" />} title={t("pages.audit.emptyTitle")} />
           ) : view === "timeline" ? (
             <AuditTimeline events={filtered} onSelect={setSelected} />
           ) : (
@@ -202,7 +204,7 @@ export default function Audit() {
               <Badge tone="neutral" className="capitalize">
                 {selected.risk.replace("_", " ")}
               </Badge>
-              {selected.approval_required && <Badge tone="amber">Approval required</Badge>}
+              {selected.approval_required && <Badge tone="amber">{t("common.approvalRequired")}</Badge>}
             </div>
             {selected.correlation_id && (
               <div className="flex items-center justify-between gap-2 rounded-lg border border-hairline glass-ambient p-3">
@@ -215,7 +217,7 @@ export default function Audit() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label="Copy correlation ID"
+                  aria-label={t("pages.audit.copyCorrelationId")}
                   onClick={() => navigator.clipboard.writeText(selected.correlation_id ?? "")}
                 >
                   <Copy className="h-3.5 w-3.5" />

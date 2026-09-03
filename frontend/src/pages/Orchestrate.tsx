@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { PlayCircle, CheckCircle2, XCircle, Copy, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -14,6 +15,7 @@ import { useOrchestrate } from "@/lib/api/queries";
 import { useToast } from "@/components/ui/Toast";
 
 export default function Orchestrate() {
+  const t = useT();
   const [objective, setObjective] = useState("");
   const [context, setContext] = useState("");
   const orchestrate = useOrchestrate();
@@ -41,8 +43,8 @@ export default function Orchestrate() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Orchestrate"
-        description="Run a researcher → builder → reviewer multi-agent orchestration against a single objective."
+        title={t("pages.orchestrate.title")}
+        description={t("pages.orchestrate.description")}
       />
 
       <Card>
@@ -53,7 +55,7 @@ export default function Orchestrate() {
               id="objective"
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
-              placeholder="Design a rollout plan for the new billing system"
+              placeholder={t("pages.orchestrate.objectivePlaceholder")}
               rows={2}
             />
           </div>
@@ -63,7 +65,7 @@ export default function Orchestrate() {
               id="context"
               value={context}
               onChange={(e) => setContext(e.target.value)}
-              placeholder="Relevant constraints, prior decisions, or background"
+              placeholder={t("pages.orchestrate.contextPlaceholder")}
               rows={3}
             />
           </div>
@@ -76,7 +78,7 @@ export default function Orchestrate() {
       {orchestrate.isPending && (
         <Card>
           <CardContent className="pt-5">
-            <LoadingState label="Researcher, builder, and reviewer are working…" />
+            <LoadingState label={t("pages.orchestrate.working")} />
           </CardContent>
         </Card>
       )}
@@ -123,7 +125,7 @@ export default function Orchestrate() {
           {result.verification.issues.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Reviewer issues</CardTitle>
+                <CardTitle>{t("common.reviewerIssues")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="list-inside list-disc space-y-1 text-sm text-content-secondary">
@@ -137,7 +139,7 @@ export default function Orchestrate() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Final synthesis</CardTitle>
+              <CardTitle>{t("common.finalSynthesis")}</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
@@ -157,8 +159,8 @@ export default function Orchestrate() {
       {!result && !orchestrate.isPending && !orchestrate.isError && (
         <EmptyState
           icon={<Sparkles className="h-5 w-5" />}
-          title="No orchestration run yet"
-          description="Enter an objective above and run it to see researcher, builder, and reviewer activity."
+          title={t("pages.orchestrate.emptyTitle")}
+          description={t("pages.orchestrate.emptyBody")}
         />
       )}
     </div>

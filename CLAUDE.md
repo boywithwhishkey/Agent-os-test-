@@ -127,6 +127,22 @@ retrieval, cached and deterministic fast paths.
 
 ---
 
+## 4b. Localization
+
+User-facing static product copy goes through the central localization layer
+(`frontend/src/lib/i18n/`). Enabled languages come from the canonical locale
+registry — **never** hardcode language conditionals in components; a
+`lang === "hi" ? … : …` anywhere is a bug, because it breaks the day a third
+language is added.
+
+Machine states (`AUTH_REQUIRED`, `LIVE_VALIDATED`, `auth_not_configured`),
+route identifiers, and provider/technical names stay canonical and are
+localized only at the presentation boundary. Never translate user-generated
+content, provider responses, logs or audit payloads. English is the fallback,
+and English and Hindi must stay at key parity — the test suite enforces it.
+
+See `docs/LOCALIZATION.md` for how to add a language.
+
 ## 5. Architecture invariants
 
 Preserve this path; never put provider-specific code inside core reasoning

@@ -1,4 +1,5 @@
 import { Badge } from "./Badge";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type StatusKind =
@@ -23,31 +24,38 @@ export type StatusKind =
   | "error"
   | "disabled";
 
-const config: Record<StatusKind, { label: string; tone: "neutral" | "gold" | "green" | "red" | "amber"; pulse?: boolean }> = {
-  pending: { label: "Pending", tone: "neutral" },
-  running: { label: "Running", tone: "gold", pulse: true },
-  completed: { label: "Completed", tone: "green" },
-  succeeded: { label: "Succeeded", tone: "green" },
-  failed: { label: "Failed", tone: "red" },
-  rejected: { label: "Rejected", tone: "red" },
-  paused: { label: "Paused", tone: "amber" },
-  skipped: { label: "Skipped", tone: "neutral" },
-  waiting_approval: { label: "Waiting approval", tone: "amber", pulse: true },
-  ok: { label: "Healthy", tone: "green" },
-  healthy: { label: "Healthy", tone: "green" },
-  unconfigured: { label: "Unconfigured", tone: "neutral" },
-  unavailable: { label: "Unavailable", tone: "red" },
-  degraded: { label: "Degraded", tone: "amber" },
-  connected: { label: "Connected", tone: "green", pulse: true },
-  configured: { label: "Configured", tone: "gold" },
-  needs_setup: { label: "Needs setup", tone: "amber" },
-  available: { label: "Available", tone: "neutral" },
-  error: { label: "Error", tone: "red" },
-  disabled: { label: "Disabled", tone: "neutral" },
+// Label text lives in the locale catalogue under `badges.<status>`; the
+// machine status is the key and never changes.
+const config: Record<StatusKind, { tone: "neutral" | "gold" | "green" | "red" | "amber"; pulse?: boolean }> = {
+  pending: { tone: "neutral" },
+  running: { tone: "gold", pulse: true },
+  completed: { tone: "green" },
+  succeeded: { tone: "green" },
+  failed: { tone: "red" },
+  rejected: { tone: "red" },
+  paused: { tone: "amber" },
+  skipped: { tone: "neutral" },
+  waiting_approval: { tone: "amber", pulse: true },
+  ok: { tone: "green" },
+  healthy: { tone: "green" },
+  unconfigured: { tone: "neutral" },
+  unavailable: { tone: "red" },
+  degraded: { tone: "amber" },
+  connected: { tone: "green", pulse: true },
+  configured: { tone: "gold" },
+  needs_setup: { tone: "amber" },
+  available: { tone: "neutral" },
+  error: { tone: "red" },
+  disabled: { tone: "neutral" },
 };
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
-  const entry = config[status as StatusKind] ?? { label: status, tone: "neutral" as const };
+  const t = useT();
+  const entry = config[status as StatusKind] ?? { tone: "neutral" as const };
+  // Unknown statuses fall back to the raw value rather than a missing key —
+  // a new backend status shows through instead of vanishing.
+  const label =
+    status in config ? t(`badges.${status}` as Parameters<typeof t>[0]) : status;
   return (
     <Badge tone={entry.tone} className={cn("capitalize", className)}>
       <span
@@ -57,7 +65,7 @@ export function StatusBadge({ status, className }: { status: string; className?:
         )}
         aria-hidden
       />
-      {entry.label}
+      {label}
     </Badge>
   );
 }

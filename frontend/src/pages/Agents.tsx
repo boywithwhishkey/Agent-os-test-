@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useT } from "@/lib/i18n";
 import { Search, Hammer, Eye, ArrowUpRight, Info } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -23,11 +24,12 @@ const roles = [
 ];
 
 export default function Agents() {
+  const t = useT();
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Agents"
-        description="THYNACT runs three fixed roles per orchestration, and dynamically named specialists per autonomous run."
+        title={t("pages.agents.title")}
+        description={t("pages.agents.description")}
       />
 
       <Card className="border-accent-gold-soft/25 bg-accent-gold-soft/5">
@@ -68,7 +70,7 @@ export default function Agents() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Autonomous specialists</CardTitle>
+          <CardTitle>{t("common.autonomousSpecialists")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-content-secondary">

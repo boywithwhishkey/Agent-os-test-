@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, FieldError } from "@/components/ui/Input";
@@ -7,6 +8,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { MCPAuthType } from "@/lib/types";
 
 export function AddMcpServerDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [endpoint, setEndpoint] = useState("");
   const [authType, setAuthType] = useState<MCPAuthType>("none");
@@ -61,7 +63,7 @@ export function AddMcpServerDialog({ open, onClose }: { open: boolean; onClose: 
         reset();
         onClose();
       }}
-      title="Add MCP server"
+      title={t("pages.integrations.addMcpServer")}
       description="Connect a remote MCP server over Streamable HTTP. Secrets are stored server-side and never sent to the browser again."
       footer={
         <>
@@ -76,7 +78,7 @@ export function AddMcpServerDialog({ open, onClose }: { open: boolean; onClose: 
     >
       <div className="space-y-4">
         <div>
-          <Label htmlFor="mcp-name">Display name</Label>
+          <Label htmlFor="mcp-name">{t("common.displayName")}</Label>
           <Input id="mcp-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="My tools server" />
         </div>
         <div>
@@ -91,7 +93,7 @@ export function AddMcpServerDialog({ open, onClose }: { open: boolean; onClose: 
         <div>
           <Label htmlFor="mcp-auth">Authentication</Label>
           <Select id="mcp-auth" value={authType} onChange={(e) => setAuthType(e.target.value as MCPAuthType)}>
-            <option value="none">None</option>
+            <option value="none">{t("common.none")}</option>
             <option value="bearer">Bearer token</option>
             <option value="header">Custom header</option>
           </Select>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Plug, Sparkles, Plus, Clock3 } from "lucide-react";
@@ -27,11 +28,14 @@ import {
 } from "@/lib/integration-hub";
 import { cn } from "@/lib/utils";
 
-const FILTERS: { value: FilterChip; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "connected", label: "Connected" },
-  { value: "ready", label: "Ready to connect" },
-  { value: "coming_soon", label: "Coming soon" },
+// `value` is the machine filter token and never changes; `labelKey` is what the
+// user reads. Protocol names (MCP, API, OAuth, Webhook, AI) stay as-is — they
+// are technical identifiers, not copy.
+const FILTERS: { value: FilterChip; label?: string; labelKey?: string }[] = [
+  { value: "all", labelKey: "pages.integrations.all" },
+  { value: "connected", labelKey: "pages.integrations.connected" },
+  { value: "ready", labelKey: "pages.integrations.readyToConnect" },
+  { value: "coming_soon", labelKey: "pages.integrations.comingSoon" },
   { value: "mcp", label: "MCP" },
   { value: "api", label: "API" },
   { value: "oauth", label: "OAuth" },
@@ -45,6 +49,7 @@ const FILTERS: { value: FilterChip; label: string }[] = [
 ];
 
 export default function Integrations() {
+  const t = useT();
   const catalog = useConnectorCatalog();
   const mcpServers = useMCPServers();
   const testIntegration = useTestIntegration();
@@ -113,11 +118,11 @@ export default function Integrations() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="THYNACT Integrations"
-        description="Connect intelligence to the tools that make things happen."
+        title={t("pages.integrations.title")}
+        description={t("pages.integrations.description")}
         actions={
           <Button size="sm" onClick={() => setAddMcpOpen(true)} disabled={!authed}>
-            <Plus className="h-3.5 w-3.5" /> Add MCP server
+            <Plus className="h-3.5 w-3.5" /> {t("pages.integrations.addMcpServer")}
           </Button>
         }
       />
@@ -130,7 +135,7 @@ export default function Integrations() {
         <>
           {/* Currently integrated — only real, verified connections. */}
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">Currently integrated</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">{t("pages.integrations.currentlyIntegrated")}</h2>
             {isLoading ? (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <SkeletonCard />
@@ -138,8 +143,8 @@ export default function Integrations() {
             ) : connected.length === 0 ? (
               <EmptyState
                 icon={<Plug className="h-5 w-5" />}
-                title="No integrations connected yet."
-                description="Connect one below, or add an MCP server to get started."
+                title={t("pages.integrations.emptyTitle")}
+                description={t("pages.integrations.emptyBody")}
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -163,7 +168,7 @@ export default function Integrations() {
           {!isLoading && readyToConnect.length > 0 && (
             <section className="space-y-3">
               <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-content-muted">
-                <Clock3 className="h-3.5 w-3.5 text-accent-amber" /> Ready to connect
+                <Clock3 className="h-3.5 w-3.5 text-accent-amber" /> {t("pages.integrations.readyToConnect")}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <AnimatePresence>
@@ -203,8 +208,8 @@ export default function Integrations() {
           <ScrollReveal>
           <section className="space-y-4">
             <div className="flex flex-col gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">All integrations</h2>
-              <SearchInput value={search} onChange={setSearch} placeholder="Search integrations…" className="w-full sm:max-w-md" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">{t("common.allIntegrations")}</h2>
+              <SearchInput value={search} onChange={setSearch} placeholder={t("pages.integrations.searchPlaceholder")} className="w-full sm:max-w-md" />
               <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
                 {FILTERS.map((f) => (
                   <button
@@ -217,7 +222,9 @@ export default function Integrations() {
                         : "glass-ambient border-hairline text-content-muted hover:text-content-primary"
                     )}
                   >
-                    {f.label}
+                    {/* Translated chrome where we have a key; protocol names
+                        (MCP, API, OAuth) keep their literal label. */}
+                    {f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : f.label}
                   </button>
                 ))}
               </div>
@@ -232,8 +239,8 @@ export default function Integrations() {
             ) : filtered.length === 0 ? (
               <EmptyState
                 icon={<Plug className="h-5 w-5" />}
-                title="No integrations match your search"
-                description="Try a different term or clear the filters."
+                title={t("pages.integrations.noMatchTitle")}
+                description={t("pages.integrations.noMatchBody")}
               />
             ) : (
               <>

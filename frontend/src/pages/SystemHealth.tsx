@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useT } from "@/lib/i18n";
 import {
   HeartPulse,
   RefreshCw,
@@ -69,14 +70,15 @@ function BackendNode({ name, backend, index }: { name: string; backend: string; 
 }
 
 export default function SystemHealth() {
+  const t = useT();
   const health = useHealth();
   const readiness = useReadiness();
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="System Health"
-        description="Live status straight from the backend's /health and /ready endpoints."
+        title={t("pages.health.title")}
+        description={t("pages.health.description")}
         actions={
           <Button
             variant="outline"
@@ -105,12 +107,12 @@ export default function SystemHealth() {
               <ErrorState error={health.error} onRetry={() => health.refetch()} />
             ) : (
               <dl className="space-y-2 text-sm">
-                <Row label="Status">
+                <Row label={t("pages.health.status")}>
                   <StatusBadge status={health.data?.status === "ok" ? "healthy" : "degraded"} />
                 </Row>
-                <Row label="Service">{health.data?.service}</Row>
-                <Row label="Environment">{health.data?.environment}</Row>
-                <Row label="LLM provider">
+                <Row label={t("pages.health.service")}>{health.data?.service}</Row>
+                <Row label={t("pages.health.environment")}>{health.data?.environment}</Row>
+                <Row label={t("pages.health.llmProvider")}>
                   <Badge tone={health.data?.llm_provider === "mock" ? "amber" : "gold"} className="capitalize">
                     <Brain className="h-3 w-3" /> {health.data?.llm_provider}
                   </Badge>
@@ -119,7 +121,7 @@ export default function SystemHealth() {
                     them, so an operator running on ephemeral storage had no way
                     to discover that a restart discards their data. */}
                 {health.data?.persistence && (
-                  <Row label="Storage">
+                  <Row label={t("pages.health.storage")}>
                     <Badge
                       tone={health.data.persistence === "durable" ? "green" : "amber"}
                       className="capitalize"
@@ -163,7 +165,7 @@ export default function SystemHealth() {
               <ErrorState error={readiness.error} onRetry={() => readiness.refetch()} />
             ) : (
               <div className="space-y-3">
-                <Row label="Overall">
+                <Row label={t("pages.health.overall")}>
                   <StatusBadge status={readiness.data?.status === "ready" ? "healthy" : "degraded"} />
                 </Row>
                 {Object.entries(readiness.data?.checks ?? {}).length === 0 ? (

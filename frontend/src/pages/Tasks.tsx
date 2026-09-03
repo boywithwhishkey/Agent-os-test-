@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +25,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function Tasks() {
+  const t = useT();
   const { push } = useToast();
   const createTask = useCreateTask();
   const history = useSessionHistory("task");
@@ -68,8 +70,8 @@ export default function Tasks() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tasks"
-        description="Create tasks and look them up by ID. The API does not expose a task list, so recent tasks from this session are tracked below."
+        title={t("pages.tasks.title")}
+        description={t("pages.tasks.description")}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -90,10 +92,10 @@ export default function Tasks() {
                 <div>
                   <Label htmlFor="priority">Priority</Label>
                   <Select id="priority" {...register("priority")}>
-                    <option value="low">Low</option>
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
-                    <option value="critical">Critical</option>
+                    <option value="low">{t("common.priorityLow")}</option>
+                    <option value="normal">{t("common.priorityNormal")}</option>
+                    <option value="high">{t("common.priorityHigh")}</option>
+                    <option value="critical">{t("common.priorityCritical")}</option>
                   </Select>
                 </div>
                 <div>
@@ -119,7 +121,7 @@ export default function Tasks() {
               <Input
                 value={lookupId}
                 onChange={(e) => setLookupId(e.target.value)}
-                placeholder="Paste a task ID"
+                placeholder={t("pages.tasks.lookupPlaceholder")}
                 onKeyDown={(e) => e.key === "Enter" && setActiveLookup(lookupId)}
               />
               <Button variant="secondary" onClick={() => setActiveLookup(lookupId)}>
@@ -133,14 +135,14 @@ export default function Tasks() {
 
       <Card>
         <CardHeader>
-          <CardTitle>This session's tasks</CardTitle>
+          <CardTitle>{t("common.sessionTasks")}</CardTitle>
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
             <EmptyState
               icon={<ListTodo className="h-5 w-5" />}
-              title="No tasks created yet"
-              description="Tasks you create above will appear here for quick lookup."
+              title={t("pages.tasks.emptyTitle")}
+              description={t("pages.tasks.emptyBody")}
             />
           ) : (
             <ul className="divide-y divide-surface">

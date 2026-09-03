@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { motion } from "framer-motion";
 import { Bot, PlayCircle, CheckCircle2, XCircle, Zap } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -14,6 +15,7 @@ import { useAutonomousRun, useHealth } from "@/lib/api/queries";
 import { useToast } from "@/components/ui/Toast";
 
 export default function Autonomous() {
+  const t = useT();
   const [objective, setObjective] = useState("");
   const [context, setContext] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -52,8 +54,8 @@ export default function Autonomous() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Autonomous Runs"
-        description="Planner → specialist jobs → verifier → synthesis, fully autonomous from a single objective."
+        title={t("pages.autonomous.title")}
+        description={t("pages.autonomous.description")}
       />
 
       <Card>
@@ -81,7 +83,7 @@ export default function Autonomous() {
       {run.isPending && (
         <Card>
           <CardContent className="pt-5">
-            <LoadingState label="Planning, executing specialists, and verifying…" />
+            <LoadingState label={t("pages.autonomous.working")} />
           </CardContent>
         </Card>
       )}
@@ -98,7 +100,7 @@ export default function Autonomous() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle>Execution stages</CardTitle>
+              <CardTitle>{t("common.executionStages")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Timeline steps={steps} />
@@ -149,7 +151,7 @@ export default function Autonomous() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Final answer</CardTitle>
+                <CardTitle>{t("common.finalAnswer")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="whitespace-pre-wrap text-sm text-content-primary">{result.final_answer}</p>
@@ -163,8 +165,8 @@ export default function Autonomous() {
       {!result && !run.isPending && !run.isError && (
         <EmptyState
           icon={<Bot className="h-5 w-5" />}
-          title="No autonomous run yet"
-          description="Submit an objective above to watch the planner, specialists, and verifier work."
+          title={t("pages.autonomous.emptyTitle")}
+          description={t("pages.autonomous.emptyBody")}
         />
       )}
     </div>

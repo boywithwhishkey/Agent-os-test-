@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Trash2, Search as SearchIcon, PenLine, List, Share2 } from "lucide-react";
 import { MemoryGraph } from "@/components/memory/MemoryGraph";
@@ -34,11 +35,12 @@ function MatchScore({ score }: { score: number }) {
 }
 
 export default function Memory() {
+  const t = useT();
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Memory"
-        description="Search THYNACT's semantic + lexical memory, or write new memories directly."
+        title={t("pages.memory.title")}
+        description={t("pages.memory.description")}
       />
       <Tabs defaultValue="search">
         <TabsList>
@@ -61,6 +63,7 @@ export default function Memory() {
 }
 
 function MemorySearchPanel() {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<MemoryScope | "">("");
   const [projectId, setProjectId] = useState("");
@@ -94,12 +97,12 @@ function MemorySearchPanel() {
         <CardContent className="grid gap-3 pt-5 sm:grid-cols-4">
           <div className="sm:col-span-2">
             <Label htmlFor="q">Query</Label>
-            <Input id="q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Ranked by semantic + lexical relevance" />
+            <Input id="q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("pages.memory.searchHint")} />
           </div>
           <div>
             <Label htmlFor="scope">Scope</Label>
             <Select id="scope" value={scope} onChange={(e) => setScope(e.target.value as MemoryScope | "")}>
-              <option value="">All scopes</option>
+              <option value="">{t("common.allScopes")}</option>
               {scopes.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -130,14 +133,14 @@ function MemorySearchPanel() {
             <div className="glass-ambient flex rounded-lg border border-hairline p-0.5">
               <button
                 onClick={() => setView("list")}
-                aria-label="List view"
+                aria-label={t("pages.memory.listView")}
                 className={`rounded-md p-1.5 transition-colors ${view === "list" ? "bg-accent-gold/10 text-accent-gold" : "text-content-muted hover:text-content-primary"}`}
               >
                 <List className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setView("graph")}
-                aria-label="Graph view"
+                aria-label={t("pages.memory.graphView")}
                 className={`rounded-md p-1.5 transition-colors ${view === "graph" ? "bg-accent-gold/10 text-accent-gold" : "text-content-muted hover:text-content-primary"}`}
               >
                 <Share2 className="h-4 w-4" />
@@ -151,7 +154,7 @@ function MemorySearchPanel() {
           ) : results.isError ? (
             <ErrorState error={results.error} onRetry={() => results.refetch()} />
           ) : !results.data?.length ? (
-            <EmptyState icon={<Brain className="h-5 w-5" />} title="No memories found" description="Try a different query or scope." />
+            <EmptyState icon={<Brain className="h-5 w-5" />} title={t("pages.memory.emptyTitle")} description={t("pages.memory.emptyBody")} />
           ) : view === "graph" ? (
             <MemoryGraph records={results.data} />
           ) : (
@@ -187,7 +190,7 @@ function MemorySearchPanel() {
                         ))}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => setPendingDelete(record.id)} aria-label="Delete memory">
+                    <Button variant="ghost" size="icon" onClick={() => setPendingDelete(record.id)} aria-label={t("pages.memory.deleteMemory")}>
                       <Trash2 className="h-4 w-4 text-accent-red" />
                     </Button>
                   </div>
@@ -203,8 +206,8 @@ function MemorySearchPanel() {
         open={Boolean(pendingDelete)}
         onClose={() => setPendingDelete(null)}
         onConfirm={confirmDelete}
-        title="Delete this memory?"
-        description="This cannot be undone."
+        title={t("pages.memory.deleteTitle")}
+        description={t("pages.memory.deleteBody")}
         confirmLabel="Delete"
         danger
         loading={deleteMemory.isPending}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { History, Search, PlayCircle } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -13,6 +14,7 @@ import { useSessionHistory } from "@/lib/session-history";
 import { useToast } from "@/components/ui/Toast";
 
 export default function WorkflowRuns() {
+  const t = useT();
   const history = useSessionHistory("workflow-run");
   const [lookupId, setLookupId] = useState("");
   const [activeId, setActiveId] = useState<string | undefined>();
@@ -20,8 +22,8 @@ export default function WorkflowRuns() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Workflow Runs"
-        description="Inspect a run by ID and resume it past approval pauses. The API does not expose a run list, so this session's runs are tracked below."
+        title={t("pages.workflowRuns.title")}
+        description={t("pages.workflowRuns.description")}
       />
 
       <Card>
@@ -35,7 +37,7 @@ export default function WorkflowRuns() {
             <Input
               value={lookupId}
               onChange={(e) => setLookupId(e.target.value)}
-              placeholder="Paste a workflow run ID"
+              placeholder={t("pages.workflowRuns.lookupPlaceholder")}
               onKeyDown={(e) => e.key === "Enter" && setActiveId(lookupId)}
             />
             {/* shrink-0 + nowrap: at 320px the flex row squeezed this button
@@ -60,7 +62,7 @@ export default function WorkflowRuns() {
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
-            <EmptyState title="No workflow runs yet" description="Runs started from the Workflows editor appear here." />
+            <EmptyState title={t("pages.workflowRuns.emptyTitle")} description={t("pages.workflowRuns.emptyBody")} />
           ) : (
             <ul className="divide-y divide-surface">
               {history.map((entry) => (
@@ -83,6 +85,7 @@ export default function WorkflowRuns() {
 }
 
 function RunDetail({ runId }: { runId: string | undefined }) {
+  const t = useT();
   const { data, isLoading, isError, error, refetch } = useWorkflowRun(runId);
   const resume = useResumeWorkflow();
   const { push } = useToast();
@@ -148,12 +151,12 @@ function RunDetail({ runId }: { runId: string | undefined }) {
 
       {waiting.length > 0 && (
         <div className="space-y-3 rounded-lg border border-accent-amber/25 bg-accent-amber/5 p-3">
-          <p className="text-sm font-medium text-content-primary">Resume paused steps</p>
+          <p className="text-sm font-medium text-content-primary">{t("common.resumePausedSteps")}</p>
           {waiting.map((step) => (
             <div key={step.step_id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <Label className="mb-0 sm:w-32 sm:shrink-0">{step.step_id}</Label>
               <Input
-                placeholder="Approval ID"
+                placeholder={t("pages.workflowRuns.approvalIdPlaceholder")}
                 value={approvalInputs[step.step_id] ?? ""}
                 onChange={(e) => setApprovalInputs((prev) => ({ ...prev, [step.step_id]: e.target.value }))}
               />

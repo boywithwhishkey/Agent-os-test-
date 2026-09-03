@@ -64,6 +64,38 @@ One English-shaped rule applied everywhere gets both wrong.
 Dates and numbers go through `formatDate` / `formatNumber`, which use the
 locale's `intlLocale`.
 
+## Terminology glossary
+
+One product concept gets exactly one Hindi word, everywhere. Adding a page must
+not introduce a second translation for a concept that already has one.
+
+| Concept | Hindi | Note |
+|---|---|---|
+| Agent | एजेंट | |
+| Task | कार्य | never "कार्यभार" |
+| Goal / Objective | उद्देश्य | |
+| Workflow | वर्कफ़्लो | transliterated; "कार्यप्रवाह" reads academic |
+| Workflow run | वर्कफ़्लो रन | |
+| Approval | स्वीकृति | grant = अनुदान |
+| Memory | मेमोरी | |
+| Runtime | रनटाइम | |
+| Tool | टूल | |
+| Integration | इंटीग्रेशन | |
+| Connector | कनेक्टर | |
+| Provider | प्रदाता | |
+| Audit | ऑडिट | |
+| Status | स्थिति | |
+| Settings | सेटिंग्स | |
+| Dashboard | डैशबोर्ड | |
+| Authentication | प्रमाणीकरण | |
+| Credential | क्रेडेंशियल | |
+| Storage | स्टोरेज | |
+| Degraded | सीमित | not "अपमानित" |
+| Ephemeral | अस्थायी | |
+
+Style: modern, concise, technical-user Hindi. Avoid heavy Sanskritised coinages
+where a transliteration is what practitioners actually say.
+
 ## What must NOT be translated
 
 - User-generated content: task text, workflow names, usernames, repo names

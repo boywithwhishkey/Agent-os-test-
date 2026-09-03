@@ -300,6 +300,54 @@ Production architecture is unchanged and still designed for durable Postgres +
 persistent Key Value. Nothing paid was provisioned. Backend suite: **282
 passing** with real Postgres/Redis.
 
+## MULTILINGUAL FOUNDATION — EN + हिंदी SHIPPED (2026-09-02, latest)
+
+English and Hindi are live. Only those two are exposed; the architecture takes
+more without touching components.
+
+**Implementation.** No i18n library. `frontend/src/lib/i18n/` is a typed Context
+layer mirroring the existing `ThemeProvider`. `i18next` + `react-i18next` would
+have added ~40 kB gzipped and a second state layer; the whole feature costs
+**+10.9 kB gzipped** (143.98 vs 133.12) with both catalogues, the provider, the
+switcher and every page's copy. The catalogue is TypeScript, not JSON, so a
+missing key is a **build failure** rather than a raw key shown to a user — a
+mapped type enforces key structure while leaving values free.
+
+**Registry-driven, not two-branch.** `registry.ts` is the single source of
+enabled languages; `LanguageSwitcher` maps `enabledLocales()`. Tests prove a
+newly registered locale renders with no component change, a registered but
+`enabled: false` locale stays hidden, and `dir="rtl"` applies for a future RTL
+locale. Nothing anywhere branches on a language code.
+
+**Coverage.** All 17 routes: nav, topbar, command palette, shared
+loading/empty/error/auth states, status badges, and page copy for Dashboard,
+Tasks, Orchestrate, Autonomous, Agents, Workflows, Workflow Runs, Approvals,
+Memory, Runtime, Tools, Integrations, Audit, System Health, Settings, Overview
+and NotFound.
+
+Deliberately NOT translated, per the audit: connector catalogue names,
+descriptions and capability labels (backend data), protocol names (MCP, API,
+OAuth, Webhook), technical identifiers, and all user-generated content. Machine
+codes are untouched — `StatusBadge` keys on the machine status and localises
+only the label, and API errors localise via the `code` field rather than
+translating backend prose.
+
+**Devanagari.** Space Grotesk is Latin-only and has no Devanagari subset, so
+Hindi was previously falling through to whatever the platform picked. The
+`--font-sans` stack now names platform Devanagari faces explicitly — designed
+fallback, no font download, brand type unchanged.
+
+**QA.** EN and HI × dark/light at 320/390/430/768/1024/1440 plus Integrations,
+Settings, Audit, Approvals, Tools, Tasks, Workflows and the open mobile drawer:
+no horizontal overflow, no clipped Devanagari. One defect found only by opening
+the PNGs: at 320px the switcher was hidden entirely, making language
+undiscoverable on mobile — it now moves into the mobile drawer below 640px with
+44px touch targets.
+
+Tests: **95 frontend** (was 68), typecheck/build clean, lint 0 errors. Parity and
+placeholder-parity checks fail the build if the two locales drift. Backend
+untouched.
+
 ## PRODUCTION ENVIRONMENT CUTOVER — DONE; DURABILITY BLOCKED AT ONE STEP (2026-09-02, latest)
 
 Performed through the Render MCP against workspace `tea-da691mgn74is739iod9g`.

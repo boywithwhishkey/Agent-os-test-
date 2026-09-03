@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { Server, PlayCircle, Search, ShieldCheck, ShieldAlert, Gauge } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -15,6 +16,7 @@ import { cn, formatDateTime } from "@/lib/utils";
 import type { RuntimeStatus } from "@/lib/types";
 
 export default function Runtime() {
+  const t = useT();
   const [provider, setProvider] = useState("n8n");
   const [workflow, setWorkflow] = useState("");
   const [payloadText, setPayloadText] = useState("{}");
@@ -56,8 +58,8 @@ export default function Runtime() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Runtime"
-        description="Execute provider-backed workflows with retries, idempotency, and correlation tracking."
+        title={t("pages.runtime.title")}
+        description={t("pages.runtime.description")}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -106,7 +108,7 @@ export default function Runtime() {
               <Input
                 value={lookupId}
                 onChange={(e) => setLookupId(e.target.value)}
-                placeholder="Paste an execution ID"
+                placeholder={t("pages.runtime.lookupPlaceholder")}
                 onKeyDown={(e) => e.key === "Enter" && setActiveLookup(lookupId)}
               />
               <Button variant="secondary" onClick={() => setActiveLookup(lookupId)}>
@@ -126,7 +128,7 @@ export default function Runtime() {
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
-            <EmptyState title="No executions triggered yet" />
+            <EmptyState title={t("pages.runtime.emptyTitle")} />
           ) : (
             <ul className="divide-y divide-surface">
               {history.map((entry) => (
@@ -149,6 +151,7 @@ export default function Runtime() {
 }
 
 function ExecutionLookup({ executionId }: { executionId: string | undefined }) {
+  const t = useT();
   const { data, isLoading, isError, error, refetch } = useRuntimeExecution(executionId);
   if (!executionId) return <p className="text-sm text-content-muted">Enter an execution ID to inspect it.</p>;
   if (isLoading) return <SkeletonRows rows={3} />;
@@ -167,7 +170,7 @@ function ExecutionLookup({ executionId }: { executionId: string | undefined }) {
           <dd className="truncate font-mono">{data.correlation_id ?? "—"}</dd>
         </div>
         <div>
-          <dt className="font-medium">Idempotency key</dt>
+          <dt className="font-medium">{t("common.idempotencyKey")}</dt>
           <dd className="truncate font-mono">{data.idempotency_key ?? "—"}</dd>
         </div>
         <div>

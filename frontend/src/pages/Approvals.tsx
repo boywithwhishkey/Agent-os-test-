@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { ShieldCheck, Info, Copy } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -12,6 +13,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatDateTime } from "@/lib/utils";
 
 export default function Approvals() {
+  const t = useT();
   const tools = useTools();
   const issueApproval = useIssueApproval();
   const history = useSessionHistory("approval");
@@ -48,8 +50,8 @@ export default function Approvals() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Approval Center"
-        description="THYNACT uses single-use, pre-authorized approval grants rather than a pending-request queue."
+        title={t("pages.approvals.title")}
+        description={t("pages.approvals.description")}
       />
 
       <Card className="border-accent-gold-soft/25 bg-accent-gold-soft/5">
@@ -74,7 +76,7 @@ export default function Approvals() {
           <div>
             <Label htmlFor="tool">Tool</Label>
             <Select id="tool" value={tool} onChange={(e) => setTool(e.target.value)}>
-              <option value="">Select a tool…</option>
+              <option value="">{t("common.selectTool")}</option>
               {writeOrHighRiskTools.map((t) => (
                 <option key={t.name} value={t.name}>
                   {t.name} ({t.risk.replace("_", " ")})
@@ -83,7 +85,7 @@ export default function Approvals() {
             </Select>
           </div>
           <div>
-            <Label htmlFor="approved-by">Approved by</Label>
+            <Label htmlFor="approved-by">{t("common.approvedBy")}</Label>
             <Input id="approved-by" value={approvedBy} onChange={(e) => setApprovedBy(e.target.value)} placeholder="you@example.com" />
           </div>
           <div>
@@ -100,14 +102,14 @@ export default function Approvals() {
 
       <Card>
         <CardHeader>
-          <CardTitle>This session's grants</CardTitle>
+          <CardTitle>{t("common.sessionGrants")}</CardTitle>
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
             <EmptyState
               icon={<ShieldCheck className="h-5 w-5" />}
-              title="No approvals issued yet"
-              description="Grants you issue above will be listed here for quick reuse in the Tools page."
+              title={t("pages.approvals.emptyTitle")}
+              description={t("pages.approvals.emptyBody")}
             />
           ) : (
             <ul className="divide-y divide-surface">

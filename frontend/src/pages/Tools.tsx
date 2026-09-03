@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { Wrench, PlayCircle, ShieldCheck, Copy } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -19,6 +20,7 @@ const riskTone: Record<ToolRisk, "green" | "amber" | "red"> = {
 };
 
 export default function Tools() {
+  const t = useT();
   const tools = useTools();
   const executeTool = useExecuteTool();
   const issueApproval = useIssueApproval();
@@ -65,8 +67,8 @@ export default function Tools() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tools"
-        description="Browse the tool registry, issue trusted (single-use) approvals for write/high-risk tools, and execute them safely."
+        title={t("pages.tools.title")}
+        description={t("pages.tools.description")}
       />
 
       <Card>
@@ -81,7 +83,7 @@ export default function Tools() {
           ) : tools.isError ? (
             <ErrorState error={tools.error} onRetry={() => tools.refetch()} />
           ) : !tools.data?.length ? (
-            <EmptyState title="No tools registered" />
+            <EmptyState title={t("pages.tools.emptyTitle")} />
           ) : (
             <ul className="divide-y divide-surface">
               {tools.data.map((tool) => (
@@ -111,7 +113,7 @@ export default function Tools() {
             <div>
               <Label htmlFor="approval-tool">Tool</Label>
               <Select id="approval-tool" value={selectedTool} onChange={(e) => setSelectedTool(e.target.value)}>
-                <option value="">Select a tool…</option>
+                <option value="">{t("common.selectTool")}</option>
                 {tools.data?.map((t) => (
                   <option key={t.name} value={t.name}>
                     {t.name}
@@ -120,7 +122,7 @@ export default function Tools() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="approved-by">Approved by</Label>
+              <Label htmlFor="approved-by">{t("common.approvedBy")}</Label>
               <Input id="approved-by" value={approvedBy} onChange={(e) => setApprovedBy(e.target.value)} placeholder="you@example.com" />
             </div>
             <div>
@@ -151,7 +153,7 @@ export default function Tools() {
             <div>
               <Label htmlFor="exec-tool">Tool</Label>
               <Select id="exec-tool" value={selectedTool} onChange={(e) => setSelectedTool(e.target.value)}>
-                <option value="">Select a tool…</option>
+                <option value="">{t("common.selectTool")}</option>
                 {tools.data?.map((t) => (
                   <option key={t.name} value={t.name}>
                     {t.name}
@@ -162,7 +164,7 @@ export default function Tools() {
             {selected && selected.risk !== "read" && (
               <div>
                 <Label htmlFor="approval-id">Approval ID</Label>
-                <Input id="approval-id" value={approvalId} onChange={(e) => setApprovalId(e.target.value)} placeholder="Required for write/high-risk tools" />
+                <Input id="approval-id" value={approvalId} onChange={(e) => setApprovalId(e.target.value)} placeholder={t("pages.tools.approvalPlaceholder")} />
               </div>
             )}
             <div>
@@ -174,7 +176,7 @@ export default function Tools() {
               Execute
             </Button>
 
-            {executeTool.isPending && <LoadingState label="Executing…" />}
+            {executeTool.isPending && <LoadingState label={t("pages.tools.executing")} />}
             {executeTool.isError && <ErrorState error={executeTool.error} onRetry={runTool} />}
             {executeTool.data && (
               <div className="space-y-2">
@@ -182,7 +184,7 @@ export default function Tools() {
                   <Badge tone={executeTool.data.success ? "green" : "red"}>
                     {executeTool.data.success ? "Success" : "Failed"}
                   </Badge>
-                  {executeTool.data.approval_required && <Badge tone="amber">Approval required</Badge>}
+                  {executeTool.data.approval_required && <Badge tone="amber">{t("common.approvalRequired")}</Badge>}
                 </div>
                 <JSONViewer data={executeTool.data} collapsedByDefault={false} />
               </div>

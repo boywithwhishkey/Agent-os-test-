@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { KeyRound, Moon, Sun, Monitor, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { BrandMark } from "@/components/ui/BrandMark";
@@ -19,6 +20,7 @@ import {
 } from "@/lib/api/config";
 
 export default function Settings() {
+  const t = useT();
   const [baseUrl, setBaseUrlState] = useState(getApiBaseUrl());
   const [apiKey, setApiKeyState] = useState(getApiKey());
   const [configured, setConfigured] = useState(isApiConfigured());
@@ -43,33 +45,28 @@ export default function Settings() {
   return (
     <div className="max-w-2xl space-y-6">
       <PageHeader
-        title="Settings"
-        description="Local, frontend-only configuration. Nothing here is sent anywhere except the THYNACT API you point it at."
+        title={t("pages.settings.title")}
+        description={t("pages.settings.description")}
       />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-accent-gold" />
-            API connection
+            {t("pages.settings.apiConnection")}
           </CardTitle>
           {configured ? (
             <Badge tone="green">
               <ShieldCheck className="h-3 w-3" /> Configured
             </Badge>
           ) : (
-            <Badge tone="amber">Not configured</Badge>
+            <Badge tone="amber">{t("common.notConfigured")}</Badge>
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-content-secondary">
-            The API key is kept in <code className="font-mono text-xs">sessionStorage</code> — it is
-            cleared automatically when this tab closes and is never written to disk or logs. Prefer the
-            server-side orchestration proxy in production; this form is for local development and
-            trusted operator sessions.
-          </p>
+          <p className="text-sm text-content-secondary">{t("pages.settings.apiKeyNote")}</p>
           <div>
-            <Label htmlFor="base-url">API base URL</Label>
+            <Label htmlFor="base-url">{t("pages.settings.apiBaseUrl")}</Label>
             <Input
               id="base-url"
               value={baseUrl}
@@ -78,20 +75,20 @@ export default function Settings() {
             />
           </div>
           <div>
-            <Label htmlFor="api-key">API key (X-API-Key)</Label>
+            <Label htmlFor="api-key">{t("pages.settings.apiKeyLabel")}</Label>
             <Input
               id="api-key"
               type="password"
               autoComplete="off"
               value={apiKey}
               onChange={(e) => setApiKeyState(e.target.value)}
-              placeholder="Enter your THYNACT API key"
+              placeholder={t("pages.settings.apiKeyPlaceholder")}
             />
           </div>
           <div className="flex gap-2">
-            <Button onClick={save}>Save configuration</Button>
+            <Button onClick={save}>{t("common.saveConfiguration")}</Button>
             <Button variant="outline" onClick={clear}>
-              Clear
+              {t("pages.settings.clear")}
             </Button>
           </div>
         </CardContent>
@@ -99,15 +96,17 @@ export default function Settings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Appearance</CardTitle>
+          <CardTitle>{t("common.appearance")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
             {(
               [
-                { value: "dark", label: "Dark", icon: Moon },
-                { value: "light", label: "Light", icon: Sun },
-                { value: "system", label: "System", icon: Monitor },
+                // `value` is the stored theme token and never changes; the
+                // label comes from the catalogue.
+                { value: "dark", label: t("theme.dark"), icon: Moon },
+                { value: "light", label: t("theme.light"), icon: Sun },
+                { value: "system", label: t("theme.system"), icon: Monitor },
               ] as const
             ).map((option) => (
               <button
@@ -129,7 +128,7 @@ export default function Settings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>About</CardTitle>
+          <CardTitle>{t("common.about")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center justify-between gap-3">
           <BrandMark variant="full" />
