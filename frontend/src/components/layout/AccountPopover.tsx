@@ -1,10 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { CircleUserRound, KeyRound, LogOut, Plug, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useToast } from "@/components/ui/Toast";
+import { ConnectionStatus } from "./ConnectionStatus";
 import { getApiBaseUrl, isApiConfigured, resetApiConfig } from "@/lib/api/config";
 import { modalMotion, sheetMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -33,6 +35,7 @@ const VIEWPORT_MARGIN = 16; // px safe margin so the panel never touches the scr
  * a floating popover, which is unclippable by construction.
  */
 export function AccountPopover() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [isSheet, setIsSheet] = useState(
     () => typeof window !== "undefined" && window.innerWidth < SHEET_BREAKPOINT
@@ -97,19 +100,26 @@ export function AccountPopover() {
           <CircleUserRound className="h-4.5 w-4.5" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-content-primary">Operator</p>
+          <p className="truncate text-sm font-medium text-content-primary">{t("common.operator")}</p>
           <p className="truncate text-xs text-content-muted">{getApiBaseUrl()}</p>
         </div>
+      </div>
+
+      {/* API reachability lives here now rather than in the header. It is
+          status, not a control — people check it when something looks wrong,
+          which is the same moment they open this menu. */}
+      <div className="border-b border-hairline px-4 py-2.5">
+        <ConnectionStatus showLabels />
       </div>
 
       <div className="px-4 py-3 text-xs">
         {configured ? (
           <span className="inline-flex items-center gap-1.5 text-accent-green">
-            <ShieldCheck className="h-3.5 w-3.5" /> API key configured
+            <ShieldCheck className="h-3.5 w-3.5" /> {t("common.apiKeyConfigured")}
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 text-accent-amber">
-            <KeyRound className="h-3.5 w-3.5" /> No API key set
+            <KeyRound className="h-3.5 w-3.5" /> {t("common.noApiKeySet")}
           </span>
         )}
       </div>
@@ -120,21 +130,21 @@ export function AccountPopover() {
           onClick={() => setOpen(false)}
           className="focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary"
         >
-          <SettingsIcon className="h-4 w-4" /> Settings
+          <SettingsIcon className="h-4 w-4" /> {t("nav.items.settings")}
         </Link>
         <Link
           to="/integrations"
           onClick={() => setOpen(false)}
           className="focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary"
         >
-          <Plug className="h-4 w-4" /> Connections
+          <Plug className="h-4 w-4" /> {t("common.connections")}
         </Link>
         {configured && (
           <button
             onClick={clearSession}
             className="focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-left text-sm text-accent-red transition-colors hover:bg-accent-red/10"
           >
-            <LogOut className="h-4 w-4" /> Clear session
+            <LogOut className="h-4 w-4" /> {t("common.clearSession")}
           </button>
         )}
       </div>

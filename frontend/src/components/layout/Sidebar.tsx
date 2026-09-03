@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { navGroups } from "@/lib/nav";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import { useT, type TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -114,8 +115,12 @@ export function Sidebar({
             button, not buried in Settings. `sm:hidden` keeps exactly one
             instance visible at any width. */}
         {!collapsed && (
-          <div className="shrink-0 border-t border-hairline px-3 py-3 sm:hidden">
-            <LanguageSwitcher className="w-full justify-center" />
+          <div className="shrink-0 space-y-2 border-t border-hairline px-3 py-3 xs:hidden">
+            {/* Below xs the header only has room for the language control, so
+                theme lives here. One tap from the menu button, not buried in
+                Settings. */}
+            <LanguageSwitcher className="w-full" />
+            <ThemeSwitcher className="w-full justify-center" />
           </div>
         )}
       </aside>

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
+import { useCompactViewport } from "@/lib/use-compact-viewport";
 
 // A handful of fixed (not random-per-render) data points — sparse by design,
 // never hundreds of DOM nodes. Positions are deterministic percentages so
@@ -64,7 +65,7 @@ function Blob({
  * transform/opacity/filter only — no layout properties — so scrolling stays
  * cheap. All of it is disabled under prefers-reduced-motion.
  */
-export function AmbientBackground() {
+function AmbientMotion() {
   const reduceMotion = useReducedMotion();
   const { scrollY } = useScroll();
   // Softer spring than a raw scroll binding: the background keeps moving for a
@@ -161,4 +162,42 @@ export function AmbientBackground() {
       )}
     </div>
   );
+}
+
+
+/**
+ * Phone ambient: the same palette, painted once.
+ *
+ * Deliberately a separate component rather than the motion version with things
+ * hidden. `AmbientMotion` registers a scroll listener and animates
+ * `border-radius` on six blurred layers — animating a non-composited property
+ * forces the blur to be re-rasterised every frame, which is what made scrolling
+ * judder on a phone. Hiding those layers with CSS would not have stopped any of
+ * that work; not mounting them does.
+ *
+ * What is left is three static radial gradients on one element: no listener, no
+ * per-frame work, no compositing beyond a single paint.
+ */
+function AmbientStatic() {
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 z-0 opacity-[0.5] dark:opacity-100"
+      aria-hidden
+      style={{
+        backgroundImage: [
+          "radial-gradient(60vh 48vh at 88% -6%, color-mix(in srgb, var(--color-ambient-gold) 46%, transparent), transparent 70%)",
+          "radial-gradient(56vh 46vh at 6% 26%, color-mix(in srgb, var(--color-ambient-magenta) 30%, transparent), transparent 72%)",
+          "radial-gradient(64vh 52vh at 26% 104%, color-mix(in srgb, var(--color-ambient-plum) 44%, transparent), transparent 70%)",
+        ].join(","),
+      }}
+    />
+  );
+}
+
+/**
+ * Picks the ambient background the device can actually afford.
+ */
+export function AmbientBackground() {
+  const compact = useCompactViewport();
+  return compact ? <AmbientStatic /> : <AmbientMotion />;
 }

@@ -27,7 +27,7 @@ import { useT } from "@/lib/i18n";
  * `warnings` come from the real payload, so a deployment running without
  * durable storage cannot present itself as fully healthy.
  */
-export function ConnectionStatus() {
+export function ConnectionStatus({ showLabels = false }: { showLabels?: boolean } = {}) {
   const t = useT();
   const { data, isError, isLoading } = useHealth();
   const configured = isApiConfigured();
@@ -78,7 +78,7 @@ export function ConnectionStatus() {
       <Tooltip content={tooltip}>
         <span className={cn("inline-flex items-center gap-1.5 px-1 py-1 text-xs font-medium sm:gap-2", tone)}>
           <HeartbeatLine state={state} width={30} height={14} />
-          <span className="hidden sm:inline">{label}</span>
+          <span className={showLabels ? "inline" : "hidden sm:inline"}>{label}</span>
         </span>
       </Tooltip>
 
@@ -87,13 +87,13 @@ export function ConnectionStatus() {
           the wrong thing. */}
       {reachable && !configured && (
         <>
-          <span className="hidden h-3 w-px bg-hairline sm:block" aria-hidden />
+          <span className={showLabels ? "h-3 w-px bg-hairline" : "hidden h-3 w-px bg-hairline sm:block"} aria-hidden />
           <Link
             to="/settings"
             className="focus-ring inline-flex items-center gap-1 rounded px-1 py-1 text-[11px] font-medium text-content-muted transition-colors duration-200 hover:text-accent-gold"
           >
             <KeyRound className="h-3 w-3" />
-            <span className="hidden sm:inline">{t("topbar.keyNeeded")}</span>
+            <span className={showLabels ? "inline" : "hidden sm:inline"}>{t("topbar.keyNeeded")}</span>
           </Link>
         </>
       )}

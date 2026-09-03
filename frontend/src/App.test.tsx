@@ -37,7 +37,10 @@ describe("App shell", () => {
     expect(within(nav).getByText("Dashboard")).toBeInTheDocument();
     expect(within(nav).getByText("Tasks")).toBeInTheDocument();
     expect(within(nav).getByText("Orchestrate")).toBeInTheDocument();
-    // Sentence case, matching the sibling states ("API offline", "Degraded").
+    // API reachability moved out of the header and into the account popover,
+    // so it has to be opened. Same intent as before: the shell reports the
+    // backend as reachable.
+    await userEvent.click(screen.getByRole("button", { name: /account and operator session/i }));
     await waitFor(() => expect(screen.getByText("API online")).toBeInTheDocument());
   });
 

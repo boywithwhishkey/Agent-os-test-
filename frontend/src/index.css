@@ -3,6 +3,13 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Tailwind starts at sm:640px, which is too coarse for the header: a 320px
+   phone and a 390px phone have meaningfully different room. 23rem (368px) is
+   measured, not guessed — it is the width at which the left cluster, the
+   language capsule and the three-segment theme capsule stop competing. Below
+   it, theme moves into the drawer. */
+@custom-variant xs (@media (width >= 23rem));
+
 @theme {
   /* Space Grotesk ships Latin only — it has no Devanagari subset — so Hindi
      was previously falling through to whatever the platform happened to pick.
@@ -441,4 +448,41 @@ h4 {
   .locale-transition {
     animation: none;
   }
+}
+
+
+/* Mobile compositing budget ------------------------------------------------
+   Phones composite blurred surfaces on a much tighter budget than desktops.
+   The ambient background already drops to a static paint below 640px
+   (AmbientBackground); these trim the remaining always-on work so scrolling a
+   long list stays smooth.
+
+   `.animate-float` moves ten absolutely-positioned specks continuously. They
+   are transform-only and cheap on desktop, but they are pure decoration, so
+   they stop earning their frame cost on a phone. */
+@media (max-width: 640px) {
+  .animate-float,
+  .animate-scan {
+    animation: none;
+  }
+
+  /* Glass panels stack: a card inside a panel inside the page each ran its own
+     backdrop-filter, so a scrolling list re-blurred several overlapping
+     surfaces per frame. Halving the radius on phones keeps the material
+     reading as glass at a fraction of the fill cost. */
+  .glass-panel,
+  .glass-soft,
+  .glass-ambient {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* Scrolling containers get their own compositing layer and stop the rubber-band
+   at their own edges rather than propagating it to the page — the usual cause
+   of a "stuck" feel when a list bottoms out on iOS. */
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }

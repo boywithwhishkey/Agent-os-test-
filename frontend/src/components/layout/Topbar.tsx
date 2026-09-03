@@ -1,12 +1,8 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, Search, Moon, Sun, Monitor, Settings as SettingsIcon } from "lucide-react";
-import { ConnectionStatus } from "./ConnectionStatus";
+import { Menu, Search } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import { AccountPopover } from "./AccountPopover";
-import { useTheme } from "@/lib/theme";
 import { getEnvironmentLabel } from "@/lib/environment";
-import { Button } from "@/components/ui/Button";
 import { useT } from "@/lib/i18n";
 
 export function Topbar({
@@ -16,13 +12,10 @@ export function Topbar({
   onOpenMobileNav: () => void;
   onOpenCommandPalette: () => void;
 }) {
-  const { theme, setTheme } = useTheme();
   const t = useT();
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
 
   const environmentLabel =
     typeof window === "undefined" ? null : getEnvironmentLabel(window.location.hostname);
-  const themeIcon = theme === "dark" ? <Moon className="h-4 w-4" /> : theme === "light" ? <Sun className="h-4 w-4" /> : <Monitor className="h-4 w-4" />;
 
   // Deliberately chrome-less: no glass panel, no border, no fade strip. The
   // ambient background runs straight through the top of the page, and each
@@ -65,49 +58,16 @@ export function Topbar({
             {environmentLabel}
           </span>
         )}
-        {/* Reachability and authorisation are reported together — see
-            ConnectionStatus for why they must not be two competing chips. */}
-        <ConnectionStatus />
 
         {/* Beside the theme control: both are "how the product presents
             itself to me" preferences, so they belong together. */}
-        <LanguageSwitcher className="hidden sm:inline-flex" />
-
-        <div className="relative">
-          <Button variant="ghost" size="icon" onClick={() => setThemeMenuOpen((o) => !o)} aria-label={t("theme.change")}>
-            {themeIcon}
-          </Button>
-          {themeMenuOpen && (
-            <div
-              className="glass-focus absolute right-0 top-full z-40 mt-1.5 w-36 rounded-lg border border-hairline p-1"
-              onMouseLeave={() => setThemeMenuOpen(false)}
-            >
-              {(["dark", "light", "system"] as const).map((option) => (
-                <button
-                  key={option}
-                  onClick={() => {
-                    setTheme(option);
-                    setThemeMenuOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm capitalize hover:bg-surface-hover ${
-                    theme === option ? "text-accent-gold" : "text-content-secondary"
-                  }`}
-                >
-                  {option === "dark" && <Moon className="h-3.5 w-3.5" />}
-                  {option === "light" && <Sun className="h-3.5 w-3.5" />}
-                  {option === "system" && <Monitor className="h-3.5 w-3.5" />}
-                  {option}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <Link to="/settings">
-          <Button variant="ghost" size="icon" aria-label="Settings">
-            <SettingsIcon className="h-4 w-4" />
-          </Button>
-        </Link>
+        {/* Language and theme are the two "how this product presents itself
+            to me" preferences, so they sit together as one control family.
+            Settings and the API status moved into the account popover: the
+            header was carrying six targets on a 320px screen, and these two
+            are the ones people actually reach for. */}
+        <LanguageSwitcher />
+        <ThemeSwitcher className="hidden xs:inline-flex" />
       </div>
     </header>
   );
