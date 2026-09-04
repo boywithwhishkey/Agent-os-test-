@@ -7,7 +7,11 @@ scratch, and read the data back — the closest in-process analogue of the API
 restarting.
 
 Skips when no reachable PostgreSQL is configured, so laptops and CI without one
-stay green.
+stay green. It picks up the DSN that `scripts/bootstrap_claude_cloud.sh`
+actually creates, so "the suite is green" and "durability was proven" mean the
+same thing on a developer machine — for a long time they did not, because this
+file defaulted to a database and password nothing in the repository ever
+created, and these tests skipped silently forever.
 
 This is LOCAL_REAL_VALIDATED. It says nothing about Render: production still
 has no DATABASE_URL, and nothing here has been run against it.
@@ -28,10 +32,46 @@ from app.persistence.postgres_stores import (
     PostgresToolAuditLog,
 )
 
-DSN = os.environ.get(
-    "THYNACT_TEST_DATABASE_URL",
-    "postgresql://agent_os:devlocal@localhost:5432/thynact_fresh",
+#: Resolution order, most explicit first:
+#:  1. THYNACT_TEST_DATABASE_URL — a database chosen specifically for these tests
+#:  2. DATABASE_URL — what bootstrap exports and what the app itself uses
+#:  3. the credentials bootstrap creates, so a plain `bash
+#:     scripts/bootstrap_claude_cloud.sh && uv run pytest` actually runs them
+#:
+#: These tests only INSERT uniquely-named rows and read them back — no DROP, no
+#: TRUNCATE, no UPDATE of anything pre-existing — which is what makes running
+#: against the ordinary development database acceptable. `_refuse_production`
+#: below is what keeps that from quietly becoming "runs against production".
+DSN = (
+    os.environ.get("THYNACT_TEST_DATABASE_URL")
+    or os.environ.get("DATABASE_URL")
+    or "postgresql://agent_os:agent_os_dev@127.0.0.1:5432/agent_os"
 )
+
+
+class ProductionDatabaseRefused(RuntimeError):
+    """The resolved DSN points at a database stamped `production`."""
+
+
+async def _refuse_production(db: AsyncpgDatabase) -> None:
+    """Fail loudly rather than write test rows into production.
+
+    Falling back to DATABASE_URL is what makes these tests run by default, and
+    it is also how they would end up pointed at production if someone exported
+    a production DSN in their shell. Migration 007 already stamps every
+    database with its environment; this reads that stamp and refuses. An
+    unstamped database is fine — it predates the migration and cannot be
+    production, which refuses to start without the stamp.
+    """
+    try:
+        rows = await db.fetch("SELECT environment FROM deployment_environment")
+    except Exception:  # noqa: BLE001 - unstamped or pre-migration database
+        return
+    if rows and rows[0]["environment"] == "production":
+        raise ProductionDatabaseRefused(
+            "Refusing to run durability tests against a database stamped "
+            "'production'. Set THYNACT_TEST_DATABASE_URL to a development database."
+        )
 
 
 async def _postgres_available() -> bool:
@@ -39,9 +79,12 @@ async def _postgres_available() -> bool:
         db = AsyncpgDatabase(DSN)
         try:
             await db.fetch("SELECT 1")
+            await _refuse_production(db)
         finally:
             await db.close()
         return True
+    except ProductionDatabaseRefused:
+        raise
     except Exception:  # noqa: BLE001 - any failure means "no PostgreSQL here"
         return False
 

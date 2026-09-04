@@ -86,12 +86,27 @@ else
       fi
     fi
 
-    # Development-local role/database only. Never touched if already present.
+    # Development-local role/database only.
+    #
+    # The password is (re)set on every run, not only at creation. A role left
+    # behind by an earlier session with a different password used to survive
+    # the existence check forever, so bootstrap kept "succeeding" at this step
+    # and then failing three steps later with an opaque
+    # "password authentication failed for user agent_os" out of asyncpg. That
+    # is not idempotent, which is what this script promises.
+    #
+    # Safe to do unconditionally: `agent_os_dev` is a development credential
+    # written in plaintext at the top of this file, this branch only runs
+    # against the local cluster, and an externally-supplied DATABASE_URL takes
+    # precedence at the migration step below — so a real database is never the
+    # target here.
     if ! su postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='agent_os'\"" 2>/dev/null | grep -q 1; then
       su postgres -c "psql -qc \"CREATE ROLE agent_os LOGIN PASSWORD 'agent_os_dev';\"" >/dev/null 2>&1 \
         && ok "dev role agent_os created" || { fail "could not create dev role"; FAILED=1; }
     else
-      skip "dev role agent_os exists"
+      su postgres -c "psql -qc \"ALTER ROLE agent_os LOGIN PASSWORD 'agent_os_dev';\"" >/dev/null 2>&1 \
+        && skip "dev role agent_os exists (password reset to the documented dev value)" \
+        || { fail "could not reset dev role password"; FAILED=1; }
     fi
     if ! su postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='agent_os'\"" 2>/dev/null | grep -q 1; then
       su postgres -c "createdb -O agent_os agent_os" >/dev/null 2>&1 \
