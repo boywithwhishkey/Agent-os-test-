@@ -42,7 +42,11 @@ new `PROGRESS.md` / `NOTES.md` / `PHASE*.md` files.
 
 Run `bash scripts/bootstrap_claude_cloud.sh` — idempotent, safe to re-run, and
 faster than rediscovering the environment by hand. `scripts/project_doctor.sh`
-reports status without changing anything.
+reports status without changing anything. `scripts/verify_local.sh` runs the
+whole gate CI runs (ruff, migrations + idempotency, pytest, frontend
+typecheck/lint/test/build) against the real local PostgreSQL and Redis and
+exits non-zero on the first failure — use it before committing. It never
+deploys; local verification and production release stay separate commands.
 
 Key facts that bite if forgotten:
 
