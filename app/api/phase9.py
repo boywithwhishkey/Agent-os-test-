@@ -37,6 +37,7 @@ from app.integrations.oauth.service import (
     exchange_code,
 )
 from app.integrations.status_store import IntegrationStatusStore
+from app.integrations.url_guard import UnsafeURLError, validate_outbound_url
 
 public_router = APIRouter(prefix="/api/v1/integrations", tags=["integrations"])
 router = APIRouter(
@@ -253,6 +254,13 @@ async def list_mcp_servers_route() -> list[MCPServerPublic]:
 
 @router.post("/mcp/servers", response_model=MCPServerPublic, status_code=201)
 async def create_mcp_server_route(payload: MCPServerCreate) -> MCPServerPublic:
+    # The endpoint is a URL this server will request on the operator's behalf,
+    # with their configured bearer token attached — refuse the ones that turn
+    # that into an SSRF primitive before storing it.
+    try:
+        validate_outbound_url(payload.endpoint)
+    except UnsafeURLError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     record = mcp_store.create(payload)
     return record.to_public()
 
@@ -262,6 +270,14 @@ async def test_mcp_server_route(server_id: str) -> MCPServerPublic:
     record = mcp_store.get(server_id)
     if record is None:
         raise HTTPException(status_code=404, detail="MCP server not found")
+
+    # Re-checked here and not only at creation: DNS can change underneath a
+    # stored endpoint. This narrows the rebinding window rather than closing
+    # it — see url_guard's docstring.
+    try:
+        validate_outbound_url(record.endpoint)
+    except UnsafeURLError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     client = MCPHttpClient(
         endpoint=record.endpoint,

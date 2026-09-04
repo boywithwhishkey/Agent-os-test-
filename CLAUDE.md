@@ -161,7 +161,21 @@ User/Channel → Auth → RequestPrincipal → Tenant/Actor → Agent Intelligen
   pick an unsafe MCP just to write less code.
 - Normalize providers into **canonical capabilities** (`mail.message.send`,
   `commerce.orders.list`, `ads.budget.update`, …) so core logic reasons about
-  intent, not vendor API names.
+  intent, not vendor API names. The registry is
+  `app/integrations/capabilities.py`; ids are `domain.object.action`, are never
+  translated, and are referenced by workflows and audit records, so renaming
+  one is a breaking change. **Risk belongs to the capability, not the
+  provider** — sending mail is high risk through Gmail and through Outlook —
+  and it reuses `ToolRisk`, so a connector can never reach a consequential
+  action by a softer path than a tool. An unmapped capability id raises; it
+  must never fall through to the READ path.
+- **A URL an operator types is a URL this server will request on their
+  behalf.** Custom MCP/REST/GraphQL endpoints go through
+  `app/integrations/url_guard.py` at configuration time *and* immediately
+  before each call: http/https only, no embedded credentials, and every
+  resolved address must be publicly routable (loopback allowed outside
+  production only). Never widen it by matching hostnames instead of resolving
+  them.
 - **Multi-tenancy:** identity, credentials, memory, conversations, runs,
   approvals, audit, connectors and policies are per-tenant. Never leak owner or
   personal data into a customer deployment; never use a global fallback

@@ -210,3 +210,34 @@ def test_delete_mcp_server_requires_auth_and_removes_it():
 def test_delete_unknown_mcp_server_returns_404():
     response = client.delete("/api/v1/integrations/mcp/servers/does-not-exist", headers=AUTH)
     assert response.status_code == 404
+
+
+def test_mcp_server_pointing_at_cloud_metadata_is_refused():
+    """The route, not just the guard, must refuse it.
+
+    Without this the connector UI is a way to read instance metadata: THYNACT
+    makes the request from inside the deployment and hands the response back.
+    """
+    response = client.post(
+        "/api/v1/integrations/mcp/servers",
+        headers=AUTH,
+        json={
+            "name": "Totally normal",
+            "endpoint": "http://169.254.169.254/latest/meta-data/",
+        },
+    )
+    assert response.status_code == 422
+    assert "publicly routable" in response.json()["detail"]
+
+    # And nothing was stored — a refused endpoint must not linger in the list.
+    listing = client.get("/api/v1/integrations/mcp/servers").json()
+    assert all(s["endpoint"] != "http://169.254.169.254/latest/meta-data/" for s in listing)
+
+
+def test_mcp_server_with_a_non_http_scheme_is_refused():
+    response = client.post(
+        "/api/v1/integrations/mcp/servers",
+        headers=AUTH,
+        json={"name": "Local file", "endpoint": "file:///etc/passwd"},
+    )
+    assert response.status_code == 422
