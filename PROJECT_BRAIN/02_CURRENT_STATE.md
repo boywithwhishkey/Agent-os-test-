@@ -21,6 +21,10 @@ contradicting note elsewhere.
   109 tests, and production build passed. ESLint has 9 warnings and 0 errors.
 - Node 20.20.2 is invoked from Homebrew explicitly. Frontend commands use the
   repository-pinned pnpm 10.26.1 through Corepack.
+- **IMPLEMENTED_TESTED:** real-PostgreSQL approval single-use coverage now
+  proves sequential, two-way concurrent, and ten-way concurrent consumption
+  permit exactly one winner. The local test command supplies its isolated
+  database explicitly, so these checks no longer silently skip on this Mac.
 
 ## SESSION 2026-08-31 — FIRST REAL POSTGRES/REDIS/pgvector VALIDATION
 

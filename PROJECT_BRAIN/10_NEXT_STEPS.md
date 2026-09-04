@@ -219,10 +219,10 @@ In rough priority order:
   fixed. Remaining visual work is narrower: 768px/tablet, light theme on more
   than the two pages checked, and real touch/drag behaviour on the React Flow
   canvas (which still cannot be assessed from screenshots alone).
-- **Postgres-backed correctness under real data.** The suite covers the
-  postgres paths with fakes; now that a real database is one script away, add
-  targeted tests that run against it for the trickiest queries (memory hybrid
-  ranking, workflow run resume, approval single-use semantics).
+- **Postgres-backed correctness under real data.** Approval single-use
+  semantics are now covered against real PostgreSQL, including two-way and
+  ten-way concurrent consumption. Next, add targeted real-database coverage
+  for memory hybrid ranking and workflow run resume.
 - ~~Audit correlation-ID quick-copy~~ **DONE** (migration 006, verified
   against real PostgreSQL). Natural follow-on: thread the same correlation id
   through workflow runs and runtime executions, whose types already declare a
