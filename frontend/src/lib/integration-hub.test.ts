@@ -34,6 +34,8 @@ function connector(overrides: Partial<UnifiedConnector>): UnifiedConnector {
     last_check_error: null,
     last_execution: null,
     last_execution_success: null,
+  capability_details: [],
+  kind: "user_connector",
     ...overrides,
   };
 }

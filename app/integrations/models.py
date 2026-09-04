@@ -72,6 +72,21 @@ class ConnectorCategory(StrEnum):
     OTHER = "other"
 
 
+class ConnectorKind(StrEnum):
+    """What a catalog entry actually is.
+
+    PostgreSQL and Redis are THYNACT's own persistence and queue, not services
+    a customer connects their account to. Listing them beside Slack and Stripe
+    inflates the connector count and, worse, tells an operator to "connect"
+    something that is already part of the running system. They stay in the
+    catalog because their real status is genuinely useful for diagnostics —
+    they are just labelled for what they are.
+    """
+
+    USER_CONNECTOR = "user_connector"
+    SYSTEM_INFRASTRUCTURE = "system_infrastructure"
+
+
 class ConnectorAuthType(StrEnum):
     NONE = "none"
     API_KEY = "api_key"
@@ -87,6 +102,19 @@ class ConnectorStatusValue(StrEnum):
     AVAILABLE = "available"
     ERROR = "error"
     DISABLED = "disabled"
+
+
+class CapabilityDetail(BaseModel):
+    """One canonical capability as reported to clients.
+
+    `id` and `risk` are machine values and stay canonical/English; `label` is
+    an English fallback for surfaces without a locale.
+    """
+
+    id: str
+    label: str
+    risk: str
+    requires_approval: bool
 
 
 class ConnectorEntry(BaseModel):
@@ -106,6 +134,12 @@ class ConnectorEntry(BaseModel):
     icon: str
     auth_type: ConnectorAuthType
     capabilities: list[str] = Field(default_factory=list)
+    #: Canonical capability ids plus their risk and whether acting on them
+    #: needs an approval. Derived from the capability registry, never authored
+    #: per connector, so the UI's "requires approval" list cannot drift from
+    #: what ToolPolicy enforces.
+    capability_details: list[CapabilityDetail] = Field(default_factory=list)
+    kind: ConnectorKind = ConnectorKind.USER_CONNECTOR
     provider: str
     popular: bool = False
     documentation_url: str | None = None

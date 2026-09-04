@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from app.core.auth import require_api_key
 from app.core.config import settings
 from app.core.correlation import get_or_create_correlation_id
+from app.integrations.capabilities import requires_approval, resolve_all
 from app.integrations.catalog import CatalogSpec, list_catalog
 from app.integrations.factory import (
     build_integration_adapter,
@@ -19,6 +20,7 @@ from app.integrations.mcp.client import MCPHttpClient
 from app.integrations.mcp.models import MCPServerCreate, MCPServerPublic
 from app.integrations.mcp.store import MCPServerStore
 from app.integrations.models import (
+    CapabilityDetail,
     ConnectorEntry,
     ConnectorStatusValue,
     IntegrationRequest,
@@ -208,6 +210,16 @@ def _resolve_entry(spec: CatalogSpec) -> ConnectorEntry:
         icon=spec.icon,
         auth_type=spec.auth_type,
         capabilities=spec.capabilities,
+        capability_details=[
+            CapabilityDetail(
+                id=cap.id,
+                label=cap.label,
+                risk=str(cap.risk),
+                requires_approval=requires_approval(cap),
+            )
+            for cap in resolve_all(spec.canonical_capabilities)
+        ],
+        kind=spec.kind,
         provider=spec.id,
         popular=spec.popular,
         documentation_url=spec.documentation_url,

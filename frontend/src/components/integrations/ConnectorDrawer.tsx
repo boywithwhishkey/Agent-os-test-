@@ -11,7 +11,11 @@ import {
   FileText as FileTextIcon,
   MessageCircle,
   LogIn,
+  Eye,
+  PencilLine,
+  ShieldAlert,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -33,8 +37,9 @@ import {
 import { useToast } from "@/components/ui/Toast";
 import { isApiConfigured } from "@/lib/api/config";
 import { ApiError } from "@/lib/api/client";
-import { formatDateTime, formatRelativeTime } from "@/lib/utils";
+import { cn, formatDateTime, formatRelativeTime } from "@/lib/utils";
 import type { UnifiedConnector } from "@/lib/integration-hub";
+import type { CapabilityDetail } from "@/lib/types";
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -57,6 +62,55 @@ function CapabilityGroup({ icon: Icon, title, items }: { icon: typeof Wrench; ti
           <li key={item.name} className="glass-ambient rounded-lg border border-hairline px-2.5 py-1.5 text-xs">
             <span className="font-medium text-content-primary">{item.name}</span>
             {item.description && <span className="ml-1.5 text-content-muted">{item.description}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** One authority group. Renders nothing when empty — an empty "Can change"
+ * heading reads as a claim that the list is still loading. */
+function AuthorityGroup({
+  icon: Icon,
+  title,
+  items,
+  note,
+  tone = "default",
+}: {
+  icon: LucideIcon;
+  title: string;
+  items: CapabilityDetail[];
+  note?: string;
+  tone?: "default" | "amber";
+}) {
+  const t = useT();
+  if (items.length === 0) return null;
+  return (
+    <div className="space-y-1.5">
+      <p
+        className={cn(
+          "flex items-center gap-1.5 text-xs font-semibold",
+          tone === "amber" ? "text-accent-amber" : "text-content-primary"
+        )}
+      >
+        <Icon className="h-3.5 w-3.5" /> {title}
+      </p>
+      {note && <p className="text-xs leading-relaxed text-content-muted">{note}</p>}
+      <ul className="space-y-1">
+        {items.map((c) => (
+          <li key={c.id} className="flex items-baseline gap-2 text-xs text-content-secondary">
+            <span className="mt-[0.3rem] h-1 w-1 shrink-0 rounded-full bg-content-muted/50" aria-hidden />
+            <span className="min-w-0">
+              {/* Localised label, with the API's English label as the
+                  fallback — a capability the backend adds before the locale
+                  catalogue catches up must still read as words, not as a
+                  missing key. */}
+              {t(`capabilities.${c.id}` as Parameters<typeof t>[0]) || c.label}
+              {/* The canonical id, because it is what a workflow references
+                  and what shows up in the audit trail. */}
+              <code className="ml-1.5 font-mono text-[10px] text-content-muted">{c.id}</code>
+            </span>
           </li>
         ))}
       </ul>
@@ -87,6 +141,8 @@ export function ConnectorDrawer({
   const { push } = useToast();
   const authed = isApiConfigured();
   const t = useT();
+  // Defensive: a partial or older API response must not blank the drawer.
+  const capabilityDetails = connector?.capability_details ?? [];
 
   if (!connector) return null;
   const Icon = getConnectorIcon(connector.icon);
@@ -170,6 +226,17 @@ export function ConnectorDrawer({
 
         <p className="text-sm text-content-secondary">{connector.description}</p>
 
+        {connector.kind === "system_infrastructure" && (
+          <div className="rounded-lg border border-hairline bg-surface-hover p-3 text-sm text-content-secondary">
+            <p className="font-medium text-content-primary">
+              {t("pages.integrations.detail.systemInfrastructure")}
+            </p>
+            <p className="mt-0.5 text-xs leading-relaxed">
+              {t("pages.integrations.detail.systemInfrastructureBody")}
+            </p>
+          </div>
+        )}
+
         {!authed && <AuthRequiredBanner />}
 
         {!connector.implemented ? (
@@ -243,6 +310,51 @@ export function ConnectorDrawer({
             </Row>
           )}
         </dl>
+
+        {/* What connecting actually authorises. Grouped by what it means to
+            the person deciding — read / change / needs your approval — rather
+            than by the provider's own vocabulary. The approval column is
+            derived from the backend's risk classification, which is the same
+            classification ToolPolicy enforces, so it cannot promise a gate
+            that is not really there. */}
+        {capabilityDetails.length > 0 && (
+          <div className="space-y-3 rounded-xl border border-hairline bg-surface-hover/50 p-3.5">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">
+                {t("pages.integrations.detail.authorityTitle")}
+              </p>
+              <p className="text-xs leading-relaxed text-content-muted">
+                {t("pages.integrations.detail.authorityBody")}
+              </p>
+            </div>
+            <AuthorityGroup
+              icon={Eye}
+              title={t("pages.integrations.detail.canRead")}
+              items={capabilityDetails.filter((c) => c.risk === "read")}
+            />
+            <AuthorityGroup
+              icon={PencilLine}
+              title={t("pages.integrations.detail.canChange")}
+              items={capabilityDetails.filter((c) => c.risk === "write")}
+            />
+            <AuthorityGroup
+              icon={ShieldAlert}
+              tone="amber"
+              title={t("pages.integrations.detail.needsApproval")}
+              note={t("pages.integrations.detail.needsApprovalBody")}
+              items={capabilityDetails.filter((c) => c.risk === "high_risk")}
+            />
+          </div>
+        )}
+
+        {/* An MCP server's tools are discovered at runtime and deliberately
+            left unmapped — see mcpServerToConnector. Say so rather than
+            leaving the authority section silently absent. */}
+        {isMcp && (
+          <p className="rounded-xl border border-hairline bg-surface-hover/50 p-3.5 text-xs leading-relaxed text-content-muted">
+            {t("pages.integrations.detail.mcpUnmapped")}
+          </p>
+        )}
 
         {connector.capabilities.length > 0 && !isMcp && (
           <div>

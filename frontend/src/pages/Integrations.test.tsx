@@ -33,6 +33,11 @@ const n8nNeedsSetup = {
   last_check_error: null,
   last_execution: null,
   last_execution_success: null,
+  kind: "user_connector",
+  capability_details: [
+    { id: "automation.workflow.trigger", label: "Trigger an external workflow", risk: "high_risk", requires_approval: true },
+    { id: "automation.run.read", label: "Read an execution result", risk: "read", requires_approval: false },
+  ],
 };
 
 const githubConfigured = {
@@ -57,6 +62,11 @@ const githubConfigured = {
   last_check_error: null,
   last_execution: null,
   last_execution_success: null,
+  kind: "user_connector",
+  capability_details: [
+    { id: "identity.account.read", label: "Read the connected account", risk: "read", requires_approval: false },
+    { id: "repo.branch.merge", label: "Merge a branch", risk: "high_risk", requires_approval: true },
+  ],
 };
 
 function stubFetch(routes: {
@@ -244,5 +254,49 @@ describe("Integrations page", () => {
     // Nothing is connected in this fixture, so the chip must not invite a tap.
     expect(await within(browse).findByRole("button", { name: /^connected 0$/i })).toBeDisabled();
     expect(within(browse).getByRole("button", { name: /^needs setup 1$/i })).toBeEnabled();
+  });
+
+  it("tells a user what connecting authorises, and which actions it cannot take alone", async () => {
+    // The whole point of the authority section: someone deciding whether to
+    // connect an account should see that merging a branch is gated BEFORE
+    // they authorise, not discover it afterwards.
+    stubFetch({ catalog: [githubConfigured] });
+
+    renderWithProviders(<Integrations />);
+
+    const cards = await screen.findAllByText("GitHub");
+    fireEvent.click(cards[0].closest(".group") ?? cards[0]);
+
+    expect(await screen.findByText(/what connecting this authorises/i)).toBeInTheDocument();
+
+    const approval = (await screen.findByText(/needs your approval/i)).closest("div")!;
+    expect(within(approval).getByText("repo.branch.merge")).toBeInTheDocument();
+
+    const canRead = (await screen.findByText(/^can read$/i)).closest("div")!;
+    expect(within(canRead).getByText("identity.account.read")).toBeInTheDocument();
+    // A read must never be listed as needing approval — the section would be
+    // teaching the user to expect a gate that ToolPolicy does not apply.
+    expect(within(approval).queryByText("identity.account.read")).not.toBeInTheDocument();
+  });
+
+  it("does not count THYNACT's own infrastructure as a connectable service", async () => {
+    const postgres = {
+      ...n8nNeedsSetup,
+      id: "postgresql",
+      name: "PostgreSQL",
+      category: "data",
+      kind: "system_infrastructure",
+    };
+    stubFetch({ catalog: [n8nNeedsSetup, postgres] });
+
+    renderWithProviders(<Integrations />);
+
+    const browse = (await screen.findByRole("heading", { name: /browse connectors/i })).closest("section")!;
+    // One user connector, not two.
+    expect(await within(browse).findByText(/showing 1 of 1/i)).toBeInTheDocument();
+    expect(within(browse).queryByText("PostgreSQL")).not.toBeInTheDocument();
+
+    const infra = (await screen.findByRole("heading", { name: /system infrastructure/i })).closest("section")!;
+    expect(within(infra).getByText("PostgreSQL")).toBeInTheDocument();
   });
 });

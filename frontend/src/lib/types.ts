@@ -313,6 +313,21 @@ export type ConnectorCategory = "automation" | "ai" | "developer" | "productivit
 export type ConnectorAuthType = "none" | "api_key" | "oauth2" | "bearer" | "webhook_secret";
 export type ConnectorStatusValue = "connected" | "configured" | "needs_setup" | "available" | "error" | "disabled";
 
+export type ConnectorKind = "user_connector" | "system_infrastructure";
+export type CapabilityRisk = "read" | "write" | "high_risk";
+
+/**
+ * One canonical capability as the backend reports it. `id` and `risk` are
+ * machine values and are never translated; `label` is the English fallback the
+ * API sends for surfaces without a locale.
+ */
+export interface CapabilityDetail {
+  id: string;
+  label: string;
+  risk: CapabilityRisk;
+  requires_approval: boolean;
+}
+
 export interface ConnectorEntry {
   id: string;
   name: string;
@@ -322,6 +337,8 @@ export interface ConnectorEntry {
   icon: string;
   auth_type: ConnectorAuthType;
   capabilities: string[];
+  capability_details: CapabilityDetail[];
+  kind: ConnectorKind;
   provider: string;
   popular: boolean;
   documentation_url: string | null;

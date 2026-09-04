@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.integrations.models import ConnectorAuthType, ConnectorCategory, ConnectorType
+from app.integrations.models import (
+    ConnectorAuthType,
+    ConnectorCategory,
+    ConnectorKind,
+    ConnectorType,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,10 +23,20 @@ class CatalogSpec:
     icon: str
     auth_type: ConnectorAuthType
     capabilities: list[str] = field(default_factory=list)
+    #: Canonical capability ids (see app/integrations/capabilities.py). These
+    #: are what the agent layer routes on and what risk/approval is derived
+    #: from; `capabilities` above is display text only. Declaring one here is
+    #: a statement about what connecting this account would authorise — NOT a
+    #: claim that it is implemented; `implemented` remains the only source of
+    #: truth for that.
+    canonical_capabilities: list[str] = field(default_factory=list)
     popular: bool = False
     documentation_url: str | None = None
     implemented: bool = False
     requires: list[str] = field(default_factory=list)
+    #: Whether this is a service a user connects their own account to, or a
+    #: piece of THYNACT's own running infrastructure. See ConnectorKind.
+    kind: ConnectorKind = ConnectorKind.USER_CONNECTOR
 
 
 # Only n8n has a real adapter behind it (app/integrations/n8n.py). Every other
@@ -38,6 +53,10 @@ CATALOG: list[CatalogSpec] = [
         icon="Zap",
         auth_type=ConnectorAuthType.WEBHOOK_SECRET,
         capabilities=["Trigger workflow", "Pass payload", "Read execution result"],
+        canonical_capabilities=[
+            "automation.workflow.trigger",
+            "automation.run.read",
+        ],
         popular=True,
         documentation_url="https://n8n.io",
         implemented=True,
@@ -52,6 +71,9 @@ CATALOG: list[CatalogSpec] = [
         icon="Workflow",
         auth_type=ConnectorAuthType.WEBHOOK_SECRET,
         capabilities=["Trigger zap", "Pass payload"],
+        canonical_capabilities=[
+            "automation.workflow.trigger",
+        ],
         documentation_url="https://zapier.com",
     ),
     CatalogSpec(
@@ -63,6 +85,9 @@ CATALOG: list[CatalogSpec] = [
         icon="GitMerge",
         auth_type=ConnectorAuthType.WEBHOOK_SECRET,
         capabilities=["Trigger scenario", "Pass payload"],
+        canonical_capabilities=[
+            "automation.workflow.trigger",
+        ],
         documentation_url="https://www.make.com",
         implemented=True,
         requires=["MAKE_WEBHOOK_URL"],
@@ -77,6 +102,10 @@ CATALOG: list[CatalogSpec] = [
         icon="Bot",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Verify API key", "List models"],
+        canonical_capabilities=[
+            "ai.model.list",
+            "ai.completion.create",
+        ],
         popular=True,
         documentation_url="https://openai.com",
         implemented=True,
@@ -91,6 +120,10 @@ CATALOG: list[CatalogSpec] = [
         icon="Sparkles",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Verify API key", "List models"],
+        canonical_capabilities=[
+            "ai.model.list",
+            "ai.completion.create",
+        ],
         popular=True,
         documentation_url="https://www.anthropic.com",
         implemented=True,
@@ -105,6 +138,10 @@ CATALOG: list[CatalogSpec] = [
         icon="Gem",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Chat completion", "Multi-agent reasoning"],
+        canonical_capabilities=[
+            "ai.model.list",
+            "ai.completion.create",
+        ],
         popular=True,
         documentation_url="https://ai.google.dev",
         implemented=True,
@@ -120,6 +157,13 @@ CATALOG: list[CatalogSpec] = [
         icon="Github",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Connect account", "Verify identity"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "repo.metadata.read",
+            "repo.content.read",
+            "repo.issue.create",
+            "repo.branch.merge",
+        ],
         popular=True,
         documentation_url="https://github.com",
         implemented=True,
@@ -134,6 +178,13 @@ CATALOG: list[CatalogSpec] = [
         icon="GitBranch",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Connect account", "Verify identity"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "repo.metadata.read",
+            "repo.content.read",
+            "repo.issue.create",
+            "repo.branch.merge",
+        ],
         documentation_url="https://gitlab.com",
         implemented=True,
         requires=["GITLAB_OAUTH_CLIENT_ID", "GITLAB_OAUTH_CLIENT_SECRET"],
@@ -147,6 +198,10 @@ CATALOG: list[CatalogSpec] = [
         icon="Cloud",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Verify API token"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "cloud.dns.read",
+        ],
         documentation_url="https://www.cloudflare.com",
         implemented=True,
         requires=["CLOUDFLARE_API_TOKEN"],
@@ -160,6 +215,11 @@ CATALOG: list[CatalogSpec] = [
         icon="Server",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Verify API key"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "cloud.service.read",
+            "cloud.deploy.trigger",
+        ],
         documentation_url="https://render.com",
         implemented=True,
         requires=["RENDER_API_KEY"],
@@ -173,6 +233,10 @@ CATALOG: list[CatalogSpec] = [
         icon="Triangle",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Deploy trigger", "Project status"],
+        canonical_capabilities=[
+            "cloud.service.read",
+            "cloud.deploy.trigger",
+        ],
         documentation_url="https://vercel.com",
     ),
     # --- Productivity ---
@@ -185,6 +249,11 @@ CATALOG: list[CatalogSpec] = [
         icon="MessageSquare",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Connect account", "Verify identity"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "chat.message.list",
+            "chat.message.send",
+        ],
         popular=True,
         documentation_url="https://slack.com",
         implemented=True,
@@ -199,6 +268,11 @@ CATALOG: list[CatalogSpec] = [
         icon="MessagesSquare",
         auth_type=ConnectorAuthType.WEBHOOK_SECRET,
         capabilities=["Post message"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "chat.message.list",
+            "chat.message.send",
+        ],
         documentation_url="https://discord.com",
     ),
     CatalogSpec(
@@ -210,6 +284,11 @@ CATALOG: list[CatalogSpec] = [
         icon="FileText",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Connect account", "Verify identity"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "docs.page.read",
+            "docs.page.write",
+        ],
         popular=True,
         documentation_url="https://www.notion.so",
         implemented=True,
@@ -224,6 +303,11 @@ CATALOG: list[CatalogSpec] = [
         icon="ListTodo",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Create issue", "Update issue"],
+        canonical_capabilities=[
+            "tracker.issue.list",
+            "tracker.issue.create",
+            "tracker.issue.update",
+        ],
         popular=True,
         documentation_url="https://linear.app",
     ),
@@ -236,6 +320,11 @@ CATALOG: list[CatalogSpec] = [
         icon="Bug",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Create issue", "Update issue"],
+        canonical_capabilities=[
+            "tracker.issue.list",
+            "tracker.issue.create",
+            "tracker.issue.update",
+        ],
         documentation_url="https://www.atlassian.com/software/jira",
     ),
     CatalogSpec(
@@ -247,6 +336,11 @@ CATALOG: list[CatalogSpec] = [
         icon="Users",
         auth_type=ConnectorAuthType.WEBHOOK_SECRET,
         capabilities=["Post message"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "chat.message.list",
+            "chat.message.send",
+        ],
         documentation_url="https://www.microsoft.com/microsoft-teams",
     ),
     # --- Google ---
@@ -259,6 +353,13 @@ CATALOG: list[CatalogSpec] = [
         icon="Mail",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Read email", "Send email"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "mail.message.list",
+            "mail.message.read",
+            "mail.draft.create",
+            "mail.message.send",
+        ],
         popular=True,
         documentation_url="https://mail.google.com",
     ),
@@ -271,6 +372,13 @@ CATALOG: list[CatalogSpec] = [
         icon="Calendar",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Read events", "Create events"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "calendar.event.list",
+            "calendar.event.create",
+            "calendar.event.update",
+            "calendar.event.delete",
+        ],
         popular=True,
         documentation_url="https://calendar.google.com",
     ),
@@ -283,6 +391,13 @@ CATALOG: list[CatalogSpec] = [
         icon="HardDrive",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Read files", "Write files"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "files.file.list",
+            "files.file.read",
+            "files.file.write",
+            "files.file.delete",
+        ],
         popular=True,
         documentation_url="https://drive.google.com",
     ),
@@ -296,10 +411,16 @@ CATALOG: list[CatalogSpec] = [
         icon="Database",
         auth_type=ConnectorAuthType.NONE,
         capabilities=["Durable storage", "Full-text + pgvector search"],
+        canonical_capabilities=[
+            "data.record.read",
+            "data.record.write",
+            "data.search.semantic",
+        ],
         popular=True,
         documentation_url="https://www.postgresql.org",
         implemented=True,
         requires=["DATABASE_URL"],
+        kind=ConnectorKind.SYSTEM_INFRASTRUCTURE,
     ),
     CatalogSpec(
         id="redis",
@@ -310,9 +431,14 @@ CATALOG: list[CatalogSpec] = [
         icon="Layers",
         auth_type=ConnectorAuthType.NONE,
         capabilities=["Job queue"],
+        canonical_capabilities=[
+            "queue.job.read",
+            "queue.job.enqueue",
+        ],
         documentation_url="https://redis.io",
         implemented=True,
         requires=["REDIS_URL"],
+        kind=ConnectorKind.SYSTEM_INFRASTRUCTURE,
     ),
     CatalogSpec(
         id="supabase",
@@ -323,6 +449,13 @@ CATALOG: list[CatalogSpec] = [
         icon="Flame",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Database access", "Auth", "Storage"],
+        canonical_capabilities=[
+            "data.record.read",
+            "data.record.write",
+            "auth.user.list",
+            "files.file.read",
+            "files.file.write",
+        ],
         documentation_url="https://supabase.com",
     ),
     # --- Other useful ---
@@ -335,6 +468,12 @@ CATALOG: list[CatalogSpec] = [
         icon="Box",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Read files", "Write files"],
+        canonical_capabilities=[
+            "files.file.list",
+            "files.file.read",
+            "files.file.write",
+            "files.file.delete",
+        ],
         documentation_url="https://www.dropbox.com",
     ),
     CatalogSpec(
@@ -346,6 +485,12 @@ CATALOG: list[CatalogSpec] = [
         icon="CloudCog",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["Read files", "Write files"],
+        canonical_capabilities=[
+            "files.file.list",
+            "files.file.read",
+            "files.file.write",
+            "files.file.delete",
+        ],
         documentation_url="https://onedrive.live.com",
     ),
     CatalogSpec(
@@ -357,6 +502,12 @@ CATALOG: list[CatalogSpec] = [
         icon="Magnet",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["CRM contacts", "Deals", "Tickets"],
+        canonical_capabilities=[
+            "crm.contact.list",
+            "crm.contact.update",
+            "crm.deal.list",
+            "crm.ticket.list",
+        ],
         documentation_url="https://www.hubspot.com",
     ),
     CatalogSpec(
@@ -368,6 +519,11 @@ CATALOG: list[CatalogSpec] = [
         icon="CloudSun",
         auth_type=ConnectorAuthType.OAUTH2,
         capabilities=["CRM records"],
+        canonical_capabilities=[
+            "crm.contact.list",
+            "crm.contact.update",
+            "crm.deal.list",
+        ],
         documentation_url="https://www.salesforce.com",
     ),
     CatalogSpec(
@@ -379,6 +535,12 @@ CATALOG: list[CatalogSpec] = [
         icon="CreditCard",
         auth_type=ConnectorAuthType.API_KEY,
         capabilities=["Payments", "Subscriptions", "Webhooks"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "commerce.payment.list",
+            "commerce.subscription.list",
+            "commerce.refund.create",
+        ],
         documentation_url="https://stripe.com",
     ),
 ]

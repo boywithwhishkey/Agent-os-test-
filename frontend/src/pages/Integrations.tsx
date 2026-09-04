@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { Plug, Plus, Clock3 } from "lucide-react";
+import { Plug, Plus, Clock3, Server } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState, ErrorState } from "@/components/ui/States";
@@ -21,6 +21,8 @@ import {
   mcpServerToConnector,
   isConnected,
   bucketCounts,
+  isUserConnector,
+  isSystemInfrastructure,
   groupByCategory,
   CATEGORY_ORDER,
   statusBucket,
@@ -122,7 +124,13 @@ export default function Integrations() {
   // Marketplace browse state. Counts are computed against the OTHER axis'
   // current selection, so a chip's number is what that chip would actually
   // show — not a catalog-wide total that turns out to be empty once clicked.
-  const searched = useMemo(() => allConnectors.filter((c) => matchesSearch(c, search)), [allConnectors, search]);
+  // Browse covers connectors a user can act on. THYNACT's own infrastructure
+  // is listed under its own heading below rather than padding these counts.
+  const searched = useMemo(
+    () => allConnectors.filter((c) => isUserConnector(c) && matchesSearch(c, search)),
+    [allConnectors, search]
+  );
+  const infrastructure = useMemo(() => allConnectors.filter(isSystemInfrastructure), [allConnectors]);
 
   const counts = useMemo(
     () => bucketCounts(searched.filter((c) => category === "all" || c.category === category)),
@@ -348,11 +356,35 @@ export default function Integrations() {
               <p className="text-xs text-content-muted">
                 {t("pages.integrations.showingCount", {
                   shown: filtered.length,
-                  total: allConnectors.length,
+                  total: allConnectors.filter(isUserConnector).length,
                 })}
               </p>
             </section>
           </ScrollReveal>
+
+          {!isLoading && infrastructure.length > 0 && (
+            <ScrollReveal>
+              <section className="space-y-3 border-t border-hairline pt-6">
+                <div className="space-y-1">
+                  <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-content-muted">
+                    <Server className="h-3.5 w-3.5" /> {t("pages.integrations.detail.systemInfrastructure")}
+                  </h2>
+                  <p className="max-w-2xl text-sm text-content-secondary">
+                    {t("pages.integrations.detail.systemInfrastructureBody")}
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {infrastructure.map((connector) => (
+                    <ConnectorCard
+                      key={connector.id}
+                      connector={connector}
+                      onSelect={() => setSelected(connector)}
+                    />
+                  ))}
+                </div>
+              </section>
+            </ScrollReveal>
+          )}
         </>
       )}
 

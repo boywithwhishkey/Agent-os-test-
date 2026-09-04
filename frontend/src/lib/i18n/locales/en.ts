@@ -210,6 +210,147 @@ export const en = {
     sessionEmptyHint: "Anything you start in this tab appears here.",
   },
 
+  // Canonical capability labels, keyed by the capability id the backend
+  // reports. The ids themselves are machine values and are never
+  // translated; only the human-readable label is. The API also sends an
+  // English label, which is the fallback when a key is missing here.
+  capabilities: {
+    identity: {
+      account: {
+        read: "Read the connected account",
+      },
+    },
+    mail: {
+      message: {
+        list: "List messages",
+        read: "Read message contents",
+        send: "Send mail",
+      },
+      draft: {
+        create: "Create a draft",
+      },
+    },
+    calendar: {
+      event: {
+        list: "List calendar events",
+        create: "Create a calendar event",
+        update: "Update a calendar event",
+        delete: "Delete a calendar event",
+      },
+    },
+    files: {
+      file: {
+        list: "List files",
+        read: "Read file contents",
+        write: "Create or update a file",
+        delete: "Delete a file",
+      },
+    },
+    chat: {
+      message: {
+        list: "Read channel messages",
+        send: "Post a message",
+      },
+    },
+    docs: {
+      page: {
+        read: "Read pages",
+        write: "Create or update a page",
+      },
+    },
+    tracker: {
+      issue: {
+        list: "List issues",
+        create: "Create an issue",
+        update: "Update an issue",
+      },
+    },
+    repo: {
+      metadata: {
+        read: "Read repository metadata",
+      },
+      content: {
+        read: "Read repository contents",
+      },
+      issue: {
+        create: "Open an issue or pull request",
+      },
+      branch: {
+        merge: "Merge a branch",
+      },
+    },
+    automation: {
+      run: {
+        read: "Read an execution result",
+      },
+      workflow: {
+        trigger: "Trigger an external workflow",
+      },
+    },
+    ai: {
+      model: {
+        list: "List available models",
+      },
+      completion: {
+        create: "Run a model completion",
+      },
+    },
+    data: {
+      record: {
+        read: "Read records",
+        write: "Write records",
+      },
+      search: {
+        semantic: "Semantic search",
+      },
+    },
+    queue: {
+      job: {
+        read: "Read queued jobs",
+        enqueue: "Enqueue a job",
+      },
+    },
+    crm: {
+      contact: {
+        list: "List CRM contacts",
+        update: "Update a CRM contact",
+      },
+      deal: {
+        list: "List deals",
+      },
+      ticket: {
+        list: "List tickets",
+      },
+    },
+    commerce: {
+      payment: {
+        list: "List payments",
+      },
+      subscription: {
+        list: "List subscriptions",
+      },
+      refund: {
+        create: "Issue a refund",
+      },
+    },
+    cloud: {
+      service: {
+        read: "Read service status",
+      },
+      dns: {
+        read: "Read DNS and edge configuration",
+      },
+      deploy: {
+        trigger: "Trigger a deployment",
+      },
+    },
+    auth: {
+      user: {
+        list: "List authenticated users",
+      },
+    },
+  },
+
   pages: {
     overview: {
       title: "Product Overview",
@@ -387,6 +528,18 @@ export const en = {
           "Catalog only — this connector isn't built yet. It describes what THYNACT could support; no credentials are collected and no connection is possible until it's implemented.",
         requiresSetupPrefix: "Requires setup. This connector needs",
         requiresSetupSuffix: "configured on the backend before it can connect.",
+        authorityTitle: "What connecting this authorises",
+        authorityBody:
+          "Declared capabilities. These describe the authority a connection would carry — not that every one is implemented yet.",
+        canRead: "Can read",
+        canChange: "Can change",
+        needsApproval: "Needs your approval",
+        needsApprovalBody: "THYNACT can prepare these, but cannot carry them out on its own.",
+        mcpUnmapped:
+          "Tools discovered from this MCP server are not mapped to canonical capabilities. An unknown tool is denied until it is mapped — a server does not get to declare its own risk level.",
+        systemInfrastructure: "System infrastructure",
+        systemInfrastructureBody:
+          "Part of THYNACT's own running system, not an account you connect. Shown for diagnostics.",
         authType: "Auth type",
         lastCheck: "Last check",
         latency: "Latency",

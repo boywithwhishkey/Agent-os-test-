@@ -28,6 +28,13 @@ export function mcpServerToConnector(server: MCPServer): UnifiedConnector {
     icon: "Plug",
     auth_type: server.auth_type === "none" ? "none" : "bearer",
     capabilities,
+    // Deliberately empty. A discovered MCP tool has no canonical capability
+    // mapping, and deriving one from the server's own tool names would let a
+    // remote server choose its own risk level — the exact thing "unknown MCP
+    // tool, deny by default" exists to prevent. The discovered tool names are
+    // still listed above as untrusted display text.
+    capability_details: [],
+    kind: "user_connector",
     provider: server.id,
     popular: false,
     documentation_url: null,
@@ -216,4 +223,18 @@ export function bucketCounts(connectors: UnifiedConnector[]): Record<StatusBucke
   };
   for (const c of connectors) counts[statusBucket(c)] += 1;
   return counts;
+}
+
+/**
+ * THYNACT's own persistence and queue are not services anyone connects an
+ * account to. They stay visible for diagnostics but are counted and grouped
+ * separately, so the marketplace's numbers describe connectors a user can
+ * actually act on rather than being padded by the running system.
+ */
+export function isSystemInfrastructure(connector: UnifiedConnector): boolean {
+  return connector.kind === "system_infrastructure";
+}
+
+export function isUserConnector(connector: UnifiedConnector): boolean {
+  return !isSystemInfrastructure(connector);
 }
