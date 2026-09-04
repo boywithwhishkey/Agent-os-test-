@@ -5,6 +5,23 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-04 — ISOLATED MAC DEVELOPMENT SETUP
+
+- **IMPLEMENTED_TESTED:** `scripts/local_mac.sh` provides idempotent
+  `setup`, `start`, `status`, `stop`, `test`, and `shell-env` commands for
+  `/Users/nik/Developer/THYNACT`.
+- THYNACT uses dedicated local ports: PostgreSQL `55432`, Redis `56379`, API
+  `8000`, and frontend `3000`. PostgreSQL and Redis data live under the
+  git-ignored `.thynact-local/` directory. The stop command targets only the
+  `thynact` tmux session and PIDs/data directory created by this helper.
+- **LIVE_VALIDATED:** PostgreSQL 16.15 with pgvector 0.8.1 and Redis 8.10.1;
+  all 7 migrations applied. Live `/ready` returned database `ok`, queue `ok`,
+  and persistence `durable`.
+- **IMPLEMENTED_TESTED:** backend 359 passed / 10 skipped; frontend typecheck,
+  109 tests, and production build passed. ESLint has 9 warnings and 0 errors.
+- Node 20.20.2 is invoked from Homebrew explicitly. Frontend commands use the
+  repository-pinned pnpm 10.26.1 through Corepack.
+
 ## SESSION 2026-08-31 — FIRST REAL POSTGRES/REDIS/pgvector VALIDATION
 
 Everything in this section was verified by running it, not by reading code.

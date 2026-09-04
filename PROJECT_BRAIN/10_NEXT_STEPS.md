@@ -4,6 +4,16 @@ Read root `CLAUDE.md` first (permanent rules), then `00_START_HERE.md` and
 `02_CURRENT_STATE.md`. Run `bash scripts/project_doctor.sh` before planning —
 it answers most environment questions in seconds.
 
+## Local Mac operation (verified 2026-09-04)
+
+- Start everything: `bash scripts/local_mac.sh start`
+- Check health: `bash scripts/local_mac.sh status`
+- Run all checks: `bash scripts/local_mac.sh test`
+- Stop THYNACT-owned processes only: `bash scripts/local_mac.sh stop`
+- Current local state is **LIVE_VALIDATED** with durable PostgreSQL/pgvector
+  and Redis. Provider credentials remain optional and unset; the default LLM
+  provider is `mock`.
+
 Rewritten 2026-08-31 after the first real PostgreSQL/pgvector/Redis validation
 and the first portable browser QA. Several long-standing blockers are now
 CLOSED; do not re-litigate them.

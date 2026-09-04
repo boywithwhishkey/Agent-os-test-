@@ -21,6 +21,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+.thynact-local/
 
 # Secrets / local config
 .env
