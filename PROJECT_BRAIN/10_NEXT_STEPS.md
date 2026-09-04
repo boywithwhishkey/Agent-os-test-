@@ -23,7 +23,14 @@ CLOSED; do not re-litigate them.
 - ~~Environment rediscovery each session~~ — `scripts/bootstrap_claude_cloud.sh`
   + `scripts/project_doctor.sh`.
 
-## CONNECTOR PLATFORM — WHAT TO DO NEXT (2026-09-03)
+## CONNECTOR PLATFORM — WHAT TO DO NEXT (updated 2026-09-04)
+
+The broker exists now, so wiring a provider operation is a small change
+against a governed path rather than an architectural one: implement
+`run_capability` on the adapter, and the risk, approval, routing and audit are
+already there. `app/integrations/openai.py` is the worked example.
+
+
 
 The capability layer, risk classification and SSRF guard are in
 (`02_CURRENT_STATE.md`). Ordered by what actually unblocks the most:

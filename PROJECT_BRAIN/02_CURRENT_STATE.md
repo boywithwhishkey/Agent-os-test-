@@ -1797,6 +1797,72 @@ blocked.
 Tests after this work: **106 frontend** (was 95). Typecheck, lint (0 errors)
 and build clean.
 
+## CONNECTOR BROKER + LOCAL GATE + TWO REAL BUGS (2026-09-04, latest)
+
+Branch `claude/thynact-env-audit-fjinfj`, HEAD `f8ee417`, pushed.
+**`origin/main` is still `b429dc5`** — the fast-forward is refused by the
+session's permission classifier, not by any test.
+
+### Production, probed live (not assumed)
+
+`https://app.thynact.com` 200. `https://api.thynact.com/health` reports
+`environment: production`, `llm_provider: mock`, `persistence: ephemeral`, with
+the explicit in-memory warning. `/ready` returns body `degraded` with HTTP 200,
+so a flipped env cannot take the service down. **Production runs `b429dc5`** —
+none of this session's work is deployed.
+
+### Two local-development assumptions that were silently broken
+
+1. **Bootstrap was not idempotent** despite CLAUDE.md promising it is. The dev
+   role's password was set only at creation, so a role left by an earlier
+   session survived the existence check forever and bootstrap failed three
+   steps later with an opaque asyncpg auth error. Now reset every run.
+2. **The real-PostgreSQL durability tests had never run.** They defaulted to
+   `agent_os:devlocal@localhost/thynact_fresh` — a database and password
+   nothing in this repository creates — so five tests skipped on every run
+   while the suite reported green. Exactly the "created is not working"
+   failure mode, hiding inside the test suite. The DSN now resolves
+   `THYNACT_TEST_DATABASE_URL` → `DATABASE_URL` → what bootstrap really
+   creates, and refuses a database stamped `production` (verified by stamping
+   the local one and watching it raise). **This also means CI now runs them**,
+   since CI sets `DATABASE_URL`.
+
+### Connector Broker — capabilities are now executable
+
+`app/integrations/broker.py`. The capability layer was declarative; nothing
+routed a capability to a connector. Now:
+
+`capability id → risk → policy/approval → connector → adapter → audit`
+
+`execute` takes a capability id and **never** a provider — a test asserts the
+signature has no provider parameter. Four distinct audited refusals:
+UNKNOWN_CAPABILITY (never inherits READ), NO_PROVIDER (a catalog declaration is
+not an implementation), NOT_CONNECTED (names the missing env vars, names only),
+APPROVAL_REQUIRED (decided by the same `ToolPolicy` that gates tools).
+Refusals are audited too. Routing excludes SYSTEM_INFRASTRUCTURE, checked
+exhaustively — otherwise `data.record.read` would route user work into
+THYNACT's own database.
+
+### First wired operation
+
+`ai.model.list` executes on OpenAI and Anthropic through that path.
+`IntegrationAdapter.run_capability` defaults to raising `CapabilityNotWired`
+rather than returning an empty result, and the broker reports that as "not
+built yet" rather than a provider error. **IMPLEMENTED_TESTED, not
+LIVE_VALIDATED** — no request left the process; there is no key here.
+
+### One-command local gate
+
+`scripts/verify_local.sh` runs everything CI runs against real local
+PostgreSQL and Redis and exits non-zero on the first failure. It never
+deploys. Proven to fail by breaking a type on purpose.
+
+### Verified numbers
+
+Backend **369 passed, 0 skipped** (durability tests now execute). Frontend
+**109**. ruff, typecheck, lint, build clean. PostgreSQL 16 + pgvector, 7
+migrations, 9 tables, Redis responding.
+
 ## CONNECTOR PLATFORM — CAPABILITY LAYER, RISK, SSRF GUARD (2026-09-03, latest)
 
 Branch `claude/thynact-env-audit-fjinfj`, commits `a31b558` and `7c184ad`.
