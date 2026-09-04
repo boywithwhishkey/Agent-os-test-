@@ -23,6 +23,36 @@ CLOSED; do not re-litigate them.
 - ~~Environment rediscovery each session~~ — `scripts/bootstrap_claude_cloud.sh`
   + `scripts/project_doctor.sh`.
 
+## CONNECTOR PLATFORM — WHAT TO DO NEXT (2026-09-03)
+
+The capability layer, risk classification and SSRF guard are in
+(`02_CURRENT_STATE.md`). Ordered by what actually unblocks the most:
+
+1. **One real provider credential.** Nothing in this repository is
+   LIVE_VALIDATED, and no amount of further engineering changes that — the
+   environment has no API key and no OAuth client for any provider. A single
+   OpenAI or Anthropic key, or one registered GitHub OAuth app, converts a
+   whole column of CREDENTIAL_REQUIRED/AUTH_REQUIRED into a real governed call
+   with an audit receipt. Start here.
+2. **Credential vault.** OAuth access tokens live in **process memory**
+   (`OAuthConnectionStore`) and are lost on restart. Encrypted persistence is
+   the prerequisite for any connector surviving a deploy.
+3. **Tenant model.** Not a connector feature — the precondition for one. See
+   the multi-tenancy section of `02_CURRENT_STATE.md`; do not ship multi-user
+   on the current store.
+4. **Finish the four OAuth providers that already have full flows** (GitHub,
+   GitLab, Slack, Notion) by mapping their canonical capabilities to real
+   operations. Today each adapter only verifies identity; `repo.issue.create`
+   and `chat.message.send` are declared but not wired.
+5. **Then** expand to new providers, highest-value first (Gmail, Google
+   Calendar, Google Drive, Telegram, Discord, Stripe). Each needs the full
+   loop, not a card: transport, capability mapping, credential, risk, approval,
+   audit, test, real call. One finished connector beats ten declared ones.
+
+Do **not** add catalog entries for providers without adapters. Fifteen already
+sit at NOT_IMPLEMENTED; more would make the marketplace a list of things that
+do not work.
+
 ## OPEN RIGHT NOW (2026-09-03)
 
 **Production deploy of the About page + connector marketplace is pending.**

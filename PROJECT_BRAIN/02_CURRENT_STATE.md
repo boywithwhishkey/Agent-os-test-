@@ -1797,6 +1797,101 @@ blocked.
 Tests after this work: **106 frontend** (was 95). Typecheck, lint (0 errors)
 and build clean.
 
+## CONNECTOR PLATFORM — CAPABILITY LAYER, RISK, SSRF GUARD (2026-09-03, latest)
+
+Branch `claude/thynact-env-audit-fjinfj`, commits `a31b558` and `7c184ad`.
+Pushed. **Not deployed** — `origin/main` is still at `b429dc5`; the
+fast-forward is denied by this environment's permission classifier.
+
+### Real connector inventory — unchanged by this work
+
+**28 catalog entries. 13 have adapters, 15 are catalog metadata only.** Of the
+28, two (`postgresql`, `redis`) are now correctly labelled
+`SYSTEM_INFRASTRUCTURE` rather than user connectors, so the marketplace counts
+**26 connectable services**.
+
+No provider moved status. **Nothing is LIVE_VALIDATED and nothing is
+CONNECTED**, because this environment holds no provider credentials at all —
+not an API key, not an OAuth client. That is the single reason, and it is not
+something more engineering can remove.
+
+- `IMPLEMENTED_TESTED`, `CREDENTIAL_REQUIRED` (an API key or webhook URL is the
+  only missing piece): n8n, Make, OpenAI, Anthropic, Gemini, Cloudflare,
+  Render, PostgreSQL*, Redis* (*system infrastructure, not user connectors).
+- `IMPLEMENTED_TESTED`, `AUTH_REQUIRED` (adapter + full OAuth authorize/
+  callback/disconnect flow exists; needs a registered OAuth app and a user
+  consent): GitHub, GitLab, Slack, Notion.
+- `NOT_IMPLEMENTED` (catalog metadata only, no adapter): Zapier, Vercel,
+  Discord, Linear, Jira, Teams, Gmail, Google Calendar, Google Drive, Supabase,
+  Dropbox, OneDrive, HubSpot, Salesforce, Stripe.
+
+No social, ads, commerce or India-specific provider is implemented, and none
+was added. Adding cards for them without adapters would be exactly the
+"coming-soon graveyard" the brief forbids.
+
+### Canonical capability layer — NEW, and the reusable part
+
+`app/integrations/capabilities.py`: 44 canonical capabilities in
+`domain.object.action` form, every one of the 28 catalog entries mapped onto
+them. This is what CLAUDE.md's "reason about canonical capabilities, not vendor
+API names" invariant needed and did not have — the catalog previously carried
+display strings only.
+
+- Risk reuses `ToolRisk`, deliberately, so a connector cannot reach a
+  consequential action by a softer path than a tool. Risk is a property of the
+  capability, not the provider.
+- An unmapped id **raises**; it never falls through to READ.
+- The API returns `capability_details` (id, label, risk, requires_approval) per
+  connector; `requires_approval` is derived, and a test asserts it agrees with
+  what `ToolPolicy.authorize` really does.
+- The connector detail view opens with **What connecting this authorises**,
+  grouped Can read / Can change / Needs your approval, EN + HI.
+- MCP servers deliberately get **no** capability details: deriving them from a
+  remote server's own tool names would let that server pick its own risk level.
+
+### SSRF guard — NEW, a real hole that was open
+
+`app/integrations/url_guard.py`. The MCP endpoint was an unvalidated string
+this server POSTed to with the operator's bearer token attached, returning the
+body to the UI — `http://169.254.169.254/latest/meta-data/...` was a valid "MCP
+server". Now: http/https only, no embedded credentials, every **resolved**
+address must be publicly routable. Checked at configuration time and again
+immediately before each call.
+
+Honest limits, both documented in the module: the call-time re-check narrows
+the DNS-rebinding window, it does not close it (that needs connection-time
+pinning in the transport); loopback is permitted outside production only; an
+unresolvable host is allowed, because nothing can be requested from a name with
+no address.
+
+Bounded timeouts were audited at the same time and were **already** correct on
+every adapter and on the MCP client.
+
+### Multi-tenancy — CLAUDE.md's invariant is NOT implemented
+
+Verified by reading the code, not assumed: there is **no tenant model anywhere
+in the backend** (`grep -ril tenant app/` returns nothing).
+`OAuthConnectionStore` is `dict[provider, record]` — one GitHub connection per
+deployment, in process memory.
+
+This is not a live violation, because THYNACT has no user accounts: a
+deployment is one operator behind one API key. It becomes one the moment a
+second principal exists, and the failure would be silent — every request would
+use whoever authorised last. `tests/test_connector_tenancy.py` pins the current
+scoping so that transition cannot happen by accident; those tests are written
+to fail when tenancy is introduced.
+
+**Do not build a customer-facing multi-user feature on the current credential
+store.** That is the prerequisite, not a follow-up.
+
+### Tests
+
+Backend **358** (was 335 at session start of this pass; +23 here: capability
+mapping and risk/policy agreement, SSRF adversarial cases including a hostname
+that resolves to link-local and a host answering with one public and one
+private address, credential scoping). Frontend **109**. ruff, typecheck, lint,
+build all clean.
+
 ## Per-subsystem status
 
 | Subsystem | Status | Notes |
