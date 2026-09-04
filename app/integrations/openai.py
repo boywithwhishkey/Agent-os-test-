@@ -28,6 +28,34 @@ class OpenAIAdapter(IntegrationAdapter):
             reason="OpenAI is a model provider, not a triggered workflow; use it as an LLM provider instead.",
         )
 
+    async def run_capability(self, capability_id: str, arguments: dict) -> object:
+        """`ai.model.list` — the model ids this key can actually reach.
+
+        Same free, read-only request `test_connection` already makes; that one
+        throws the body away, this one returns it. Nothing else is wired: the
+        broker reports an unwired capability honestly rather than this adapter
+        inventing a result.
+        """
+        if capability_id != "ai.model.list":
+            return await super().run_capability(capability_id, arguments)
+        return {"models": await self._list_models()}
+
+    async def _list_models(self) -> list[str]:
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await client.get(
+                "https://api.openai.com/v1/models",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                timeout=10.0,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            return sorted(m["id"] for m in payload.get("data", []) if "id" in m)
+        finally:
+            if own_client:
+                await client.aclose()
+
     async def test_connection(self) -> tuple[bool, float | None, str | None]:
         own_client = self._client is None
         client = self._client or httpx.AsyncClient()

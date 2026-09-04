@@ -168,3 +168,77 @@ async def test_the_caller_cannot_choose_the_provider() -> None:
 
     params = set(inspect.signature(ConnectorBroker.execute).parameters)
     assert params == {"self", "capability_id", "arguments", "approval_id", "correlation_id"}
+
+
+async def test_a_wired_capability_runs_end_to_end_through_the_governed_path(monkeypatch) -> None:
+    """The whole chain on one real operation: `ai.model.list` on OpenAI.
+
+    Capability -> risk -> policy -> connector selection -> adapter -> audit,
+    with the provider's HTTP call stubbed. This is IMPLEMENTED_TESTED, not
+    LIVE_VALIDATED: no request left this process.
+    """
+    import httpx
+
+    from app.integrations.capabilities import resolve
+    from app.integrations.openai import OpenAIAdapter
+    from app.integrations.operations import default_perform
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.host == "api.openai.com"
+        # The key must travel as a header, never in the URL.
+        assert request.headers["Authorization"].startswith("Bearer ")
+        assert "test-key" not in str(request.url)
+        return httpx.Response(
+            200, json={"data": [{"id": "gpt-5"}, {"id": "gpt-4o"}]}
+        )
+
+    stub = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    adapter = OpenAIAdapter(api_key="test-key", client=stub)
+
+    async def perform(connector, capability, arguments):
+        assert connector == "openai"
+        return await adapter.run_capability(capability.id, arguments)
+
+    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: cid == "openai")
+    broker, audit = _broker(perform)
+    result = await broker.execute("ai.model.list", correlation_id="corr-e2e")
+    await stub.aclose()
+
+    assert result.outcome is BrokerOutcome.OK
+    assert result.connector == "openai"
+    assert result.output == {"models": ["gpt-4o", "gpt-5"]}
+
+    row = audit.rows[-1]
+    assert row["tool"] == "ai.model.list"
+    assert row["success"] is True
+    assert row["risk"] == "read"
+    assert row["correlation_id"] == "corr-e2e"
+    # The audit trail must never carry the credential.
+    assert "test-key" not in str(row)
+
+    # And default_perform is the production wiring for the same path.
+    assert default_perform.__module__ == "app.integrations.operations"
+    assert resolve("ai.model.list").risk is ToolRisk.READ
+
+
+async def test_an_adapter_without_the_operation_reports_not_built_not_an_outage(monkeypatch) -> None:
+    import httpx
+
+    from app.integrations.openai import OpenAIAdapter
+
+    adapter = OpenAIAdapter(
+        api_key="test-key", client=httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200)))
+    )
+
+    async def perform(connector, capability, arguments):
+        return await adapter.run_capability(capability.id, arguments)
+
+    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    broker, _ = _broker(perform)
+    # OpenAI declares ai.completion.create in the catalog; no operation exists.
+    result = await broker.execute("ai.completion.create", approval_id=None)
+
+    # Refused before it ever reaches the adapter (WRITE needs approval), or
+    # reported as unwired — never as a provider error.
+    assert result.outcome in {BrokerOutcome.APPROVAL_REQUIRED, BrokerOutcome.NO_PROVIDER}
+    assert result.outcome is not BrokerOutcome.PROVIDER_ERROR

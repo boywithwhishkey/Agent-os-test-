@@ -38,6 +38,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
+from app.integrations.base import CapabilityNotWired
 from app.integrations.capabilities import Capability, UnknownCapability, resolve
 from app.integrations.catalog import list_catalog
 from app.integrations.factory import (
@@ -228,12 +229,17 @@ class ConnectorBroker:
 
         try:
             output = await self._perform(connector, capability, arguments)
+        except CapabilityNotWired as exc:
+            # Nothing was attempted and nothing broke, so this is "not built
+            # yet" and not a provider failure. Ordered before the broad handler
+            # below, which would otherwise swallow it into PROVIDER_ERROR and
+            # make an unwired capability look like an outage.
             result = BrokerResult(
-                outcome=BrokerOutcome.OK,
+                outcome=BrokerOutcome.NO_PROVIDER,
                 capability=capability.id,
                 connector=connector,
                 risk=capability.risk,
-                output=output,
+                error=str(exc),
             )
         # Deliberately broad, for the same reason ToolExecutor is: an
         # unexpected provider failure must become an audited failure, never an
@@ -245,6 +251,14 @@ class ConnectorBroker:
                 connector=connector,
                 risk=capability.risk,
                 error=f"{type(exc).__name__}: {exc}",
+            )
+        else:
+            result = BrokerResult(
+                outcome=BrokerOutcome.OK,
+                capability=capability.id,
+                connector=connector,
+                risk=capability.risk,
+                output=output,
             )
 
         await self._record(result, correlation_id)
