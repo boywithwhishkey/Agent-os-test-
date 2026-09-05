@@ -29,6 +29,8 @@ class IntegrationProvider(StrEnum):
     STRIPE = "stripe"
     SNAPCHAT = "snapchat"
     WOOCOMMERCE = "woocommerce"
+    VERCEL = "vercel"
+    LINEAR = "linear"
 
 
 class IntegrationRequest(BaseModel):

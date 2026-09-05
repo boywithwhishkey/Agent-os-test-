@@ -44,7 +44,7 @@ without that loop remain metadata only.
 ### Daily productivity
 
 Google Gmail/Calendar/Drive, Microsoft Outlook/Calendar/OneDrive, Notion,
-GitHub/GitLab, Linear/Jira, Dropbox, Todoist, Trello, Asana, Zoom, and
+GitHub/GitLab, Linear (read-only foundation implemented), Jira, Dropbox, Todoist, Trello, Asana, Zoom, and
 calendar/meeting providers are added through the same OAuth/API families.
 
 ## Delivery phases
@@ -86,10 +86,10 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 34 catalog entries. Twenty-two have adapters and tests; PostgreSQL
+THYNACT now has 34 catalog entries. Twenty-four have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. Fourteen catalog entries still need real
-adapters, beginning with Amazon SP-API and the remaining social/productivity
+adapters, beginning with Amazon SP-API, Jira, and the remaining social/productivity
 providers after the Shopify/Stripe/WooCommerce foundations.
 
 ## Operator prerequisites

@@ -97,6 +97,14 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
             "WOOCOMMERCE_CONSUMER_SECRET",
         ],
     },
+    IntegrationProvider.VERCEL: {
+        "name": "Vercel",
+        "requires": ["VERCEL_API_TOKEN"],
+    },
+    IntegrationProvider.LINEAR: {
+        "name": "Linear",
+        "requires": ["LINEAR_API_KEY"],
+    },
 }
 
 
@@ -195,6 +203,14 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.woocommerce import WooCommerceAdapter
 
         return WooCommerceAdapter()
+    if normalized == "vercel":
+        from app.integrations.vercel import VercelAdapter
+
+        return VercelAdapter()
+    if normalized == "linear":
+        from app.integrations.linear import LinearAdapter
+
+        return LinearAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -260,4 +276,8 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
             and settings.woocommerce_consumer_key
             and settings.woocommerce_consumer_secret
         )
+    if provider == IntegrationProvider.VERCEL:
+        return bool(settings.vercel_api_token)
+    if provider == IntegrationProvider.LINEAR:
+        return bool(settings.linear_api_key)
     return False

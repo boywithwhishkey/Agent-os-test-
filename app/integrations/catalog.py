@@ -238,6 +238,8 @@ CATALOG: list[CatalogSpec] = [
             "cloud.deploy.trigger",
         ],
         documentation_url="https://vercel.com",
+        implemented=True,
+        requires=["VERCEL_API_TOKEN"],
     ),
     # --- Productivity ---
     CatalogSpec(
@@ -354,6 +356,8 @@ CATALOG: list[CatalogSpec] = [
         ],
         popular=True,
         documentation_url="https://linear.app",
+        implemented=True,
+        requires=["LINEAR_API_KEY"],
     ),
     CatalogSpec(
         id="jira",

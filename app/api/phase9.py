@@ -200,6 +200,16 @@ def _woocommerce_live_status() -> dict:
     return _status_store_backed_status("woocommerce", configured=is_provider_configured(provider))
 
 
+def _vercel_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "vercel")
+    return _status_store_backed_status("vercel", configured=is_provider_configured(provider))
+
+
+def _linear_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "linear")
+    return _status_store_backed_status("linear", configured=is_provider_configured(provider))
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -251,6 +261,8 @@ _LIVE_STATUS_RESOLVERS = {
     "stripe": _stripe_live_status,
     "snapchat": _snapchat_live_status,
     "woocommerce": _woocommerce_live_status,
+    "vercel": _vercel_live_status,
+    "linear": _linear_live_status,
 }
 
 

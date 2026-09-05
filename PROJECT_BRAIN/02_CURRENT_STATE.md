@@ -67,6 +67,14 @@ contradicting note elsewhere.
 - Ad creation, collaboration messaging, inventory/order mutations, and payment
   actions remain disabled until their own approved capabilities exist.
 
+## SESSION 2026-09-05 — VERCEL AND LINEAR CONNECTORS
+
+- **IMPLEMENTED_TESTED:** Vercel now verifies the account and lists projects;
+  Linear now verifies the viewer and lists issues through fixed GraphQL queries.
+- Both remain **CREDENTIAL_REQUIRED** until their API credentials are supplied.
+  Deploy and issue mutations remain disabled pending separate approval-gated
+  capabilities.
+
 ## SESSION 2026-09-05 — STRIPE READ-ONLY COMMERCE CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Stripe now has a secret-key adapter for account

@@ -78,6 +78,9 @@ class Settings(BaseSettings):
     woocommerce_consumer_secret: str | None = Field(
         default=None, validation_alias="WOOCOMMERCE_CONSUMER_SECRET"
     )
+    vercel_api_token: str | None = Field(default=None, validation_alias="VERCEL_API_TOKEN")
+    vercel_team_id: str | None = Field(default=None, validation_alias="VERCEL_TEAM_ID")
+    linear_api_key: str | None = Field(default=None, validation_alias="LINEAR_API_KEY")
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )
