@@ -1,6 +1,9 @@
+import json
+
 import httpx
 import pytest
 
+from app.core.config import settings
 from app.integrations.anthropic import AnthropicAdapter
 from app.integrations.cloudflare import CloudflareAdapter
 from app.integrations.gemini import GeminiAdapter
@@ -150,6 +153,55 @@ async def test_render_adapter_test_connection_network_error():
     assert connected is False
     assert latency_ms is None
     assert "ConnectError" in (error or "")
+
+
+@pytest.mark.asyncio
+async def test_render_service_read_and_deploy_use_fixed_governed_endpoints():
+    seen: list[tuple[str, str, object]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content) if request.content else None
+        seen.append((request.method, request.url.path, body))
+        if request.method == "GET":
+            return httpx.Response(200, json=[{"service": {"id": "srv-123"}}])
+        return httpx.Response(202, json={"deploy": {"id": "dep-1"}})
+
+    async with _client(handler) as client:
+        adapter = RenderAdapter(api_key="rnd-test", service_id="srv-123", client=client)
+        services = await adapter.run_capability("cloud.service.read", {"max_results": 10})
+        deploy = await adapter.run_capability(
+            "cloud.deploy.trigger",
+            {
+                "service_id": "srv-123",
+                "commit_id": "0123456789abcdef0123456789abcdef01234567",
+                "clear_cache": True,
+            },
+        )
+
+    assert services == [{"service": {"id": "srv-123"}}]
+    assert deploy == {"deploy": {"id": "dep-1"}}
+    assert seen == [
+        ("GET", "/v1/services", None),
+        (
+            "POST",
+            "/v1/services/srv-123/deploys",
+            {
+                "clearCache": "clear",
+                "deployMode": "build_and_deploy",
+                "commitId": "0123456789abcdef0123456789abcdef01234567",
+            },
+        ),
+    ]
+
+
+def test_render_deploy_arguments_are_strictly_validated(monkeypatch):
+    monkeypatch.setattr(settings, "render_service_id", None)
+    with pytest.raises(ValueError, match="service_id"):
+        RenderAdapter._deploy_payload({})
+    with pytest.raises(ValueError, match="deploy_mode"):
+        RenderAdapter._deploy_payload({"service_id": "srv-1", "deploy_mode": "production"})
+    with pytest.raises(ValueError, match="hexadecimal"):
+        RenderAdapter._deploy_payload({"service_id": "srv-1", "commit_id": "not-a-sha"})
 
 
 @pytest.mark.asyncio

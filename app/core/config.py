@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
     cloudflare_api_token: str | None = Field(default=None, validation_alias="CLOUDFLARE_API_TOKEN")
     render_api_key: str | None = Field(default=None, validation_alias="RENDER_API_KEY")
+    render_service_id: str | None = Field(default=None, validation_alias="RENDER_SERVICE_ID")
     github_oauth_client_id: str | None = Field(default=None, validation_alias="GITHUB_OAUTH_CLIENT_ID")
     github_oauth_client_secret: str | None = Field(
         default=None, validation_alias="GITHUB_OAUTH_CLIENT_SECRET"

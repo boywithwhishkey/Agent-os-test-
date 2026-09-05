@@ -35,7 +35,7 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
     },
     IntegrationProvider.RENDER: {
         "name": "Render",
-        "requires": ["RENDER_API_KEY"],
+        "requires": ["RENDER_API_KEY", "RENDER_SERVICE_ID"],
     },
     IntegrationProvider.GITHUB: {
         "name": "GitHub",

@@ -219,7 +219,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.API,
         icon="Server",
         auth_type=ConnectorAuthType.API_KEY,
-        capabilities=["Verify API key"],
+        capabilities=["Verify API key", "List services", "Trigger deployment"],
         canonical_capabilities=[
             "identity.account.read",
             "cloud.service.read",
@@ -227,7 +227,7 @@ CATALOG: list[CatalogSpec] = [
         ],
         documentation_url="https://render.com",
         implemented=True,
-        requires=["RENDER_API_KEY"],
+        requires=["RENDER_API_KEY", "RENDER_SERVICE_ID"],
     ),
     CatalogSpec(
         id="vercel",
