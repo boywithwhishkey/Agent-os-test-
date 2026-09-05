@@ -185,6 +185,32 @@ async def test_onedrive_file_write_uses_graph_content_endpoint() -> None:
     }
 
 
+@pytest.mark.anyio
+async def test_onedrive_file_delete_uses_graph_path_endpoint() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        return httpx.Response(204)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await OneDriveOAuthAdapter(connection_store=_store("onedrive"), client=client).run_capability(
+            "files.file.delete", {"path": "/Documents/notes.txt"}
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {"provider": "onedrive", "path": "/Documents/notes.txt", "deleted": True}
+    assert seen == {
+        "method": "DELETE",
+        "path": "/v1.0/me/drive/root:/Documents/notes.txt:",
+        "auth": "Bearer onedrive-access-token",
+    }
+
+
 @pytest.mark.parametrize(
     ("arguments", "message"),
     [
@@ -199,6 +225,11 @@ def test_onedrive_file_arguments_are_validated(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         OneDriveOAuthAdapter._file_payload(arguments)
+
+
+def test_onedrive_delete_path_is_validated() -> None:
+    with pytest.raises(ValueError, match="safe absolute"):
+        OneDriveOAuthAdapter._path_argument({"path": "/../bad"}, operation="files.file.delete")
 
 
 @pytest.mark.anyio

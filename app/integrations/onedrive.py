@@ -46,6 +46,10 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
                 "/me/drive/root/children",
                 params={"$top": str(value), "$select": "id,name,size,file,folder,lastModifiedDateTime"},
             )
+        if capability_id == "files.file.delete":
+            path = self._path_argument(arguments, operation="files.file.delete")
+            await self._delete_content(path)
+            return {"provider": IntegrationProvider.ONEDRIVE.value, "path": path, "deleted": True}
         if capability_id == "files.file.write":
             path, content, mime_type = self._file_payload(arguments)
             return await self._put_content(path, content, mime_type)
@@ -53,6 +57,17 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
 
     @staticmethod
     def _file_payload(arguments: dict[str, Any]) -> tuple[str, bytes, str]:
+        path = OneDriveOAuthAdapter._path_argument(arguments, operation="files.file.write")
+        mime_type = arguments.get("mime_type", "text/plain")
+        if not isinstance(mime_type, str) or not re.fullmatch(r"[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+", mime_type):
+            raise ValueError("mime_type must be a valid MIME type")
+        content = arguments.get("content")
+        if not isinstance(content, str) or not 1 <= len(content.encode("utf-8")) <= 5_000_000:
+            raise ValueError("files.file.write requires text content up to 5000000 bytes")
+        return path, content.encode("utf-8"), mime_type
+
+    @staticmethod
+    def _path_argument(arguments: dict[str, Any], *, operation: str) -> str:
         path = arguments.get("path")
         if (
             not isinstance(path, str)
@@ -61,14 +76,8 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
             or "\x00" in path
             or ".." in path.split("/")
         ):
-            raise ValueError("files.file.write requires a safe absolute OneDrive path")
-        mime_type = arguments.get("mime_type", "text/plain")
-        if not isinstance(mime_type, str) or not re.fullmatch(r"[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+", mime_type):
-            raise ValueError("mime_type must be a valid MIME type")
-        content = arguments.get("content")
-        if not isinstance(content, str) or not 1 <= len(content.encode("utf-8")) <= 5_000_000:
-            raise ValueError("files.file.write requires text content up to 5000000 bytes")
-        return path.strip(), content.encode("utf-8"), mime_type
+            raise ValueError(f"{operation} requires a safe absolute OneDrive path")
+        return path.strip()
 
     async def _get(self, path: str, *, params: dict[str, str]) -> dict[str, Any]:
         record = self._connection_store.get("onedrive")
@@ -140,6 +149,36 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
             if not isinstance(body, dict):
                 raise TypeError("OneDrive returned an invalid response")
             return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("OneDrive request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"OneDrive request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _delete_content(self, path: str) -> None:
+        record = self._connection_store.get("onedrive")
+        if not record.access_token:
+            raise RuntimeError("Not authorized yet — use Authorize to connect a OneDrive account.")
+        encoded_path = quote(path, safe="/-_.~")
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["onedrive"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.delete(
+                    f"{self._BASE_URL}/me/drive/root:{encoded_path}:",
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=10.0,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError("OneDrive rejected the stored token (HTTP 401) — authorize again")
+                raise RuntimeError(f"OneDrive returned HTTP {response.status_code}")
         except httpx.TimeoutException as exc:
             raise RuntimeError("OneDrive request timed out") from exc
         except httpx.HTTPError as exc:

@@ -523,6 +523,16 @@ contradicting note elsewhere.
   must authorize again before uploads can run. The capability remains WRITE and
   requires broker approval/audit. No live Microsoft Graph request was made.
 
+## SESSION 2026-09-05 — ONEDRIVE GOVERNED FILE DELETE
+
+- **IMPLEMENTED_TESTED:** OneDrive now supports canonical `files.file.delete`
+  through Microsoft Graph's fixed root-path delete endpoint. The adapter
+  shares strict path validation with uploads and returns a normalized result
+  only after a successful 204 response.
+- This is HIGH_RISK and remains behind broker approval and audit. The existing
+  `Files.ReadWrite` OAuth scope covers the operation; no live OneDrive request
+  was made.
+
 ## SESSION 2026-09-05 — HUBSPOT GOVERNED CONTACT UPDATE
 
 - **IMPLEMENTED_TESTED:** HubSpot now supports the canonical
