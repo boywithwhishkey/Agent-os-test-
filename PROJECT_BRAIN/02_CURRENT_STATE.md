@@ -533,6 +533,16 @@ contradicting note elsewhere.
   `Files.ReadWrite` OAuth scope covers the operation; no live OneDrive request
   was made.
 
+## SESSION 2026-09-05 — NOTION GOVERNED PAGE CREATION
+
+- **IMPLEMENTED_TESTED:** Notion now supports canonical `docs.page.write` for
+  creating a page under a validated parent page. Title and paragraph content
+  are bounded, the API version header is fixed, and no caller-controlled URL
+  or Notion property schema is accepted.
+- This is WRITE and remains behind broker approval and audit. Notion's OAuth
+  integration still grants capabilities at the integration level rather than
+  through a scope string. No live Notion request was made.
+
 ## SESSION 2026-09-05 — HUBSPOT GOVERNED CONTACT UPDATE
 
 - **IMPLEMENTED_TESTED:** HubSpot now supports the canonical

@@ -331,7 +331,7 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="notion",
         name="Notion",
-        description="Search and read Notion pages through a connected workspace.",
+        description="Search, read, and approval-create Notion pages through a connected workspace.",
         category=ConnectorCategory.PRODUCTIVITY,
         connector_type=ConnectorType.OAUTH,
         icon="FileText",
@@ -340,6 +340,7 @@ CATALOG: list[CatalogSpec] = [
         canonical_capabilities=[
             "identity.account.read",
             "docs.page.read",
+            "docs.page.write",
         ],
         popular=True,
         documentation_url="https://www.notion.so",

@@ -16,7 +16,7 @@ NOTION_API_VERSION = "2022-06-28"
 
 
 class NotionOAuthAdapter(IntegrationAdapter):
-    """Run fixed, bounded Notion identity and page-read operations."""
+    """Run fixed, bounded Notion identity, page-read, and page-write operations."""
 
     def __init__(self, *, connection_store: OAuthConnectionStore, client: httpx.AsyncClient | None = None) -> None:
         self._connection_store = connection_store
@@ -37,17 +37,54 @@ class NotionOAuthAdapter(IntegrationAdapter):
             if page_id is not None:
                 return await self._request("GET", f"/pages/{quote(self._page_id(page_id), safe='-')}")
             return await self._search_pages(arguments)
+        if capability_id == "docs.page.write":
+            return await self._request("POST", "/pages", json=self._page_write_payload(arguments))
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
 
     @staticmethod
-    def _page_id(value: object) -> str:
+    def _page_id(value: object, *, operation: str = "docs.page.read") -> str:
         if not isinstance(value, str):
-            raise TypeError("docs.page.read page_id must be a Notion page id")
+            raise TypeError(f"{operation} page_id must be a Notion page id")
         page_id = value.strip()
         compact = page_id.replace("-", "")
         if len(compact) != 32 or any(char not in "0123456789abcdefABCDEF" for char in compact):
-            raise ValueError("docs.page.read page_id must be a Notion page id")
+            raise ValueError(f"{operation} page_id must be a Notion page id")
         return page_id
+
+    @staticmethod
+    def _page_write_payload(arguments: dict[str, Any]) -> dict[str, Any]:
+        parent_page_id = NotionOAuthAdapter._page_id(
+            arguments.get("parent_page_id"), operation="docs.page.write"
+        )
+        title = arguments.get("title")
+        if not isinstance(title, str) or not 1 <= len(title.strip()) <= 200:
+            raise ValueError("docs.page.write requires a title of 200 characters or fewer")
+        content = arguments.get("content", "")
+        if not isinstance(content, str) or len(content) > 20_000:
+            raise ValueError("docs.page.write content must be 20000 characters or fewer")
+        payload: dict[str, Any] = {
+            "parent": {"page_id": parent_page_id},
+            "properties": {
+                "title": {
+                    "title": [
+                        {"type": "text", "text": {"content": title.strip()}}
+                    ]
+                }
+            },
+        }
+        if content:
+            payload["children"] = [
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {"type": "text", "text": {"content": content}}
+                        ]
+                    },
+                }
+            ]
+        return payload
 
     @staticmethod
     def _limit(arguments: dict[str, Any]) -> int:

@@ -267,6 +267,84 @@ async def test_notion_adapter_searches_and_reads_pages_with_fixed_routes():
 
 
 @pytest.mark.asyncio
+async def test_notion_adapter_creates_a_bounded_page_under_a_fixed_parent():
+    store = OAuthConnectionStore()
+    store.record_success("notion", access_token="secret_notion", token_type="bearer", scope=None)
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["url"] = str(request.url)
+        seen["auth"] = request.headers["Authorization"]
+        seen["version"] = request.headers["Notion-Version"]
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"id": "page-new", "object": "page"})
+
+    async with _client(handler) as client:
+        adapter = NotionOAuthAdapter(connection_store=store, client=client)
+        result = await adapter.run_capability(
+            "docs.page.write",
+            {
+                "parent_page_id": "11111111-1111-1111-1111-111111111111",
+                "title": "Release notes",
+                "content": "Shipped the connector update.",
+            },
+        )
+
+    assert result == {"id": "page-new", "object": "page"}
+    assert seen == {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "auth": "Bearer secret_notion",
+        "version": "2022-06-28",
+        "body": {
+            "parent": {"page_id": "11111111-1111-1111-1111-111111111111"},
+            "properties": {
+                "title": {
+                    "title": [
+                        {"type": "text", "text": {"content": "Release notes"}}
+                    ]
+                }
+            },
+            "children": [
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": "Shipped the connector update."},
+                            }
+                        ]
+                    },
+                }
+            ],
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"parent_page_id": "bad", "title": "x"}, "Notion page id"),
+        (
+            {
+                "parent_page_id": "11111111-1111-1111-1111-111111111111",
+                "title": "",
+            },
+            "title",
+        ),
+    ],
+)
+def test_notion_page_write_arguments_are_validated(
+    arguments: dict[str, object], message: str
+) -> None:
+    with pytest.raises((TypeError, ValueError), match=message):
+        NotionOAuthAdapter._page_write_payload(arguments)
+
+
+@pytest.mark.asyncio
 async def test_notion_adapter_rejects_invalid_page_id():
     adapter = NotionOAuthAdapter(connection_store=OAuthConnectionStore())
 
