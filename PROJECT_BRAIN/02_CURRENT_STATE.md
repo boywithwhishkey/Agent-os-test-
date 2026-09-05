@@ -460,6 +460,18 @@ contradicting note elsewhere.
   must authorize again before uploads can run. The capability remains WRITE and
   requires broker approval/audit. No live Microsoft Graph request was made.
 
+## SESSION 2026-09-05 — HUBSPOT GOVERNED CONTACT UPDATE
+
+- **IMPLEMENTED_TESTED:** HubSpot now supports the canonical
+  `crm.contact.update` capability through the CRM v3 contact `PATCH` endpoint.
+  Updates require exactly one contact ID or email identifier and a bounded
+  property map with safe names and values; email lookup uses HubSpot's fixed
+  `idProperty=email` query parameter.
+- The OAuth scope now includes `crm.objects.contacts.write`; existing
+  connections must authorize again before updates can run. The capability
+  remains WRITE and requires broker approval/audit. No live HubSpot request was
+  made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

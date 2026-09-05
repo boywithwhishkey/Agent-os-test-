@@ -51,6 +51,53 @@ async def test_hubspot_missing_connection_is_explicit() -> None:
     assert error == "Not authorized yet — use Authorize to connect a HubSpot account."
 
 
+@pytest.mark.anyio
+async def test_hubspot_contact_update_uses_patch_and_email_lookup() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["query"] = request.url.query.decode()
+        seen["auth"] = request.headers["authorization"]
+        seen["body"] = request.content
+        return httpx.Response(200, json={"id": "contact-1", "properties": {"firstname": "Ada"}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await HubSpotOAuthAdapter(connection_store=_store(), client=client).run_capability(
+            "crm.contact.update",
+            {"email": "ada@example.com", "properties": {"firstname": "Ada", "lastname": "Lovelace"}},
+        )
+    finally:
+        await client.aclose()
+
+    assert result["id"] == "contact-1"
+    assert seen == {
+        "method": "PATCH",
+        "path": "/crm/v3/objects/contacts/ada@example.com",
+        "query": "idProperty=email",
+        "auth": "Bearer hubspot-access-token",
+        "body": b'{"properties":{"firstname":"Ada","lastname":"Lovelace"}}',
+    }
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"contact_id": "1", "email": "a@example.com", "properties": {"firstname": "A"}}, "exactly one"),
+        ({"contact_id": "1", "properties": {}}, "1-20"),
+        ({"contact_id": "1", "properties": {"bad-name": "A"}}, "safe identifiers"),
+        ({"email": "bad", "properties": {"firstname": "A"}}, "valid HubSpot contact email"),
+    ],
+)
+def test_hubspot_contact_update_arguments_are_validated(
+    arguments: dict[str, object], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        HubSpotOAuthAdapter._contact_update_payload(arguments)
+
+
 def test_hubspot_contact_limit_is_bounded() -> None:
     adapter = HubSpotOAuthAdapter(connection_store=OAuthConnectionStore())
     with pytest.raises(ValueError, match="between 1 and 100"):

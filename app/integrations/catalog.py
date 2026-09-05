@@ -570,12 +570,12 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="hubspot",
         name="HubSpot",
-        description="Read HubSpot account details and list CRM contacts.",
+        description="Read and approval-update HubSpot CRM contacts.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="Magnet",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["CRM contacts", "Deals", "Tickets"],
+        capabilities=["CRM contacts", "Update contacts", "Deals", "Tickets"],
         canonical_capabilities=[
             "crm.contact.list",
             "crm.contact.update",
