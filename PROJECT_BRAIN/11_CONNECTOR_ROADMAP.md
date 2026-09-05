@@ -132,6 +132,9 @@ catalog; identity/list capabilities require a future OAuth or bot adapter.
 Supabase now supports bounded approval-gated writes to its one configured
 PostgREST table in addition to record reads; Auth/Storage remain separate
 capabilities until their own credentials and policies are wired.
+n8n, Make, and Zapier now expose bounded canonical
+`automation.workflow.trigger` routes through the broker; standalone execution
+read is not claimed because webhook providers do not expose a shared read API.
 Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a

@@ -2643,7 +2643,7 @@ build all clean.
   interpolating workflow data; unsuccessful mutation payloads fail closed.
 - Focused connector, capability, and broker checks for the AI/catalog update:
   **61 passed** (Linear's earlier focused set was 34).
-  The full gate after the AI connector work is **545 backend tests passed, 13
+  The full gate after the automation capability work is **549 backend tests passed, 13
   skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
@@ -2669,6 +2669,9 @@ build all clean.
   send-only webhook capability; unsupported identity/list claims were removed.
 - Supabase now has a bounded, approval-routed insert into its one configured
   PostgREST table, with JSON-only records and fixed routes.
-- Verified local functional commits are `a8b3908` and `3104b1c`. The GitHub
-  publish is pending explicit destination confirmation; Ride&Glide and
+- n8n, Make, and Zapier now expose bounded `automation.workflow.trigger`
+  capability routes through the broker; destinations remain fixed in server
+  configuration and are never accepted from workflow input.
+- Verified local functional commits are `a8b3908`, `3104b1c`, and `931bc56`.
+  GitHub publish is pending explicit destination confirmation; Ride&Glide and
   production remain untouched.
