@@ -439,6 +439,17 @@ contradicting note elsewhere.
   audit receipt. The configured token must include Shopify's product-write
   permission; no live Shopify request was made.
 
+## SESSION 2026-09-05 — DROPBOX GOVERNED FILE UPLOAD
+
+- **IMPLEMENTED_TESTED:** Dropbox now supports the canonical
+  `files.file.write` capability through the real `/2/files/upload` content
+  endpoint. Uploads validate an absolute safe path, bounded UTF-8 text content,
+  and an explicit `add` or `overwrite` mode before sending the fixed Dropbox
+  API argument header.
+- The OAuth scope now includes `files.content.write`; existing connections must
+  authorize again before uploads can run. The capability remains WRITE and
+  requires broker approval/audit. No live Dropbox request was made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

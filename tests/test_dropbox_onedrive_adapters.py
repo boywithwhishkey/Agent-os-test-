@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -67,6 +69,53 @@ async def test_onedrive_identity_and_root_list_use_graph_read_calls() -> None:
             "%24top=10&%24select=id%2Cname%2Csize%2Cfile%2Cfolder%2ClastModifiedDateTime",
         ),
     ]
+
+
+@pytest.mark.anyio
+async def test_dropbox_file_write_uses_content_upload_endpoint() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        seen["arg"] = json.loads(request.headers["dropbox-api-arg"])
+        seen["content_type"] = request.headers["content-type"]
+        seen["body"] = request.content
+        return httpx.Response(200, json={"name": "notes.txt", "path_display": "/notes.txt"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await DropboxOAuthAdapter(connection_store=_store("dropbox"), client=client).run_capability(
+            "files.file.write",
+            {"path": "/notes.txt", "content": "hello dropbox", "mode": "overwrite"},
+        )
+    finally:
+        await client.aclose()
+
+    assert result["path_display"] == "/notes.txt"
+    assert seen == {
+        "path": "/2/files/upload",
+        "auth": "Bearer dropbox-access-token",
+        "arg": {"path": "/notes.txt", "mode": "overwrite", "autorename": False, "mute": False},
+        "content_type": "application/octet-stream",
+        "body": b"hello dropbox",
+    }
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"path": "relative.txt", "content": "x"}, "absolute"),
+        ({"path": "/../bad", "content": "x"}, "safe"),
+        ({"path": "/x.txt", "content": "", "mode": "add"}, "text content"),
+        ({"path": "/x.txt", "content": "x", "mode": "bad"}, "mode"),
+    ],
+)
+def test_dropbox_file_arguments_are_validated(
+    arguments: dict[str, object], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        DropboxOAuthAdapter._file_payload(arguments)
 
 
 @pytest.mark.anyio

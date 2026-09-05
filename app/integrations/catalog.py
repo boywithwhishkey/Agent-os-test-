@@ -532,12 +532,12 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="dropbox",
         name="Dropbox",
-        description="Read Dropbox account details and list file metadata.",
+        description="Read Dropbox files and create governed file uploads.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="Box",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Read files", "Write files"],
+        capabilities=["Read files", "Upload files", "Write files"],
         canonical_capabilities=[
             "files.file.list",
             "files.file.read",
