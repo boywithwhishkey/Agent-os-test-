@@ -44,6 +44,7 @@ async def test_consumer_routes_only_by_operator_allowlist():
     )
     assert result == {"workflow_id": "workflow-1", "correlation_id": "corr-1"}
     assert engine.calls[0][1]["webhook"]["delivery_id"] == "telegram:abc"
+    assert engine.calls[0][1]["webhook"]["event_type"] == "update.received"
 
 
 @pytest.mark.asyncio

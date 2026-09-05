@@ -151,8 +151,8 @@ contradicting note elsewhere.
   handed to the `webhooks` job queue. Duplicate delivery ids are suppressed;
   Redis uses an atomic TTL claim while development memory uses the same
   semantics process-locally. Invalid, oversized, or unconfigured verification
-  fails closed. A consumer that maps queued provider events to workflows is
-  still a separate follow-on.
+  fails closed. The separate webhook worker maps queued events to workflows
+  only through the operator allowlist described below.
 
 ## SESSION 2026-09-05 — WEBHOOK WORKFLOW CONSUMER
 
@@ -164,6 +164,16 @@ contradicting note elsewhere.
 - The consumer process is intentionally separate from the API process. It can
   be run against the same Redis namespace in a deployment; no local or
   production process was started by this change.
+
+## SESSION 2026-09-05 — CANONICAL WEBHOOK EVENTS
+
+- **IMPLEMENTED_TESTED:** queued Telegram and Meta deliveries are normalized
+  into a stable `{provider, event_type, event_id, payload}` envelope before a
+  workflow starts. Telegram messages/callbacks and WhatsApp message/status
+  changes receive canonical event types; unknown shapes remain observable as
+  `event.received` instead of being dropped.
+- The original body remains available in workflow context for provider-specific
+  details, while routing still comes only from the operator allowlist.
 
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 

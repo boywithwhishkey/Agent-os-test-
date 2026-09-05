@@ -93,7 +93,7 @@ THYNACT now has 35 catalog entries. All thirty-five have adapters and tests; Pos
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. There are no catalog-only entries left;
 the next work is capability depth, multi-user tenant isolation, provider-specific
-event normalization, sandbox validation, and live credential checks. OAuth refresh-on-401,
+event expansion, sandbox validation, and live credential checks. OAuth refresh-on-401,
 encrypted expiry metadata, and verified Meta / Telegram webhook ingress with
 queue handoff and replay suppression are now implemented and tested; live
 provider refresh/webhook delivery is still credential-gated.

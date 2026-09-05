@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.queue.base import QueueJob
+from app.webhooks.events import normalize_webhook
 
 
 class WebhookWorkflowNotConfigured(RuntimeError):
@@ -42,11 +43,15 @@ class WebhookConsumer:
             raise WebhookWorkflowNotConfigured(
                 f"Webhook workflow definition {workflow_id} does not exist"
             )
+        event = normalize_webhook(provider, body, delivery)
         context = {
             "webhook": {
                 "provider": provider,
                 "body": body,
                 "delivery_id": delivery,
+                "event_id": event.event_id,
+                "event_type": event.event_type,
+                "payload": event.payload,
             }
         }
         return await self.engine.start(
