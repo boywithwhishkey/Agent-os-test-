@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 import time
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -13,7 +15,7 @@ from app.integrations.oauth.store import OAuthConnectionStore
 
 
 class OneDriveOAuthAdapter(IntegrationAdapter):
-    """Read-only Microsoft Graph identity and OneDrive root listing."""
+    """Governed Microsoft Graph identity, listing, and file-content operations."""
 
     _BASE_URL = "https://graph.microsoft.com/v1.0"
 
@@ -30,7 +32,7 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
         return unsupported_execute_result(
             IntegrationProvider.ONEDRIVE,
             request,
-            reason="OneDrive file mutations are not enabled; use governed read capabilities.",
+            reason="OneDrive actions must use governed canonical capabilities.",
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
@@ -44,7 +46,29 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
                 "/me/drive/root/children",
                 params={"$top": str(value), "$select": "id,name,size,file,folder,lastModifiedDateTime"},
             )
+        if capability_id == "files.file.write":
+            path, content, mime_type = self._file_payload(arguments)
+            return await self._put_content(path, content, mime_type)
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
+
+    @staticmethod
+    def _file_payload(arguments: dict[str, Any]) -> tuple[str, bytes, str]:
+        path = arguments.get("path")
+        if (
+            not isinstance(path, str)
+            or not 2 <= len(path.strip()) <= 400
+            or not path.strip().startswith("/")
+            or "\x00" in path
+            or ".." in path.split("/")
+        ):
+            raise ValueError("files.file.write requires a safe absolute OneDrive path")
+        mime_type = arguments.get("mime_type", "text/plain")
+        if not isinstance(mime_type, str) or not re.fullmatch(r"[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+", mime_type):
+            raise ValueError("mime_type must be a valid MIME type")
+        content = arguments.get("content")
+        if not isinstance(content, str) or not 1 <= len(content.encode("utf-8")) <= 5_000_000:
+            raise ValueError("files.file.write requires text content up to 5000000 bytes")
+        return path.strip(), content.encode("utf-8"), mime_type
 
     async def _get(self, path: str, *, params: dict[str, str]) -> dict[str, Any]:
         record = self._connection_store.get("onedrive")
@@ -62,6 +86,47 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
                     params=params,
                     headers={"Authorization": f"Bearer {token}"},
                     timeout=10.0,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError("OneDrive rejected the stored token (HTTP 401) — authorize again")
+                raise RuntimeError(f"OneDrive returned HTTP {response.status_code}")
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise RuntimeError("OneDrive returned a non-JSON response") from exc
+            if not isinstance(body, dict):
+                raise TypeError("OneDrive returned an invalid response")
+            return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("OneDrive request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"OneDrive request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _put_content(self, path: str, content: bytes, mime_type: str) -> dict[str, Any]:
+        record = self._connection_store.get("onedrive")
+        if not record.access_token:
+            raise RuntimeError("Not authorized yet — use Authorize to connect a OneDrive account.")
+        encoded_path = quote(path, safe="/-_.~")
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["onedrive"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.put(
+                    f"{self._BASE_URL}/me/drive/root:{encoded_path}:/content",
+                    content=content,
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": mime_type,
+                    },
+                    timeout=30.0,
                 ),
             )
             if response.status_code >= 400:

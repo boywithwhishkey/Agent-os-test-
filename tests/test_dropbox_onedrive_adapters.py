@@ -119,6 +119,53 @@ def test_dropbox_file_arguments_are_validated(
 
 
 @pytest.mark.anyio
+async def test_onedrive_file_write_uses_graph_content_endpoint() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        seen["content_type"] = request.headers["content-type"]
+        seen["body"] = request.content
+        return httpx.Response(201, json={"id": "file-2", "name": "notes.txt", "size": 12})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await OneDriveOAuthAdapter(connection_store=_store("onedrive"), client=client).run_capability(
+            "files.file.write",
+            {"path": "/Documents/notes.txt", "content": "hello onedrive", "mime_type": "text/plain"},
+        )
+    finally:
+        await client.aclose()
+
+    assert result["id"] == "file-2"
+    assert seen == {
+        "method": "PUT",
+        "path": "/v1.0/me/drive/root:/Documents/notes.txt:/content",
+        "auth": "Bearer onedrive-access-token",
+        "content_type": "text/plain",
+        "body": b"hello onedrive",
+    }
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"path": "relative.txt", "content": "x"}, "absolute"),
+        ({"path": "/../bad", "content": "x"}, "safe"),
+        ({"path": "/x.txt", "content": "", "mime_type": "text/plain"}, "text content"),
+        ({"path": "/x.txt", "content": "x", "mime_type": "bad"}, "MIME"),
+    ],
+)
+def test_onedrive_file_arguments_are_validated(
+    arguments: dict[str, object], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        OneDriveOAuthAdapter._file_payload(arguments)
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize(
     ("adapter", "message"),
     [

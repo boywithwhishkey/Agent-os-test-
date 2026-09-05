@@ -450,6 +450,16 @@ contradicting note elsewhere.
   authorize again before uploads can run. The capability remains WRITE and
   requires broker approval/audit. No live Dropbox request was made.
 
+## SESSION 2026-09-05 — ONEDRIVE GOVERNED FILE UPLOAD
+
+- **IMPLEMENTED_TESTED:** OneDrive now supports the canonical
+  `files.file.write` capability through Microsoft Graph's fixed small-file
+  upload endpoint. Uploads validate a safe absolute path, bounded UTF-8 text
+  content, and MIME type before issuing the authenticated `PUT` request.
+- The Microsoft OAuth scope now uses `Files.ReadWrite`; existing connections
+  must authorize again before uploads can run. The capability remains WRITE and
+  requires broker approval/audit. No live Microsoft Graph request was made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

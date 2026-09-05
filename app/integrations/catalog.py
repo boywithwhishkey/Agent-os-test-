@@ -551,12 +551,12 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="onedrive",
         name="OneDrive",
-        description="Read Microsoft account details and list OneDrive files.",
+        description="Read OneDrive files and create governed uploads.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="CloudCog",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Read files", "Write files"],
+        capabilities=["Read files", "Upload files", "Write files"],
         canonical_capabilities=[
             "files.file.list",
             "files.file.read",
