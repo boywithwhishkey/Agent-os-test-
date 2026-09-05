@@ -61,8 +61,9 @@ CLOSED; do not re-litigate them.
 The active expansion goal is tracked in `PROJECT_BRAIN/11_CONNECTOR_ROADMAP.md`.
 Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify now has a tested read-only commerce
-foundation. Phase 1 continues with Meta inbound/webhook capabilities; commerce
-then starts with Shopify, Stripe, Amazon SP-API, and WooCommerce. Every entry
+foundation. Phase 1 continues with Meta inbound/webhook capabilities; Shopify
+and Stripe now have read-only foundations, followed by Amazon SP-API and
+WooCommerce. Every entry
 must pass the adapter/capability/approval/audit/test/live-validation contract;
 the goal is not to inflate the catalog with unconnected cards.
 

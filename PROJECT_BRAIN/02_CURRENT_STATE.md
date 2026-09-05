@@ -57,6 +57,14 @@ contradicting note elsewhere.
 - Product/order mutations and payment actions remain disabled until their own
   high-risk capability and approval contracts exist.
 
+## SESSION 2026-09-05 — STRIPE READ-ONLY COMMERCE CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Stripe now has a secret-key adapter for account
+  identity, payment-intent listing, and subscription listing. Refunds remain
+  unwired and therefore cannot bypass the high-risk approval path.
+- It remains **CREDENTIAL_REQUIRED** until `STRIPE_SECRET_KEY` is supplied and
+  the account probe succeeds. No live Stripe request was made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

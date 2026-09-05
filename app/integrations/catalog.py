@@ -588,6 +588,8 @@ CATALOG: list[CatalogSpec] = [
             "commerce.refund.create",
         ],
         documentation_url="https://stripe.com",
+        implemented=True,
+        requires=["STRIPE_SECRET_KEY"],
     ),
     CatalogSpec(
         id="shopify",

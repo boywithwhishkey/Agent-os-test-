@@ -36,8 +36,8 @@ without that loop remain metadata only.
    endpoints, sandbox tests, and restricted-role handling.
 3. WooCommerce — store URL plus consumer key/secret, order/product reads and
    approval-gated writes.
-4. Stripe — restricted API key or OAuth, customers/subscriptions/refunds with
-   high-risk approval for money movement.
+4. Stripe — implemented/tested read-only account/payment/subscription
+   foundation; customers and refunds require separate approved capabilities.
 5. Razorpay — API credentials, payment/order reads and approval-gated refunds.
 
 ### Daily productivity
@@ -85,11 +85,11 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 32 catalog entries. Nineteen have adapters and tests; PostgreSQL
+THYNACT now has 33 catalog entries. Twenty have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. Fourteen catalog entries still need real
-adapters, beginning with Amazon SP-API, WooCommerce, and Stripe after the
-Shopify read-only foundation.
+adapters, beginning with Amazon SP-API and WooCommerce after the Shopify/Stripe
+read-only foundations.
 
 ## Operator prerequisites
 

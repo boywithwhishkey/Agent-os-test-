@@ -81,6 +81,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Shopify",
         "requires": ["SHOPIFY_ADMIN_ACCESS_TOKEN", "SHOPIFY_SHOP_DOMAIN"],
     },
+    IntegrationProvider.STRIPE: {
+        "name": "Stripe",
+        "requires": ["STRIPE_SECRET_KEY"],
+    },
 }
 
 
@@ -167,6 +171,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.shopify import ShopifyAdminAdapter
 
         return ShopifyAdminAdapter()
+    if normalized == "stripe":
+        from app.integrations.stripe import StripeAdapter
+
+        return StripeAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -222,4 +230,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.teams_webhook_url)
     if provider == IntegrationProvider.SHOPIFY:
         return bool(settings.shopify_admin_access_token and settings.shopify_shop_domain)
+    if provider == IntegrationProvider.STRIPE:
+        return bool(settings.stripe_secret_key)
     return False

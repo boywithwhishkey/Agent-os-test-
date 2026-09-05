@@ -26,6 +26,7 @@ class IntegrationProvider(StrEnum):
     INSTAGRAM = "instagram"
     TEAMS = "teams"
     SHOPIFY = "shopify"
+    STRIPE = "stripe"
 
 
 class IntegrationRequest(BaseModel):
