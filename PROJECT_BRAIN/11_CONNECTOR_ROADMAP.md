@@ -15,8 +15,9 @@ without that loop remain metadata only.
 
 1. Telegram Bot API — implemented/tested send-only foundation; bot token and
    live `getMe` validation remain.
-2. WhatsApp Cloud API — implemented/tested text foundation; Meta app/OAuth or system-user token, business phone,
-   message templates and inbound webhook verification.
+2. WhatsApp Cloud API — implemented/tested text and bounded template-message
+   foundations; Meta app/OAuth or system-user token, business phone, richer
+   media/templates and inbound webhook verification remain follow-ons.
 3. Instagram Graph API — implemented/tested text and image-publishing
    foundations; Meta OAuth, business/creator account, comments and richer
    media/messaging remain permission- and capability-specific follow-ons.

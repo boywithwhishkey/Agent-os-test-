@@ -181,6 +181,19 @@ contradicting note elsewhere.
   Instagram account are still required for live validation. No live publish
   was attempted, and no production or Ride&Glide setting was changed.
 
+## SESSION 2026-09-05 — WHATSAPP TEMPLATE MESSAGING
+
+- **IMPLEMENTED_TESTED:** WhatsApp now supports the high-risk canonical
+  `chat.template.send` capability in addition to free-form text. The adapter
+  constructs the provider template payload from an explicit recipient,
+  approved template name, language code, and bounded text body parameters.
+- Arbitrary WhatsApp message JSON, template components, URLs, and provider
+  endpoints are not accepted from workflow arguments. Existing broker approval
+  and audit enforcement applies before the send.
+- **CREDENTIAL_REQUIRED:** live validation still requires a Meta system-user
+  token, a configured phone number, and an approved WhatsApp template. No live
+  message was sent in this pass.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now

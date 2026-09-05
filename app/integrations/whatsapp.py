@@ -48,6 +48,8 @@ class WhatsAppCloudAdapter(IntegrationAdapter):
                 "GET", self.phone_number_id, params={"fields": "id,display_phone_number,verified_name"}
             )
             return body
+        if capability_id == "chat.template.send":
+            return await self._send_template(arguments)
         if capability_id != "chat.message.send":
             raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
         recipient = arguments.get("to")
@@ -74,6 +76,62 @@ class WhatsAppCloudAdapter(IntegrationAdapter):
             "provider": IntegrationProvider.WHATSAPP.value,
             "status_code": status_code,
             "message_id": messages[0].get("id") if messages else None,
+        }
+
+    async def _send_template(self, arguments: dict[str, Any]) -> object:
+        recipient = arguments.get("to")
+        if not isinstance(recipient, str) or not recipient.strip() or len(recipient) > 32:
+            raise ValueError("chat.template.send requires a recipient phone number")
+        template_name = arguments.get("template_name")
+        if (
+            not isinstance(template_name, str)
+            or not template_name.strip()
+            or len(template_name) > 512
+            or not template_name.replace("_", "").isalnum()
+        ):
+            raise ValueError("chat.template.send requires an alphanumeric template_name")
+        language_code = arguments.get("language_code", "en_US")
+        if (
+            not isinstance(language_code, str)
+            or not language_code.strip()
+            or len(language_code) > 32
+            or any(char not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_" for char in language_code)
+        ):
+            raise ValueError("chat.template.send requires a valid language_code")
+        body_parameters = arguments.get("body_parameters", [])
+        if not isinstance(body_parameters, list) or len(body_parameters) > 20:
+            raise ValueError("chat.template.send body_parameters must contain at most 20 strings")
+        if any(not isinstance(value, str) or len(value) > 1024 for value in body_parameters):
+            raise ValueError("chat.template.send body_parameters must contain strings of 1024 characters or fewer")
+
+        template: dict[str, Any] = {
+            "name": template_name.strip(),
+            "language": {"code": language_code.strip()},
+        }
+        if body_parameters:
+            template["components"] = [
+                {
+                    "type": "body",
+                    "parameters": [{"type": "text", "text": value} for value in body_parameters],
+                }
+            ]
+        body, status_code = await self._graph.request(
+            "POST",
+            f"{self.phone_number_id}/messages",
+            json={
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": recipient.strip(),
+                "type": "template",
+                "template": template,
+            },
+        )
+        messages = body.get("messages") or []
+        return {
+            "provider": IntegrationProvider.WHATSAPP.value,
+            "status_code": status_code,
+            "message_id": messages[0].get("id") if messages else None,
+            "template_name": template_name.strip(),
         }
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:

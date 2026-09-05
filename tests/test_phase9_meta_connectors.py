@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -35,6 +37,68 @@ async def test_whatsapp_identity_and_send_are_fixed_to_configured_phone() -> Non
     assert seen[0][:2] == ("GET", "/v23.0/phone-1")
     assert seen[1][:2] == ("POST", "/v23.0/phone-1/messages")
     assert "15551234567" in seen[1][2]
+
+
+@pytest.mark.anyio
+async def test_whatsapp_template_send_uses_explicit_bounded_fields() -> None:
+    payloads: list[bytes] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        payloads.append(request.read())
+        return httpx.Response(200, json={"messages": [{"id": "wamid.template.1"}]})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = WhatsAppCloudAdapter(
+            access_token=TOKEN, phone_number_id="phone-1", api_version="v23.0", client=client
+        )
+        result = await adapter.run_capability(
+            "chat.template.send",
+            {
+                "to": "15551234567",
+                "template_name": "order_update",
+                "language_code": "en_US",
+                "body_parameters": ["A-100", "ready"],
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {
+        "provider": "whatsapp",
+        "status_code": 200,
+        "message_id": "wamid.template.1",
+        "template_name": "order_update",
+    }
+    assert json.loads(payloads[0]) == {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": "15551234567",
+        "type": "template",
+        "template": {
+            "name": "order_update",
+            "language": {"code": "en_US"},
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": [
+                        {"type": "text", "text": "A-100"},
+                        {"type": "text", "text": "ready"},
+                    ],
+                }
+            ],
+        },
+    }
+
+
+@pytest.mark.anyio
+async def test_whatsapp_template_send_rejects_unsafe_template_name() -> None:
+    adapter = WhatsAppCloudAdapter(access_token=TOKEN, phone_number_id="phone-1")
+
+    with pytest.raises(ValueError, match="alphanumeric template_name"):
+        await adapter.run_capability(
+            "chat.template.send", {"to": "15551234567", "template_name": "order/update"}
+        )
 
 
 @pytest.mark.anyio
