@@ -43,6 +43,34 @@ async def test_hubspot_identity_and_contacts_use_fixed_api_calls() -> None:
 
 
 @pytest.mark.anyio
+async def test_hubspot_deals_and_tickets_use_fixed_object_endpoints() -> None:
+    seen: list[tuple[str, str]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.url.path, request.url.query.decode()))
+        assert request.headers["authorization"] == "Bearer hubspot-access-token"
+        return httpx.Response(200, json={"results": [{"id": "object-1"}], "total": 1})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = HubSpotOAuthAdapter(connection_store=_store(), client=client)
+        deals = await adapter.run_capability("crm.deal.list", {"limit": 7})
+        tickets = await adapter.run_capability("crm.ticket.list", {"limit": 8})
+    finally:
+        await client.aclose()
+
+    assert deals["results"][0]["id"] == "object-1"
+    assert tickets["results"][0]["id"] == "object-1"
+    assert seen == [
+        ("/crm/v3/objects/deals", "limit=7&properties=dealname%2Cdealstage%2Camount%2Cclosedate"),
+        (
+            "/crm/v3/objects/tickets",
+            "limit=8&properties=subject%2Ccontent%2Chs_pipeline%2Chs_pipeline_stage",
+        ),
+    ]
+
+
+@pytest.mark.anyio
 async def test_hubspot_missing_connection_is_explicit() -> None:
     adapter = HubSpotOAuthAdapter(connection_store=OAuthConnectionStore())
     connected, latency_ms, error = await adapter.test_connection()

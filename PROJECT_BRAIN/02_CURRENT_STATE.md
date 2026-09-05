@@ -439,6 +439,16 @@ contradicting note elsewhere.
   request was made; mocked tests cover endpoint, query, bearer auth, and
   identifier validation.
 
+## SESSION 2026-09-05 — HUBSPOT DEAL AND TICKET READS
+
+- **IMPLEMENTED_TESTED:** HubSpot now supports canonical `crm.deal.list` and
+  `crm.ticket.list` in addition to contacts. Each operation uses a fixed
+  HubSpot CRM object endpoint, a bounded `limit`, and an explicit property
+  allowlist; the caller cannot supply an arbitrary object name or URL.
+- OAuth configuration now requests the corresponding deals/tickets read
+  scopes. These are READ capabilities and require no approval. No live
+  HubSpot request was made.
+
 ## SESSION 2026-09-05 — GOOGLE DRIVE GOVERNED FILE CREATION
 
 - **IMPLEMENTED_TESTED:** Google Drive now supports the canonical

@@ -43,6 +43,22 @@ class HubSpotOAuthAdapter(IntegrationAdapter):
                 "/crm/v3/objects/contacts",
                 params={"limit": str(self._limit(arguments)), "properties": "email,firstname,lastname"},
             )
+        if capability_id == "crm.deal.list":
+            return await self._get(
+                "/crm/v3/objects/deals",
+                params={
+                    "limit": str(self._limit(arguments)),
+                    "properties": "dealname,dealstage,amount,closedate",
+                },
+            )
+        if capability_id == "crm.ticket.list":
+            return await self._get(
+                "/crm/v3/objects/tickets",
+                params={
+                    "limit": str(self._limit(arguments)),
+                    "properties": "subject,content,hs_pipeline,hs_pipeline_stage",
+                },
+            )
         if capability_id == "crm.contact.update":
             identifier, id_property, properties = self._contact_update_payload(arguments)
             return await self._patch(

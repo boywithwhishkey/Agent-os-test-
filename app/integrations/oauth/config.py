@@ -126,7 +126,8 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         token_url="https://api.hubapi.com/oauth/v3/token",
         scope=(
             "oauth account-info.basic.read crm.objects.contacts.read "
-            "crm.objects.contacts.write"
+            "crm.objects.contacts.write crm.objects.deals.read "
+            "crm.objects.tickets.read"
         ),
         client_id_env="HUBSPOT_OAUTH_CLIENT_ID",
         client_secret_env="HUBSPOT_OAUTH_CLIENT_SECRET",
