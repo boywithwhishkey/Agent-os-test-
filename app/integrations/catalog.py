@@ -581,7 +581,7 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="salesforce",
         name="Salesforce",
-        description="Read and update Salesforce CRM records.",
+        description="Read Salesforce organization details and list contacts.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="CloudSun",
@@ -593,6 +593,12 @@ CATALOG: list[CatalogSpec] = [
             "crm.deal.list",
         ],
         documentation_url="https://www.salesforce.com",
+        implemented=True,
+        requires=[
+            "SALESFORCE_OAUTH_CLIENT_ID",
+            "SALESFORCE_OAUTH_CLIENT_SECRET",
+            "SALESFORCE_INSTANCE_URL",
+        ],
     ),
     CatalogSpec(
         id="stripe",

@@ -95,8 +95,8 @@ The capability layer, risk classification and SSRF guard are in
    GitLab, Slack, Notion) by mapping their canonical capabilities to real
    operations. Today each adapter only verifies identity; `repo.issue.create`
    and `chat.message.send` are declared but not wired.
-5. **Then** expand to new providers, highest-value first (Salesforce, Supabase,
-   and Zapier). Gmail, Google
+5. **Then** expand to new providers, highest-value first (Supabase and Zapier).
+   Gmail, Google
    Calendar, Google Drive, Telegram, Stripe, Discord, and Teams now have
    tested adapter foundations but still need real credentials or OAuth consent
    for live validation.

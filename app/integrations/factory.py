@@ -147,6 +147,14 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "HubSpot",
         "requires": ["HUBSPOT_OAUTH_CLIENT_ID", "HUBSPOT_OAUTH_CLIENT_SECRET"],
     },
+    IntegrationProvider.SALESFORCE: {
+        "name": "Salesforce",
+        "requires": [
+            "SALESFORCE_OAUTH_CLIENT_ID",
+            "SALESFORCE_OAUTH_CLIENT_SECRET",
+            "SALESFORCE_INSTANCE_URL",
+        ],
+    },
 }
 
 
@@ -284,6 +292,11 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.oauth.registry import oauth_connection_store
 
         return HubSpotOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "salesforce":
+        from app.integrations.oauth.registry import oauth_connection_store
+        from app.integrations.salesforce import SalesforceOAuthAdapter
+
+        return SalesforceOAuthAdapter(connection_store=oauth_connection_store)
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -379,4 +392,10 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.microsoft_oauth_client_id and settings.microsoft_oauth_client_secret)
     if provider == IntegrationProvider.HUBSPOT:
         return bool(settings.hubspot_oauth_client_id and settings.hubspot_oauth_client_secret)
+    if provider == IntegrationProvider.SALESFORCE:
+        return bool(
+            settings.salesforce_oauth_client_id
+            and settings.salesforce_oauth_client_secret
+            and settings.salesforce_instance_url
+        )
     return False

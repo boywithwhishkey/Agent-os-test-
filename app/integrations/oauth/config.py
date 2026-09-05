@@ -116,6 +116,15 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="HUBSPOT_OAUTH_CLIENT_ID",
         client_secret_env="HUBSPOT_OAUTH_CLIENT_SECRET",
     ),
+    "salesforce": OAuthProviderConfig(
+        id="salesforce",
+        name="Salesforce",
+        authorize_url="https://login.salesforce.com/services/oauth2/authorize",
+        token_url="https://login.salesforce.com/services/oauth2/token",
+        scope="api refresh_token",
+        client_id_env="SALESFORCE_OAUTH_CLIENT_ID",
+        client_secret_env="SALESFORCE_OAUTH_CLIENT_SECRET",
+    ),
 }
 
 

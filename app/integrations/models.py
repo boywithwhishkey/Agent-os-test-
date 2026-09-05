@@ -39,6 +39,7 @@ class IntegrationProvider(StrEnum):
     DROPBOX = "dropbox"
     ONEDRIVE = "onedrive"
     HUBSPOT = "hubspot"
+    SALESFORCE = "salesforce"
 
 
 class IntegrationRequest(BaseModel):

@@ -72,6 +72,20 @@ contradicting note elsewhere.
   catalog-only**. PostgreSQL and Redis remain the only live-validated
   providers in the local development environment.
 
+## SESSION 2026-09-05 — SALESFORCE OAUTH READ CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Salesforce now uses the OAuth web-server flow and a
+  fixed, server-configured instance URL for read-only organization identity and
+  bounded contact-list SOQL queries. CRM writes and arbitrary SOQL remain
+  disabled.
+- **CREDENTIAL_REQUIRED:** no Salesforce connected app or token was available
+  here, so no live request was made. Focused tests cover fixed API-version
+  routing, server-defined SOQL, HTTPS instance validation, bounded limits,
+  missing connections, and secret-safe errors.
+- Catalog truth after this session: **35 entries, 33 implemented/tested, 2
+  catalog-only**. PostgreSQL and Redis remain the only live-validated
+  providers in the local development environment.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

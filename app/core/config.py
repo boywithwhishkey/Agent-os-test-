@@ -131,6 +131,16 @@ class Settings(BaseSettings):
     hubspot_oauth_client_secret: str | None = Field(
         default=None, validation_alias="HUBSPOT_OAUTH_CLIENT_SECRET"
     )
+    salesforce_oauth_client_id: str | None = Field(
+        default=None, validation_alias="SALESFORCE_OAUTH_CLIENT_ID"
+    )
+    salesforce_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="SALESFORCE_OAUTH_CLIENT_SECRET"
+    )
+    salesforce_instance_url: str | None = Field(
+        default=None, validation_alias="SALESFORCE_INSTANCE_URL"
+    )
+    salesforce_api_version: str = Field(default="v61.0", validation_alias="SALESFORCE_API_VERSION")
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )
