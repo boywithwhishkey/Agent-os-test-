@@ -31,6 +31,7 @@ class IntegrationProvider(StrEnum):
     WOOCOMMERCE = "woocommerce"
     VERCEL = "vercel"
     LINEAR = "linear"
+    AMAZON = "amazon"
 
 
 class IntegrationRequest(BaseModel):

@@ -63,7 +63,8 @@ Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel and Linear now have read-only foundations.
 Phase 1 continues with Meta inbound/webhook capabilities; Stripe now has a
-read-only foundation, followed by Amazon SP-API and Jira. Every entry
+read-only foundation, followed by Amazon SP-API sandbox/order capabilities and
+Jira. Every entry
 must pass the adapter/capability/approval/audit/test/live-validation contract;
 the goal is not to inflate the catalog with unconnected cards.
 

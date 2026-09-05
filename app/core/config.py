@@ -81,6 +81,25 @@ class Settings(BaseSettings):
     vercel_api_token: str | None = Field(default=None, validation_alias="VERCEL_API_TOKEN")
     vercel_team_id: str | None = Field(default=None, validation_alias="VERCEL_TEAM_ID")
     linear_api_key: str | None = Field(default=None, validation_alias="LINEAR_API_KEY")
+    amazon_lwa_client_id: str | None = Field(
+        default=None, validation_alias="AMAZON_LWA_CLIENT_ID"
+    )
+    amazon_lwa_client_secret: str | None = Field(
+        default=None, validation_alias="AMAZON_LWA_CLIENT_SECRET"
+    )
+    amazon_lwa_refresh_token: str | None = Field(
+        default=None, validation_alias="AMAZON_LWA_REFRESH_TOKEN"
+    )
+    amazon_aws_access_key_id: str | None = Field(
+        default=None, validation_alias="AMAZON_AWS_ACCESS_KEY_ID"
+    )
+    amazon_aws_secret_access_key: str | None = Field(
+        default=None, validation_alias="AMAZON_AWS_SECRET_ACCESS_KEY"
+    )
+    amazon_aws_session_token: str | None = Field(
+        default=None, validation_alias="AMAZON_AWS_SESSION_TOKEN"
+    )
+    amazon_region: str = Field(default="na", validation_alias="AMAZON_REGION")
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

@@ -75,6 +75,16 @@ contradicting note elsewhere.
   Deploy and issue mutations remain disabled pending separate approval-gated
   capabilities.
 
+## SESSION 2026-09-05 — AMAZON SP-API SIGNED IDENTITY CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Amazon now has a Login with Amazon refresh-token
+  exchange plus AWS SigV4-signed seller identity probe, with explicit region and
+  IAM credential configuration. No arbitrary endpoint or operation is accepted.
+- It remains **CREDENTIAL_REQUIRED** until LWA, refresh-token, and IAM signing
+  credentials are supplied; no live Amazon request was made.
+- Orders, listings, fulfillment, and restricted-role operations remain separate
+  capabilities pending sandbox coverage and approval requirements.
+
 ## SESSION 2026-09-05 — STRIPE READ-ONLY COMMERCE CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Stripe now has a secret-key adapter for account

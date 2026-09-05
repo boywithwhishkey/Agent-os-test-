@@ -33,8 +33,9 @@ without that loop remain metadata only.
 
 1. Shopify Admin API — implemented/tested read-only shop/products/orders
    foundation; merchant OAuth, inventory, and webhook subscriptions follow.
-2. Amazon Selling Partner API — Login with Amazon/OAuth, marketplace-aware
-   endpoints, sandbox tests, and restricted-role handling.
+2. Amazon Selling Partner API — implemented/tested LWA + SigV4 seller-identity
+   foundation; marketplace-aware orders, sandbox tests, and restricted-role
+   handling follow.
 3. WooCommerce — implemented/tested read-only store/product/order foundation;
    approval-gated writes follow.
 4. Stripe — implemented/tested read-only account/payment/subscription
@@ -86,7 +87,7 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 34 catalog entries. Twenty-four have adapters and tests; PostgreSQL
+THYNACT now has 35 catalog entries. Twenty-five have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. Fourteen catalog entries still need real
 adapters, beginning with Amazon SP-API, Jira, and the remaining social/productivity

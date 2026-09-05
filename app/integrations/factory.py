@@ -105,6 +105,16 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Linear",
         "requires": ["LINEAR_API_KEY"],
     },
+    IntegrationProvider.AMAZON: {
+        "name": "Amazon Selling Partner API",
+        "requires": [
+            "AMAZON_LWA_CLIENT_ID",
+            "AMAZON_LWA_CLIENT_SECRET",
+            "AMAZON_LWA_REFRESH_TOKEN",
+            "AMAZON_AWS_ACCESS_KEY_ID",
+            "AMAZON_AWS_SECRET_ACCESS_KEY",
+        ],
+    },
 }
 
 
@@ -211,6 +221,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.linear import LinearAdapter
 
         return LinearAdapter()
+    if normalized == "amazon":
+        from app.integrations.amazon import AmazonSPAPIAdapter
+
+        return AmazonSPAPIAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -280,4 +294,12 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.vercel_api_token)
     if provider == IntegrationProvider.LINEAR:
         return bool(settings.linear_api_key)
+    if provider == IntegrationProvider.AMAZON:
+        return bool(
+            settings.amazon_lwa_client_id
+            and settings.amazon_lwa_client_secret
+            and settings.amazon_lwa_refresh_token
+            and settings.amazon_aws_access_key_id
+            and settings.amazon_aws_secret_access_key
+        )
     return False
