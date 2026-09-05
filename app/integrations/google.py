@@ -78,6 +78,13 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 params=self._limit_params(arguments),
             )
 
+        if self.provider is IntegrationProvider.GMAIL and capability_id == "mail.message.read":
+            message_id = self._message_id(arguments)
+            return await self._get(
+                f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{quote(message_id, safe='')}",
+                params={"format": "full"},
+            )
+
         if self.provider is IntegrationProvider.GMAIL and capability_id == "mail.draft.create":
             return await self._post(
                 "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
@@ -168,6 +175,19 @@ class GoogleOAuthAdapter(IntegrationAdapter):
         if isinstance(query, str) and query.strip():
             params["q"] = query.strip()
         return params
+
+    @staticmethod
+    def _message_id(arguments: dict[str, Any]) -> str:
+        message_id = arguments.get("message_id")
+        if (
+            not isinstance(message_id, str)
+            or not 1 <= len(message_id.strip()) <= 255
+            or "/" in message_id
+            or "\\" in message_id
+            or any(ord(char) < 0x20 for char in message_id)
+        ):
+            raise ValueError("mail.message.read requires a valid message_id")
+        return message_id.strip()
 
     @staticmethod
     def _draft_raw(arguments: dict[str, Any], *, operation: str = "mail.draft.create") -> str:

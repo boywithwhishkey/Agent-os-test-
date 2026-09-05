@@ -118,6 +118,43 @@ async def test_google_read_capabilities_use_provider_endpoints_and_limits() -> N
 
 
 @pytest.mark.anyio
+async def test_gmail_message_read_uses_fixed_message_endpoint() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["query"] = request.url.query.decode()
+        seen["auth"] = request.headers["authorization"]
+        return httpx.Response(200, json={"id": "msg_1", "payload": {"headers": []}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GMAIL,
+            connection_store=_connected_store(IntegrationProvider.GMAIL),
+            client=client,
+        )
+        result = await adapter.run_capability("mail.message.read", {"message_id": "msg_1"})
+    finally:
+        await client.aclose()
+
+    assert result == {"id": "msg_1", "payload": {"headers": []}}
+    assert seen == {
+        "method": "GET",
+        "path": "/gmail/v1/users/me/messages/msg_1",
+        "query": "format=full",
+        "auth": "Bearer google-access-token",
+    }
+
+
+@pytest.mark.parametrize("message_id", ["", "bad/id", "bad\\id", "bad\nheader"])
+def test_gmail_message_id_is_validated(message_id: str) -> None:
+    with pytest.raises(ValueError, match="message_id"):
+        GoogleOAuthAdapter._message_id({"message_id": message_id})
+
+
+@pytest.mark.anyio
 async def test_google_calendar_event_create_uses_fixed_insert_endpoint() -> None:
     seen: dict[str, object] = {}
 

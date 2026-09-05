@@ -429,6 +429,16 @@ contradicting note elsewhere.
   existing connections must authorize again if their grant predates that
   scope. No live Gmail request was made.
 
+## SESSION 2026-09-05 — GMAIL MESSAGE CONTENT READ
+
+- **IMPLEMENTED_TESTED:** Gmail now supports canonical `mail.message.read`.
+  The adapter validates a single message identifier, uses Gmail's fixed
+  `/users/me/messages/{id}` endpoint with `format=full`, and never accepts a
+  caller-controlled URL or method.
+- This remains a READ capability and does not require approval. No live Gmail
+  request was made; mocked tests cover endpoint, query, bearer auth, and
+  identifier validation.
+
 ## SESSION 2026-09-05 — GOOGLE DRIVE GOVERNED FILE CREATION
 
 - **IMPLEMENTED_TESTED:** Google Drive now supports the canonical
