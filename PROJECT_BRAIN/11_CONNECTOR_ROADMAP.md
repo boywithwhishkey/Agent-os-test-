@@ -50,7 +50,7 @@ without that loop remain metadata only.
 ### Daily productivity
 
 Google Gmail/Calendar/Drive, Microsoft Outlook/Calendar/OneDrive, Notion,
-GitHub/GitLab, Linear (read-only foundation implemented), Jira, Dropbox, Todoist, Trello, Asana, Zoom, and
+GitHub/GitLab, Linear (issue list/create/update implemented), Jira, Dropbox, Todoist, Trello, Asana, Zoom, and
 calendar/meeting providers are added through the same OAuth/API families.
 
 ## Delivery phases
@@ -110,6 +110,9 @@ Dropbox and OneDrive now have scoped OAuth identity/file-list foundations;
 file mutations remain separately gated.
 HubSpot now has an OAuth identity/contact-list foundation; CRM mutations remain
 separately gated.
+Linear now has fixed GraphQL identity/issue-list operations plus governed
+`tracker.issue.create` and `tracker.issue.update` mutations. Those writes remain
+credential-gated and require the shared broker approval/audit path at runtime.
 Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a

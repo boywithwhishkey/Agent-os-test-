@@ -61,7 +61,8 @@ CLOSED; do not re-litigate them.
 The active expansion goal is tracked in `PROJECT_BRAIN/11_CONNECTOR_ROADMAP.md`.
 Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
-tested read-only foundations. Vercel and Linear now have read-only foundations.
+tested read-only foundations. Vercel remains read-only; Linear now has
+governed issue create/update mutations as well as read capabilities.
 Phase 1 continues with Meta inbound/webhook capabilities; Stripe now has a
 read-only foundation, Google Gmail/Calendar/Drive and Jira now have shared
 OAuth read-only adapters, followed by Amazon SP-API sandbox/order capabilities.
@@ -94,10 +95,10 @@ The capability layer, risk classification and SSRF guard are in
    current OAuth key is deployment-scoped, not multi-user isolation. See
    the multi-tenancy section of `02_CURRENT_STATE.md`; do not ship multi-user
    on the current store.
-4. **Finish the four OAuth providers that already have full flows** (GitHub,
-   GitLab, Slack, Notion) by mapping their canonical capabilities to real
-   operations. Today each adapter only verifies identity; `repo.issue.create`
-   and `chat.message.send` are declared but not wired.
+4. **Finish the remaining OAuth provider depth** (GitHub, GitLab, Slack,
+   Notion, and the Google/Microsoft providers) by mapping their declared
+   capabilities to real operations. Linear issue writes are now the reference
+   for a governed GraphQL mutation; Vercel deploy mutations remain disabled.
 5. **Then** deepen the complete provider set systematically: tenant isolation,
    provider-specific event expansion,
    provider sandbox runs, and real credential-backed live validation. Gmail,
@@ -278,9 +279,11 @@ In rough priority order:
   never allowed to block correctness work.
 
 ## 3. Standing verification commands
-- Backend: `uv run pytest tests/ -q` (230 passing as of 2026-08-31).
+- Backend: `uv run pytest tests/ -q` (528 passing, 13 skipped, verified
+  2026-09-05).
 - Frontend from `frontend/`: `pnpm typecheck && pnpm lint && pnpm test &&
-  pnpm build` (48 passing, 2 pre-existing lint warnings).
+  pnpm build` (109 passing, typecheck/build clean, 9 pre-existing lint
+  warnings).
 - Production: `curl https://api.thynact.com/health` and `/ready`; compare the
   served frontend asset hash against a fresh local `pnpm build`.
 

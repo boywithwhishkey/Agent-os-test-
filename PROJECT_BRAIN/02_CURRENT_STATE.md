@@ -367,10 +367,12 @@ contradicting note elsewhere.
 ## SESSION 2026-09-05 — VERCEL AND LINEAR CONNECTORS
 
 - **IMPLEMENTED_TESTED:** Vercel now verifies the account and lists projects;
-  Linear now verifies the viewer and lists issues through fixed GraphQL queries.
+  Linear now verifies the viewer, lists issues, and supports governed issue
+  creation and updates through fixed GraphQL mutations with variables.
 - Both remain **CREDENTIAL_REQUIRED** until their API credentials are supplied.
-  Deploy and issue mutations remain disabled pending separate approval-gated
-  capabilities.
+  Vercel deploy mutations remain disabled. Linear issue writes are routed
+  through the canonical WRITE risk/approval/audit path; no live provider call
+  was made in this pass.
 
 ## SESSION 2026-09-05 — AMAZON SP-API SIGNED IDENTITY CONNECTOR
 
@@ -2632,3 +2634,19 @@ build all clean.
 | Settings | DONE (this session: About/brand section added) | API base URL + key (sessionStorage only), theme, About |
 | Persistence | PARTIAL — production is memory-only | Code supports Postgres/Redis backends (`app/persistence/`, `app/queue/redis_queue.py`) but production has none configured (see NEEDS CREDENTIALS) |
 | Responsive UI | Dashboard + mobile sidebar drawer VERIFIED at 320/360/390/430/640/768/1024px, both themes, HEAD `aad329e` (real rendering + programmatic overflow check, not just code review) | Codebase has solid responsive primitives (`overflow-x-hidden`, `min-w-0`, mobile sidebar drawer, responsive grids). Verified this session: no horizontal overflow at any of the 7 breakpoints, Dashboard cards 1-up below 640px / 2-up 640-1023px / 4-up 1024px+, mobile drawer opens and is fully legible. NOT yet re-verified this way: every other page (Tasks/Workflows/Memory/etc. were audited at the source level in a prior session, and Tools/Settings were spot-checked at desktop width only this session — not at all 7 breakpoints), iPad/tablet-specific AmbientBackground blur cost, AccountPopover touch sizing |
+
+## LATEST VERIFIED SNAPSHOT — 2026-09-05
+
+- Linear's cataloged `tracker.issue.create` and `tracker.issue.update`
+  capabilities are implemented in `app/integrations/linear.py`. Inputs are
+  bounded and identifier-validated; GraphQL variables are used instead of
+  interpolating workflow data; unsuccessful mutation payloads fail closed.
+- Focused connector, capability, and broker checks: **34 passed**. Full gate:
+  **528 backend tests passed, 13 skipped, 1 warning; 109 frontend tests
+  passed; typecheck and production build passed; lint 0 errors / 9 existing
+  warnings**.
+- Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
+  so no live Linear request or live credential validation was performed.
+- Code and tests are pushed to the isolated branch
+  `claude/thynact-postgres-correctness` at commit `f3f5901`. Ride&Glide and
+  production remain untouched.
