@@ -385,6 +385,8 @@ CATALOG: list[CatalogSpec] = [
             "chat.message.list",
             "chat.message.send",
         ],
+        implemented=True,
+        requires=["TEAMS_WEBHOOK_URL"],
         documentation_url="https://www.microsoft.com/microsoft-teams",
     ),
     # --- Google ---

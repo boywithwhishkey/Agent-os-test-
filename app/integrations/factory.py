@@ -73,6 +73,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Instagram",
         "requires": ["META_ACCESS_TOKEN", "INSTAGRAM_BUSINESS_ACCOUNT_ID"],
     },
+    IntegrationProvider.TEAMS: {
+        "name": "Microsoft Teams",
+        "requires": ["TEAMS_WEBHOOK_URL"],
+    },
 }
 
 
@@ -151,6 +155,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.instagram import InstagramGraphAdapter
 
         return InstagramGraphAdapter()
+    if normalized == "teams":
+        from app.integrations.teams import TeamsWebhookAdapter
+
+        return TeamsWebhookAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -202,4 +210,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.meta_access_token and settings.whatsapp_phone_number_id)
     if provider == IntegrationProvider.INSTAGRAM:
         return bool(settings.meta_access_token and settings.instagram_business_account_id)
+    if provider == IntegrationProvider.TEAMS:
+        return bool(settings.teams_webhook_url)
     return False

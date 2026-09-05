@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     instagram_business_account_id: str | None = Field(
         default=None, validation_alias="INSTAGRAM_BUSINESS_ACCOUNT_ID"
     )
+    teams_webhook_url: str | None = Field(default=None, validation_alias="TEAMS_WEBHOOK_URL")
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

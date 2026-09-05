@@ -37,6 +37,14 @@ contradicting note elsewhere.
 - Media publishing, templates, inbound webhook verification, comments, and
   campaign operations remain separate follow-on capabilities.
 
+## SESSION 2026-09-05 — MICROSOFT TEAMS WEBHOOK CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Teams now has a fixed, server-configured incoming
+  webhook adapter for governed `chat.message.send`, with timeout/error handling,
+  live-status registration, and secret-safe mocked tests.
+- It remains **CREDENTIAL_REQUIRED** until `TEAMS_WEBHOOK_URL` is supplied and
+  a real probe succeeds. This pass made no live Teams request.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

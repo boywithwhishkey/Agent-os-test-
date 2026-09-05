@@ -21,7 +21,8 @@ without that loop remain metadata only.
    comments and messaging where the approved permissions allow it.
 4. Snapchat Marketing/Public Profile APIs — OAuth, ad/profile scopes, and
    allowlist-dependent features kept separate from generally available calls.
-5. Microsoft Teams — Graph OAuth and/or supported incoming webhook path.
+5. Microsoft Teams — tested incoming-webhook send foundation; Graph OAuth and
+   inbound/event capabilities remain follow-on work.
 6. Discord — completed send-only webhook adapter; OAuth/bot expansion follows
    only when a concrete Discord workflow needs it.
 7. Slack — existing OAuth identity adapter; governed message actions remain a
@@ -84,7 +85,7 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 31 catalog entries. Seventeen have adapters and tests; PostgreSQL
+THYNACT now has 31 catalog entries. Eighteen have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. Fourteen catalog entries still need real
 adapters, beginning with Teams and the commerce providers after the Meta batch.
