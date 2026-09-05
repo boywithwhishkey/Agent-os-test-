@@ -85,10 +85,13 @@ The capability layer, risk classification and SSRF guard are in
    OpenAI or Anthropic key, or one registered GitHub OAuth app, converts a
    whole column of CREDENTIAL_REQUIRED/AUTH_REQUIRED into a real governed call
    with an audit receipt. Start here.
-2. **Credential vault.** OAuth access tokens live in **process memory**
-   (`OAuthConnectionStore`) and are lost on restart. Encrypted persistence is
-   the prerequisite for any connector surviving a deploy.
-3. **Tenant model.** Not a connector feature — the precondition for one. See
+2. **Credential vault.** The connector branch now has an encrypted,
+   tenant-keyed PostgreSQL OAuth store, selected with
+   `AGENT_OS_OAUTH_STORAGE_BACKEND=postgres`. Before production, configure a
+   Fernet `AGENT_OS_OAUTH_ENCRYPTION_KEY`, run migration 008, and validate
+   restart/reconnect behavior against staging.
+3. **Tenant model.** Not a connector feature — the precondition for one. The
+   current OAuth key is deployment-scoped, not multi-user isolation. See
    the multi-tenancy section of `02_CURRENT_STATE.md`; do not ship multi-user
    on the current store.
 4. **Finish the four OAuth providers that already have full flows** (GitHub,

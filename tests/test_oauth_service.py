@@ -61,6 +61,30 @@ async def test_exchange_code_success(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_exchange_code_preserves_existing_refresh_token_when_provider_omits_it(monkeypatch):
+    monkeypatch.setattr(settings, "github_oauth_client_id", "client-123")
+    monkeypatch.setattr(settings, "github_oauth_client_secret", "secret-456")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"access_token": "gho_rotated", "token_type": "bearer"})
+
+    connection_store = OAuthConnectionStore()
+    connection_store.record_success(
+        "github",
+        access_token="gho_old",
+        refresh_token="refresh-stable",
+        token_type="bearer",
+        scope="repo",
+    )
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await service.exchange_code(GITHUB, code="the-code", connection_store=connection_store, client=client)
+
+    record = connection_store.get("github")
+    assert record.access_token == "gho_rotated"
+    assert record.refresh_token == "refresh-stable"
+
+
+@pytest.mark.asyncio
 async def test_exchange_code_requires_client_secret(monkeypatch):
     monkeypatch.setattr(settings, "github_oauth_client_secret", None)
     with pytest.raises(OAuthNotConfigured):

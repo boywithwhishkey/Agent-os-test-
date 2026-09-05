@@ -33,7 +33,13 @@ def test_oauth_connections_are_scoped_to_the_deployment_not_a_principal() -> Non
     signature = inspect.signature(store.record_success)
     assert "tenant" not in signature.parameters
     assert "principal" not in signature.parameters
-    assert set(signature.parameters) == {"provider", "access_token", "token_type", "scope"}
+    assert set(signature.parameters) == {
+        "provider",
+        "access_token",
+        "token_type",
+        "scope",
+        "refresh_token",
+    }
 
     # Consequence, stated explicitly: a second authorisation replaces the first
     # for everyone, rather than sitting beside it.

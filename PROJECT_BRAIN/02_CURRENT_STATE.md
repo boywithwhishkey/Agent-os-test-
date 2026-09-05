@@ -103,6 +103,22 @@ contradicting note elsewhere.
   catalog-only**. PostgreSQL and Redis remain the only live-validated
   providers in the local development environment.
 
+## SESSION 2026-09-05 — ENCRYPTED DURABLE OAUTH STORAGE
+
+- **IMPLEMENTED_TESTED:** OAuth access and refresh tokens can now be persisted
+  encrypted in PostgreSQL through migration `008_oauth_connections.sql`.
+  `OAuthTokenCipher` uses authenticated Fernet encryption; ciphertext only is
+  written to the database and tokens remain redacted from public models.
+- Storage is opt-in with `AGENT_OS_OAUTH_STORAGE_BACKEND=postgres`,
+  `AGENT_OS_OAUTH_ENCRYPTION_KEY`, and a deployment-scoped
+  `AGENT_OS_OAUTH_TENANT_ID`. Startup loads only that tenant's rows and fails
+  closed if the database or encryption key is missing/invalid. Development
+  defaults remain process-local memory.
+- **VERIFIED:** focused OAuth, persistence-safety, readiness, and durable-store
+  tests pass. No production or Ride&Glide configuration was changed. Staging
+  still needs migration 008, a generated Fernet key, and restart/reconnect
+  validation before this is called live validated.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

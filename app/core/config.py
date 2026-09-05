@@ -153,6 +153,15 @@ class Settings(BaseSettings):
     supabase_read_table: str | None = Field(
         default=None, validation_alias="SUPABASE_READ_TABLE"
     )
+    oauth_storage_backend: str = Field(
+        default="memory", validation_alias="AGENT_OS_OAUTH_STORAGE_BACKEND"
+    )
+    oauth_tenant_id: str = Field(
+        default="operator", min_length=1, validation_alias="AGENT_OS_OAUTH_TENANT_ID"
+    )
+    oauth_encryption_key: str | None = Field(
+        default=None, validation_alias="AGENT_OS_OAUTH_ENCRYPTION_KEY"
+    )
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )
@@ -245,6 +254,14 @@ class Settings(BaseSettings):
             )
         return normalized
 
+    @field_validator("oauth_storage_backend")
+    @classmethod
+    def _validate_oauth_storage_backend(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"memory", "postgres"}:
+            raise ValueError("AGENT_OS_OAUTH_STORAGE_BACKEND must be 'memory' or 'postgres'")
+        return normalized
+
     @property
     def docs_enabled(self) -> bool:
         if self.enable_docs is not None:
@@ -268,14 +285,17 @@ class Settings(BaseSettings):
             "tool": self.tool_backend,
             "queue": self.queue_backend,
         }
-        return sorted(name for name, backend in backends.items() if backend == "memory")
+        ephemeral = [name for name, backend in backends.items() if backend == "memory"]
+        if self.oauth_storage_backend == "memory":
+            ephemeral.append("oauth")
+        return sorted(ephemeral)
 
     @property
     def persistence_mode(self) -> str:
         ephemeral = self.ephemeral_subsystems
         if not ephemeral:
             return "durable"
-        if len(ephemeral) == 7:
+        if len(ephemeral) == 8:
             return "ephemeral"
         return "partial"
 
@@ -313,6 +333,17 @@ class Settings(BaseSettings):
                 )
         if self.queue_backend == "redis" and not self.redis_url:
             warnings.append("the redis queue backend is selected but REDIS_URL is empty")
+        if self.oauth_storage_backend == "postgres":
+            if not self.database_url:
+                warnings.append("OAuth PostgreSQL storage is selected but DATABASE_URL is empty")
+            if not self.oauth_encryption_key:
+                warnings.append(
+                    "OAuth PostgreSQL storage is selected but AGENT_OS_OAUTH_ENCRYPTION_KEY is empty"
+                )
+        elif self.is_production_like:
+            warnings.append(
+                f"{self.app_env} is using process-local OAuth storage; OAuth tokens are lost on restart"
+            )
         return warnings
 
     @property

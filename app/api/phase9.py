@@ -527,3 +527,4 @@ async def oauth_disconnect_route(provider: str) -> None:
     if config is None:
         raise HTTPException(status_code=404, detail=f"Unknown OAuth provider: {provider}")
     oauth_connection_store.disconnect(config.id)
+    await oauth_connection_store.persist_disconnect(config.id)

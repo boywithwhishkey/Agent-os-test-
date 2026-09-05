@@ -21,6 +21,8 @@ from app.core import lifecycle
 from app.core.config import settings
 from app.core.correlation import CORRELATION_HEADER, get_or_create_correlation_id
 from app.core.readiness import check_readiness
+from app.integrations.oauth.crypto import OAuthTokenCipher
+from app.integrations.oauth.registry import oauth_connection_store
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,17 @@ async def lifespan(app: FastAPI):
         )
     for warning in settings.persistence_warnings():
         logger.warning("configuration: %s", warning)
+    if settings.oauth_storage_backend == "postgres":
+        from app.core.lifecycle import register_resource
+        from app.persistence.database import AsyncpgDatabase
+
+        database = register_resource(AsyncpgDatabase.from_settings())
+        oauth_connection_store.configure(
+            database=database,
+            tenant_id=settings.oauth_tenant_id,
+            cipher=OAuthTokenCipher(settings.oauth_encryption_key or ""),
+        )
+        await oauth_connection_store.initialize()
     yield
     await lifecycle.close_all()
 

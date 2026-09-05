@@ -42,6 +42,7 @@ class OAuthStateRecord:
 class OAuthConnectionRecord:
     provider: str
     access_token: str | None = None
+    refresh_token: str | None = None
     token_type: str | None = None
     scope: str | None = None
     connected_at: str | None = None
