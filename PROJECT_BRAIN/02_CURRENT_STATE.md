@@ -154,6 +154,17 @@ contradicting note elsewhere.
   fails closed. A consumer that maps queued provider events to workflows is
   still a separate follow-on.
 
+## SESSION 2026-09-05 — WEBHOOK WORKFLOW CONSUMER
+
+- **IMPLEMENTED_TESTED:** `WebhookConsumer` and
+  `scripts/webhook_worker.py` now turn queued `connector.webhook` jobs into
+  workflow runs. Provider payloads cannot select a workflow; only the typed
+  `AGENT_OS_WEBHOOK_WORKFLOW_MAP` allowlist can do that. Missing routes or
+  definitions fail into the existing retry/dead-letter worker path.
+- The consumer process is intentionally separate from the API process. It can
+  be run against the same Redis namespace in a deployment; no local or
+  production process was started by this change.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

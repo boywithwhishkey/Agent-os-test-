@@ -1,3 +1,5 @@
+import json
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -64,6 +66,9 @@ class Settings(BaseSettings):
     )
     webhook_max_body_bytes: int = Field(
         default=262_144, ge=1_024, le=5_242_880, validation_alias="AGENT_OS_WEBHOOK_MAX_BODY_BYTES"
+    )
+    webhook_workflow_map: str = Field(
+        default="", validation_alias="AGENT_OS_WEBHOOK_WORKFLOW_MAP"
     )
     meta_access_token: str | None = Field(default=None, validation_alias="META_ACCESS_TOKEN")
     meta_graph_api_version: str = Field(default="v23.0", validation_alias="META_GRAPH_API_VERSION")
@@ -272,6 +277,25 @@ class Settings(BaseSettings):
             raise ValueError("AGENT_OS_OAUTH_STORAGE_BACKEND must be 'memory' or 'postgres'")
         return normalized
 
+    @field_validator("webhook_workflow_map")
+    @classmethod
+    def _validate_webhook_workflow_map(cls, value: str) -> str:
+        if not value.strip():
+            return value
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise ValueError("AGENT_OS_WEBHOOK_WORKFLOW_MAP must be a JSON object") from exc
+        if not isinstance(parsed, dict) or any(
+            not isinstance(key, str)
+            or not key.strip()
+            or not isinstance(route, str)
+            or not route.strip()
+            for key, route in parsed.items()
+        ):
+            raise ValueError("AGENT_OS_WEBHOOK_WORKFLOW_MAP must map provider names to workflow ids")
+        return value
+
     @property
     def docs_enabled(self) -> bool:
         if self.enable_docs is not None:
@@ -369,6 +393,13 @@ class Settings(BaseSettings):
     @property
     def allowed_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def webhook_workflow_routes(self) -> dict[str, str]:
+        if not self.webhook_workflow_map.strip():
+            return {}
+        parsed = json.loads(self.webhook_workflow_map)
+        return {key.strip().lower(): route.strip() for key, route in parsed.items()}
 
     model_config = SettingsConfigDict(
         env_file=".env",
