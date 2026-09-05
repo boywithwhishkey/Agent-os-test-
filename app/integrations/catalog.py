@@ -589,12 +589,12 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="salesforce",
         name="Salesforce",
-        description="Read Salesforce organization details and list contacts.",
+        description="Read and approval-update Salesforce contacts.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="CloudSun",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["CRM records"],
+        capabilities=["CRM records", "Update contacts"],
         canonical_capabilities=[
             "crm.contact.list",
             "crm.contact.update",

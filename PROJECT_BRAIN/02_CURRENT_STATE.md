@@ -472,6 +472,17 @@ contradicting note elsewhere.
   remains WRITE and requires broker approval/audit. No live HubSpot request was
   made.
 
+## SESSION 2026-09-05 — SALESFORCE GOVERNED CONTACT UPDATE
+
+- **IMPLEMENTED_TESTED:** Salesforce now supports the canonical
+  `crm.contact.update` capability through the versioned sObject `Contact`
+  `PATCH` endpoint. Updates require a bounded Salesforce contact ID and a
+  bounded scalar field map; a successful empty-body response is normalized to
+  an audited `{id, updated}` result.
+- The existing OAuth `api` scope covers this write path. The capability remains
+  WRITE and requires broker approval/audit. No live Salesforce request was
+  made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only
