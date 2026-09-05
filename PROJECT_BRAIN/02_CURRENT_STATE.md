@@ -1,4 +1,4 @@
-# CURRENT STATE — verified as of 2026-08-31, HEAD `1b5ccc6`
+# CURRENT STATE — verified as of 2026-09-05, Google connector checkpoint
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
