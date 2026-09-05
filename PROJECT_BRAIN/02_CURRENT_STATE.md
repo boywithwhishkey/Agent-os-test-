@@ -394,6 +394,18 @@ contradicting note elsewhere.
   the account probe succeeds. Tests use mocked Stripe responses; no live Stripe
   request was made.
 
+## SESSION 2026-09-05 — GOOGLE CALENDAR GOVERNED EVENT CREATION
+
+- **IMPLEMENTED_TESTED:** Google Calendar now supports the canonical
+  `calendar.event.create` capability through the shared OAuth adapter. Event
+  creation validates the calendar identifier, bounded summary/description,
+  timezone-aware RFC3339 start/end values, and chronological ordering before
+  issuing the fixed Google Calendar `events.insert` request.
+- The OAuth scope now requests `calendar.events`; existing read-only tokens
+  must be authorized again before this write capability can run. The broker's
+  WRITE approval and audit path remains authoritative. No live Google request
+  was made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

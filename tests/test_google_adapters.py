@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -112,6 +114,67 @@ async def test_google_read_capabilities_use_provider_endpoints_and_limits() -> N
             "pageSize=9&fields=files%28id%2Cname%2CmimeType%2CmodifiedTime%29",
         ),
     ]
+
+
+@pytest.mark.anyio
+async def test_google_calendar_event_create_uses_fixed_insert_endpoint() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"id": "event_1", "status": "confirmed"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GOOGLE_CALENDAR,
+            connection_store=_connected_store(IntegrationProvider.GOOGLE_CALENDAR),
+            client=client,
+        )
+        result = await adapter.run_capability(
+            "calendar.event.create",
+            {
+                "calendar_id": "primary",
+                "summary": "Planning",
+                "start": "2026-09-05T10:00:00+05:30",
+                "end": "2026-09-05T11:00:00+05:30",
+                "description": "Weekly planning",
+                "timezone": "Asia/Kolkata",
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {"id": "event_1", "status": "confirmed"}
+    assert seen == {
+        "method": "POST",
+        "path": "/calendar/v3/calendars/primary/events",
+        "auth": "Bearer google-access-token",
+        "body": {
+            "summary": "Planning",
+            "start": {"dateTime": "2026-09-05T10:00:00+05:30", "timeZone": "Asia/Kolkata"},
+            "end": {"dateTime": "2026-09-05T11:00:00+05:30", "timeZone": "Asia/Kolkata"},
+            "description": "Weekly planning",
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"summary": "x", "start": "2026-09-05T11:00:00Z", "end": "2026-09-05T10:00:00Z"}, "after start"),
+        ({"summary": "x", "start": "2026-09-05T10:00:00", "end": "2026-09-05T11:00:00"}, "timezone offset"),
+        ({"summary": "x", "start": "bad", "end": "2026-09-05T11:00:00Z"}, "RFC3339"),
+    ],
+)
+def test_google_calendar_event_arguments_are_validated(
+    arguments: dict[str, object], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        GoogleOAuthAdapter._event_payload(arguments)
 
 
 @pytest.mark.anyio
