@@ -63,6 +63,8 @@ Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel remains read-only; Linear now has
 governed issue create/update mutations as well as read capabilities.
+Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
+provider credentials remain required for live validation.
 Phase 1 continues with Meta inbound/webhook capabilities; Stripe now has a
 read-only foundation, Google Gmail/Calendar/Drive and Jira now have shared
 OAuth read-only adapters, followed by Amazon SP-API sandbox/order capabilities.

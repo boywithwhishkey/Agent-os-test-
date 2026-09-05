@@ -103,16 +103,21 @@ encrypted expiry metadata, and verified Meta / Telegram webhook ingress with
 queue handoff and replay suppression are now implemented and tested; live
 provider refresh/webhook delivery is still credential-gated.
 Google Gmail/Calendar/Drive now share one OAuth client configuration and have
-read-only identity/list adapters; write capabilities remain separately gated.
+read-only identity/list adapters plus bounded Drive file-content reads; write
+capabilities remain separately gated.
 Jira now has the same read-only OAuth foundation with a server-configured cloud
 id; issue mutations remain a separate approval-gated capability.
-Dropbox and OneDrive now have scoped OAuth identity/file-list foundations;
-file mutations remain separately gated.
+Dropbox and OneDrive now have scoped OAuth identity/file-list/file-content
+foundations; file writes/deletes remain separately gated. Dropbox's OAuth scope
+now includes `files.content.read`, so existing connections must re-authorize.
 HubSpot now has an OAuth identity/contact-list foundation; CRM mutations remain
 separately gated.
 Linear now has fixed GraphQL identity/issue-list operations plus governed
 `tracker.issue.create` and `tracker.issue.update` mutations. Those writes remain
 credential-gated and require the shared broker approval/audit path at runtime.
+Google Drive, Dropbox, and OneDrive now have bounded `files.file.read`
+operations; Dropbox connections must re-authorize for the expanded content-read
+scope.
 Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a

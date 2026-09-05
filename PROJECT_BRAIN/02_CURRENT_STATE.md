@@ -2641,12 +2641,15 @@ build all clean.
   capabilities are implemented in `app/integrations/linear.py`. Inputs are
   bounded and identifier-validated; GraphQL variables are used instead of
   interpolating workflow data; unsuccessful mutation payloads fail closed.
-- Focused connector, capability, and broker checks: **34 passed**. Full gate:
-  **528 backend tests passed, 13 skipped, 1 warning; 109 frontend tests
-  passed; typecheck and production build passed; lint 0 errors / 9 existing
-  warnings**.
+- Focused connector, capability, and broker checks for Linear: **34 passed**.
+  The full gate after the file-read work is **531 backend tests passed, 13
+  skipped, 1 warning; 109 frontend tests passed; typecheck and production
+  build passed; lint 0 errors / 9 existing warnings**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
   so no live Linear request or live credential validation was performed.
+- Google Drive, Dropbox, and OneDrive now implement bounded `files.file.read`
+  responses using fixed provider download routes. These tests are mocked only;
+  no provider credentials or live file content were used.
 - Code and tests are pushed to the isolated branch
-  `claude/thynact-postgres-correctness` at commit `f3f5901`. Ride&Glide and
+  `claude/thynact-postgres-correctness` at commit `d76c5db`. Ride&Glide and
   production remain untouched.
