@@ -5,6 +5,7 @@ import hmac
 import time
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -20,7 +21,7 @@ _REGION_ENDPOINTS = {
 
 
 class AmazonSPAPIAdapter(IntegrationAdapter):
-    """Signed, read-only Amazon SP-API seller identity adapter."""
+    """Signed, read-only Amazon SP-API seller identity and order adapter."""
 
     def __init__(
         self,
@@ -65,6 +66,13 @@ class AmazonSPAPIAdapter(IntegrationAdapter):
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
+        if capability_id == "commerce.order.list":
+            token = await self._lwa_access_token()
+            return await self._signed_get(
+                "/orders/v0/orders",
+                access_token=token,
+                params=self._order_params(arguments),
+            )
         if capability_id != "identity.account.read":
             raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
         token = await self._lwa_access_token()
@@ -110,7 +118,78 @@ class AmazonSPAPIAdapter(IntegrationAdapter):
             if own_client:
                 await client.aclose()
 
-    async def _signed_get(self, path: str, *, access_token: str) -> dict[str, Any]:
+    @staticmethod
+    def _order_params(arguments: dict[str, Any]) -> list[tuple[str, str]]:
+        marketplace_ids = arguments.get("marketplace_ids")
+        if isinstance(marketplace_ids, str):
+            marketplace_ids = [marketplace_ids]
+        if (
+            not isinstance(marketplace_ids, list)
+            or not 1 <= len(marketplace_ids) <= 10
+            or any(
+                not isinstance(value, str)
+                or not 3 <= len(value.strip()) <= 40
+                or not all(char.isalnum() or char in "_-" for char in value.strip())
+                for value in marketplace_ids
+            )
+        ):
+            raise ValueError("commerce.order.list requires 1-10 safe marketplace_ids")
+
+        created_after = arguments.get("created_after")
+        if not isinstance(created_after, str) or not created_after.strip():
+            raise ValueError("commerce.order.list requires created_after")
+        try:
+            created_after_dt = datetime.fromisoformat(created_after.strip())
+        except ValueError as exc:
+            raise ValueError("created_after must be a valid RFC3339 date-time") from exc
+        if created_after_dt.tzinfo is None:
+            raise ValueError("created_after must include a timezone offset")
+
+        params: list[tuple[str, str]] = [
+            ("MarketplaceIds", value.strip()) for value in marketplace_ids
+        ]
+        params.append(("CreatedAfter", created_after.strip()))
+
+        statuses = arguments.get("order_statuses")
+        if statuses is not None:
+            if isinstance(statuses, str):
+                statuses = [statuses]
+            allowed = {
+                "Pending",
+                "Unshipped",
+                "PartiallyShipped",
+                "Shipped",
+                "Canceled",
+                "Unfulfillable",
+                "InvoiceUnconfirmed",
+                "PendingAvailability",
+            }
+            if (
+                not isinstance(statuses, list)
+                or not 1 <= len(statuses) <= 8
+                or any(not isinstance(value, str) or value.strip() not in allowed for value in statuses)
+            ):
+                raise ValueError("order_statuses contains an unsupported Amazon order status")
+            params.extend(("OrderStatuses", value.strip()) for value in statuses)
+
+        next_token = arguments.get("next_token")
+        if next_token is not None:
+            if (
+                not isinstance(next_token, str)
+                or not 1 <= len(next_token.strip()) <= 2000
+                or any(ord(char) < 0x20 for char in next_token)
+            ):
+                raise ValueError("next_token must be a safe Amazon pagination token")
+            params.append(("NextToken", next_token.strip()))
+        return params
+
+    async def _signed_get(
+        self,
+        path: str,
+        *,
+        access_token: str,
+        params: list[tuple[str, str]] | None = None,
+    ) -> dict[str, Any]:
         host, aws_region = _REGION_ENDPOINTS[self.region_name]
         now = datetime.now(UTC)
         amz_date = now.strftime("%Y%m%dT%H%M%SZ")
@@ -123,9 +202,14 @@ class AmazonSPAPIAdapter(IntegrationAdapter):
         }
         if self.aws_session_token:
             headers["x-amz-security-token"] = self.aws_session_token
+        encoded_query = sorted(
+            (quote(key, safe="-_.~"), quote(value, safe="-_.~"))
+            for key, value in (params or [])
+        )
+        canonical_query = "&".join(f"{key}={value}" for key, value in encoded_query)
         canonical_headers = "".join(f"{key}:{' '.join(value.strip().split())}\n" for key, value in sorted(headers.items()))
         signed_headers = ";".join(sorted(headers))
-        canonical_request = f"GET\n{path}\n\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
+        canonical_request = f"GET\n{path}\n{canonical_query}\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
         credential_scope = f"{date_stamp}/{aws_region}/execute-api/aws4_request"
         string_to_sign = (
             f"AWS4-HMAC-SHA256\n{amz_date}\n{credential_scope}\n"
@@ -142,7 +226,9 @@ class AmazonSPAPIAdapter(IntegrationAdapter):
         own_client = self._client is None
         client = self._client or httpx.AsyncClient()
         try:
-            response = await client.get(f"https://{host}{path}", headers=request_headers, timeout=10.0)
+            response = await client.get(
+                f"https://{host}{path}", params=params, headers=request_headers, timeout=10.0
+            )
             try:
                 body = response.json()
             except ValueError as exc:

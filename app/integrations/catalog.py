@@ -649,13 +649,13 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="amazon",
         name="Amazon Selling Partner API",
-        description="Verify an Amazon seller account through the signed SP-API.",
+        description="Verify an Amazon seller account and read bounded recent orders through the signed SP-API.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="Package",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Verify seller account"],
-        canonical_capabilities=["identity.account.read"],
+        capabilities=["Verify seller account", "List orders"],
+        canonical_capabilities=["identity.account.read", "commerce.order.list"],
         documentation_url="https://developer-docs.amazon.com/sp-api/docs/onboarding-overview",
         implemented=True,
         requires=[

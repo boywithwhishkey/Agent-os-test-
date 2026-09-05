@@ -470,6 +470,17 @@ contradicting note elsewhere.
   The existing `drive.file` grant limits the operation to files the app is
   allowed to manage. No live Google Drive request was made.
 
+## SESSION 2026-09-05 — AMAZON SP-API ORDER READ
+
+- **IMPLEMENTED_TESTED:** Amazon Selling Partner API now supports canonical
+  `commerce.order.list` in addition to seller identity. The adapter obtains a
+  cached LWA token, builds a SigV4-signed `GET /orders/v0/orders` request, and
+  validates marketplace IDs, a required RFC3339 `created_after` boundary,
+  optional allowlisted statuses, and pagination tokens before sending it.
+- This is a READ capability and requires no approval. No live Amazon request
+  was made; the mocked suite covers LWA exchange, signed query construction,
+  bounded inputs, and credential-safe errors.
+
 ## SESSION 2026-09-05 — SHOPIFY GOVERNED PRODUCT CREATION
 
 - **IMPLEMENTED_TESTED:** Shopify now supports the canonical
