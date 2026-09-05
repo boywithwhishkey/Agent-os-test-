@@ -16,6 +16,15 @@ contradicting note elsewhere.
 - It remains **CREDENTIAL_REQUIRED** until `DISCORD_WEBHOOK_URL` is supplied
   and a real connection test succeeds; this pass made no live Discord call.
 
+## SESSION 2026-09-05 — TELEGRAM BOT CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Telegram now has a server-configured Bot API adapter
+  with `identity.account.read` (`getMe`) and governed `chat.message.send`
+  (`sendMessage`) operations, factory/catalog/status registration, and mocked
+  error/secret-redaction tests.
+- It remains **CREDENTIAL_REQUIRED** until `TELEGRAM_BOT_TOKEN` is supplied
+  and `getMe` succeeds. No real Telegram request was made in this pass.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

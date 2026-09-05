@@ -2,12 +2,9 @@ from __future__ import annotations
 
 from app.integrations.oauth.models import OAuthProviderConfig
 
-# Every OAuth2 catalog entry follows the same authorization-code flow; only
-# GitHub has real Settings fields wired up today (see app/core/config.py),
-# so it is the only one marked implemented=True in the catalog. Adding the
-# next provider (Slack, Notion, ...) is: add its config here, its
-# CLIENT_ID/CLIENT_SECRET fields to Settings, and flip implemented=True on
-# its CatalogSpec.
+# Every OAuth2 catalog entry follows the same authorization-code flow. The
+# providers below have Settings fields and real identity adapters; remaining
+# providers are added only with the same complete config/adapter/test loop.
 OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
     "github": OAuthProviderConfig(
         id="github",

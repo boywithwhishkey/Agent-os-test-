@@ -58,6 +58,13 @@ CLOSED; do not re-litigate them.
 
 ## CONNECTOR PLATFORM — WHAT TO DO NEXT (updated 2026-09-04)
 
+The active expansion goal is tracked in `PROJECT_BRAIN/11_CONNECTOR_ROADMAP.md`.
+Telegram is now implemented/tested but credential-gated. Phase 1 continues
+with WhatsApp Cloud, Instagram, and Teams; commerce
+then starts with Shopify, Stripe, Amazon SP-API, and WooCommerce. Every entry
+must pass the adapter/capability/approval/audit/test/live-validation contract;
+the goal is not to inflate the catalog with unconnected cards.
+
 The broker exists now, so wiring a provider operation is a small change
 against a governed path rather than an architectural one: implement
 `run_capability` on the adapter, and the risk, approval, routing and audit are

@@ -51,6 +51,10 @@ class Settings(BaseSettings):
         default=None, validation_alias="MAKE_WEBHOOK_AUTH_VALUE"
     )
     discord_webhook_url: str | None = Field(default=None, validation_alias="DISCORD_WEBHOOK_URL")
+    telegram_bot_token: str | None = Field(default=None, validation_alias="TELEGRAM_BOT_TOKEN")
+    telegram_default_chat_id: str | None = Field(
+        default=None, validation_alias="TELEGRAM_DEFAULT_CHAT_ID"
+    )
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

@@ -61,6 +61,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Discord",
         "requires": ["DISCORD_WEBHOOK_URL"],
     },
+    IntegrationProvider.TELEGRAM: {
+        "name": "Telegram",
+        "requires": ["TELEGRAM_BOT_TOKEN"],
+    },
 }
 
 
@@ -127,6 +131,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.discord import DiscordWebhookAdapter
 
         return DiscordWebhookAdapter()
+    if normalized == "telegram":
+        from app.integrations.telegram import TelegramBotAdapter
+
+        return TelegramBotAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -172,4 +180,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.make_webhook_url)
     if provider == IntegrationProvider.DISCORD:
         return bool(settings.discord_webhook_url)
+    if provider == IntegrationProvider.TELEGRAM:
+        return bool(settings.telegram_bot_token)
     return False

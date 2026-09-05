@@ -21,6 +21,7 @@ class IntegrationProvider(StrEnum):
     GITLAB = "gitlab"
     MAKE = "make"
     DISCORD = "discord"
+    TELEGRAM = "telegram"
 
 
 class IntegrationRequest(BaseModel):
