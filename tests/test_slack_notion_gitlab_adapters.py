@@ -229,6 +229,51 @@ async def test_notion_adapter_reports_rejected_token():
     assert "401" in (error or "")
 
 
+@pytest.mark.asyncio
+async def test_notion_adapter_searches_and_reads_pages_with_fixed_routes():
+    store = OAuthConnectionStore()
+    store.record_success("notion", access_token="secret_notion", token_type="bearer", scope=None)
+    seen: list[tuple[str, str]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.method, str(request.url)))
+        assert request.headers["Authorization"] == "Bearer secret_notion"
+        assert request.headers["Notion-Version"] == "2022-06-28"
+        if request.url.path.endswith("/search"):
+            assert json.loads(request.content) == {
+                "page_size": 10,
+                "filter": {"property": "object", "value": "page"},
+                "query": "roadmap",
+                "start_cursor": "next-page",
+            }
+            return httpx.Response(200, json={"results": [{"id": "page-1"}], "has_more": False})
+        return httpx.Response(200, json={"id": "11111111-1111-1111-1111-111111111111", "object": "page"})
+
+    async with _client(handler) as client:
+        adapter = NotionOAuthAdapter(connection_store=store, client=client)
+        search = await adapter.run_capability(
+            "docs.page.read", {"query": "roadmap", "limit": 10, "cursor": "next-page"}
+        )
+        page = await adapter.run_capability(
+            "docs.page.read", {"page_id": "11111111-1111-1111-1111-111111111111"}
+        )
+
+    assert search["results"] == [{"id": "page-1"}]
+    assert page["object"] == "page"
+    assert seen == [
+        ("POST", "https://api.notion.com/v1/search"),
+        ("GET", "https://api.notion.com/v1/pages/11111111-1111-1111-1111-111111111111"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_notion_adapter_rejects_invalid_page_id():
+    adapter = NotionOAuthAdapter(connection_store=OAuthConnectionStore())
+
+    with pytest.raises(ValueError, match="Notion page id"):
+        await adapter.run_capability("docs.page.read", {"page_id": "../../secret"})
+
+
 # --- GitLab ---
 
 

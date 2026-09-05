@@ -228,6 +228,18 @@ contradicting note elsewhere.
   repository request in this pass; mocked tests cover routing, auth, path
   safety, and response handling.
 
+## SESSION 2026-09-05 — NOTION PAGE READ CAPABILITIES
+
+- **IMPLEMENTED_TESTED:** Notion now supports canonical identity and bounded
+  `docs.page.read` operations. Workflows can search pages with pagination or
+  retrieve one validated page id; the adapter always uses fixed Notion API
+  routes and the shared OAuth refresh path.
+- Page writes remain unwired and are no longer advertised until a separate
+  canonical payload and approval contract is implemented.
+- **CREDENTIAL_REQUIRED:** no Notion OAuth token was available for a live
+  page request in this pass; mocked tests cover search/read routing, bounded
+  pagination, auth headers, and page-id validation.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now
