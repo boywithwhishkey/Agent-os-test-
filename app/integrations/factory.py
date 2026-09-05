@@ -127,6 +127,14 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Google Drive",
         "requires": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     },
+    IntegrationProvider.JIRA: {
+        "name": "Jira",
+        "requires": [
+            "JIRA_OAUTH_CLIENT_ID",
+            "JIRA_OAUTH_CLIENT_SECRET",
+            "JIRA_CLOUD_ID",
+        ],
+    },
 }
 
 
@@ -244,6 +252,11 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         return GoogleOAuthAdapter(
             provider=IntegrationProvider(normalized), connection_store=oauth_connection_store
         )
+    if normalized == "jira":
+        from app.integrations.jira import JiraOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return JiraOAuthAdapter(connection_store=oauth_connection_store)
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -327,4 +340,10 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         IntegrationProvider.GOOGLE_DRIVE,
     }:
         return bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
+    if provider == IntegrationProvider.JIRA:
+        return bool(
+            settings.jira_oauth_client_id
+            and settings.jira_oauth_client_secret
+            and settings.jira_cloud_id
+        )
     return False

@@ -24,6 +24,24 @@ contradicting note elsewhere.
   catalog-only**. PostgreSQL and Redis remain the only live-validated
   providers in the local development environment.
 
+## SESSION 2026-09-05 — JIRA CLOUD OAUTH READ CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Jira Cloud now uses the shared Atlassian OAuth 2.0
+  authorization flow and a fixed-cloud REST adapter. It verifies the connected
+  account with `/rest/api/3/myself` and searches issues through the bounded
+  JQL endpoint; create/update operations remain unwired and approval-gated for
+  a future batch.
+- Jira requires `JIRA_OAUTH_CLIENT_ID`, `JIRA_OAUTH_CLIENT_SECRET`, and the
+  server-side `JIRA_CLOUD_ID` for deterministic tenant routing. No arbitrary
+  Atlassian URL or caller-supplied operation is accepted.
+- **CREDENTIAL_REQUIRED:** no Jira OAuth app or token was available here, so
+  no live Jira request was made. Focused tests cover fixed routing, bearer
+  auth, bounded JQL/results, missing cloud configuration, unauthorized-token
+  handling, and secret-safe errors.
+- Catalog truth after this session: **35 entries, 29 implemented/tested, 6
+  catalog-only**. PostgreSQL and Redis remain the only live-validated
+  providers in the local development environment.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

@@ -106,6 +106,13 @@ class Settings(BaseSettings):
     google_oauth_client_secret: str | None = Field(
         default=None, validation_alias="GOOGLE_OAUTH_CLIENT_SECRET"
     )
+    jira_oauth_client_id: str | None = Field(
+        default=None, validation_alias="JIRA_OAUTH_CLIENT_ID"
+    )
+    jira_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="JIRA_OAUTH_CLIENT_SECRET"
+    )
+    jira_cloud_id: str | None = Field(default=None, validation_alias="JIRA_CLOUD_ID")
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

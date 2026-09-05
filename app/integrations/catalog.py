@@ -362,7 +362,7 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="jira",
         name="Jira",
-        description="Create and update issues in Jira projects.",
+        description="Read Jira identity and search issues through the Cloud API.",
         category=ConnectorCategory.PRODUCTIVITY,
         connector_type=ConnectorType.OAUTH,
         icon="Bug",
@@ -374,6 +374,12 @@ CATALOG: list[CatalogSpec] = [
             "tracker.issue.update",
         ],
         documentation_url="https://www.atlassian.com/software/jira",
+        implemented=True,
+        requires=[
+            "JIRA_OAUTH_CLIENT_ID",
+            "JIRA_OAUTH_CLIENT_SECRET",
+            "JIRA_CLOUD_ID",
+        ],
     ),
     CatalogSpec(
         id="teams",

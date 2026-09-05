@@ -78,6 +78,16 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_secret_env="GOOGLE_OAUTH_CLIENT_SECRET",
         extra_authorize_params={"access_type": "offline", "prompt": "consent"},
     ),
+    "jira": OAuthProviderConfig(
+        id="jira",
+        name="Jira",
+        authorize_url="https://auth.atlassian.com/authorize",
+        token_url="https://auth.atlassian.com/oauth/token",
+        scope="read:jira-work offline_access",
+        client_id_env="JIRA_OAUTH_CLIENT_ID",
+        client_secret_env="JIRA_OAUTH_CLIENT_SECRET",
+        extra_authorize_params={"audience": "api.atlassian.com", "prompt": "consent"},
+    ),
 }
 
 
