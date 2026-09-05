@@ -22,9 +22,12 @@ audited outcome rather than a generic error:
 - **NO_PROVIDER** — canonical, but nothing in this deployment implements it.
   Declaring a capability in the catalog says what connecting *would* authorise;
   it is not a promise that code exists.
-- **NOT_CONNECTED** — a connector exists but has no working credential. This is
-  the honest answer to "why did nothing happen", and it names the missing
-  environment variables rather than saying "failed".
+- **NOT_CONNECTED** — a connector exists but has no working credential. Two
+  distinct cases share this outcome, with different messages: an API-key
+  connector names the missing environment variables; an OAuth connector whose
+  app is registered but has no account connected says so directly, since the
+  environment variables in that case are already set — the missing thing is a
+  user having clicked Authorize, not configuration.
 - **APPROVAL_REQUIRED** — the capability is not READ and no valid approval was
   presented. Decided by `ToolPolicy`, the same component that gates tools, so a
   connector cannot reach a consequential action by a softer path than a tool.
@@ -46,7 +49,8 @@ from app.integrations.factory import (
     list_providers,
     provider_requirements,
 )
-from app.integrations.models import ConnectorKind
+from app.integrations.models import ConnectorAuthType, ConnectorKind
+from app.integrations.oauth.registry import oauth_connection_store
 from app.tools.audit import ToolAuditLog
 from app.tools.models import ToolRisk
 from app.tools.policy import ToolPolicy
@@ -99,10 +103,33 @@ def providers_for(capability_id: str) -> list[str]:
     return sorted(candidates, key=lambda cid: (not _configured(cid), cid))
 
 
+def _auth_type(connector_id: str) -> ConnectorAuthType | None:
+    for spec in list_catalog():
+        if spec.id == connector_id:
+            return spec.auth_type
+    return None
+
+
+def _oauth_connected(connector_id: str) -> bool:
+    """A user has actually completed Authorize for this connector.
+
+    Distinct from `is_provider_configured`, which for an OAuth connector only
+    means the CLIENT_ID/SECRET pair is set — i.e. THYNACT itself is registered
+    with the provider. That says nothing about whether any user has connected
+    an account, and treating "app registered" as "usable" would route a
+    capability to a connector that can't yet do anything.
+    """
+    return bool(oauth_connection_store.get(connector_id).access_token)
+
+
 def _configured(connector_id: str) -> bool:
     for provider in list_providers():
         if provider.value == connector_id:
-            return is_provider_configured(provider)
+            if not is_provider_configured(provider):
+                return False
+            if _auth_type(connector_id) is ConnectorAuthType.OAUTH2:
+                return _oauth_connected(connector_id)
+            return True
     return False
 
 
@@ -173,18 +200,7 @@ class ConnectorBroker:
 
         connector = providers[0]
         if not _configured(connector):
-            missing = _requirements(connector)
-            result = BrokerResult(
-                outcome=BrokerOutcome.NOT_CONNECTED,
-                capability=capability_id,
-                connector=connector,
-                risk=capability.risk,
-                missing_configuration=missing,
-                error=(
-                    f"{connector} is not configured"
-                    + (f". Set {', '.join(missing)}." if missing else ".")
-                ),
-            )
+            result = self._not_connected(capability_id, connector, capability.risk)
             await self._record(result, correlation_id)
             return result
 
@@ -205,6 +221,37 @@ class ConnectorBroker:
             return result
 
         return await self._invoke(capability, connector, arguments or {}, correlation_id)
+
+    @staticmethod
+    def _not_connected(capability_id: str, connector: str, risk: ToolRisk) -> BrokerResult:
+        """Distinguish "not configured" from "configured, no account linked".
+
+        Only an OAuth connector can be in the second state — an API-key
+        connector has nothing analogous to "connected" beyond the key itself
+        being set, which `_configured` already checked.
+        """
+        is_oauth = _auth_type(connector) is ConnectorAuthType.OAUTH2
+        app_registered = is_oauth and is_provider_configured(
+            next(p for p in list_providers() if p.value == connector)
+        )
+        if is_oauth and app_registered:
+            return BrokerResult(
+                outcome=BrokerOutcome.NOT_CONNECTED,
+                capability=capability_id,
+                connector=connector,
+                risk=risk,
+                missing_configuration=[],
+                error=f"{connector} is registered but no account is connected. Use Authorize first.",
+            )
+        missing = _requirements(connector)
+        return BrokerResult(
+            outcome=BrokerOutcome.NOT_CONNECTED,
+            capability=capability_id,
+            connector=connector,
+            risk=risk,
+            missing_configuration=missing,
+            error=f"{connector} is not configured" + (f". Set {', '.join(missing)}." if missing else "."),
+        )
 
     async def _invoke(
         self,

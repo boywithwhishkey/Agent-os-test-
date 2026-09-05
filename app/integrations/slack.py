@@ -5,7 +5,7 @@ import httpx
 from app.integrations.base import IntegrationAdapter, unsupported_execute_result
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
 from app.integrations.oauth.store import OAuthConnectionStore
-from app.integrations.oauth.verify import verify_oauth_identity
+from app.integrations.oauth.verify import oauth_get, verify_oauth_identity
 
 
 def _interpret_slack_response(response: httpx.Response) -> tuple[bool, str | None]:
@@ -34,6 +34,26 @@ class SlackOAuthAdapter(IntegrationAdapter):
             IntegrationProvider.SLACK,
             request,
             reason="Slack actions (posting messages) are not yet wired to a triggered workflow.",
+        )
+
+    async def run_capability(self, capability_id: str, arguments: dict) -> object:
+        """`identity.account.read` only, for now.
+
+        `chat.message.list` needs a channel id THYNACT has no way to choose on
+        its own (Slack's Web API has no "list everything" for messages — only
+        per-channel history), so wiring it here would mean guessing an
+        argument shape ahead of whatever actually calls it. `chat.message.send`
+        is HIGH_RISK and unwired for the same reason as every other connector's
+        write capability: no account to responsibly exercise it against."""
+        if capability_id != "identity.account.read":
+            return await super().run_capability(capability_id, arguments)
+        return await oauth_get(
+            provider_id="slack",
+            provider_name="Slack",
+            url="https://slack.com/api/auth.test",
+            connection_store=self._connection_store,
+            build_headers=lambda token: {"Authorization": f"Bearer {token}"},
+            client=self._client,
         )
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:

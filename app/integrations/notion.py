@@ -5,7 +5,7 @@ import httpx
 from app.integrations.base import IntegrationAdapter, unsupported_execute_result
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
 from app.integrations.oauth.store import OAuthConnectionStore
-from app.integrations.oauth.verify import verify_oauth_identity
+from app.integrations.oauth.verify import oauth_get, verify_oauth_identity
 
 NOTION_API_VERSION = "2022-06-28"
 
@@ -24,6 +24,28 @@ class NotionOAuthAdapter(IntegrationAdapter):
             IntegrationProvider.NOTION,
             request,
             reason="Notion actions (reading/writing pages) are not yet wired to a triggered workflow.",
+        )
+
+    async def run_capability(self, capability_id: str, arguments: dict) -> object:
+        """`identity.account.read` only.
+
+        `docs.page.read` needs a page id — an argument, not something this
+        adapter can invent — so it stays unwired until something actually
+        supplies one. `docs.page.write` is a write capability and follows the
+        same rule as every other connector: no account here to exercise it
+        against responsibly."""
+        if capability_id != "identity.account.read":
+            return await super().run_capability(capability_id, arguments)
+        return await oauth_get(
+            provider_id="notion",
+            provider_name="Notion",
+            url="https://api.notion.com/v1/users/me",
+            connection_store=self._connection_store,
+            build_headers=lambda token: {
+                "Authorization": f"Bearer {token}",
+                "Notion-Version": NOTION_API_VERSION,
+            },
+            client=self._client,
         )
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:

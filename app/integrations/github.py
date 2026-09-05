@@ -7,6 +7,7 @@ import httpx
 from app.integrations.base import IntegrationAdapter, unsupported_execute_result
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
 from app.integrations.oauth.store import OAuthConnectionStore
+from app.integrations.oauth.verify import oauth_get
 
 
 class GitHubOAuthAdapter(IntegrationAdapter):
@@ -25,6 +26,41 @@ class GitHubOAuthAdapter(IntegrationAdapter):
             request,
             reason="GitHub actions (issues, PRs) are not yet wired to a triggered workflow.",
         )
+
+    async def run_capability(self, capability_id: str, arguments: dict) -> object:
+        """`identity.account.read` and `repo.metadata.read` — both a single
+        authenticated GET, read-only, no argument required. Write and
+        high-risk capabilities (`repo.issue.create`, `repo.branch.merge`)
+        stay unwired; those are consequential actions this session has no
+        GitHub account to responsibly exercise against."""
+        def headers(token: str) -> dict[str, str]:
+            return {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+
+        if capability_id == "identity.account.read":
+            return await oauth_get(
+                provider_id="github",
+                provider_name="GitHub",
+                url="https://api.github.com/user",
+                connection_store=self._connection_store,
+                build_headers=headers,
+                client=self._client,
+            )
+        if capability_id == "repo.metadata.read":
+            # The repos this token can see, not any one specific repo — this
+            # capability takes no argument, so there is no repo to name yet.
+            repos = await oauth_get(
+                provider_id="github",
+                provider_name="GitHub",
+                url="https://api.github.com/user/repos?per_page=100",
+                connection_store=self._connection_store,
+                build_headers=headers,
+                client=self._client,
+            )
+            return [
+                {"full_name": r["full_name"], "private": r["private"], "default_branch": r["default_branch"]}
+                for r in repos
+            ]
+        return await super().run_capability(capability_id, arguments)
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:
         record = self._connection_store.get("github")

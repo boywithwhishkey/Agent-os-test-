@@ -242,3 +242,50 @@ async def test_an_adapter_without_the_operation_reports_not_built_not_an_outage(
     # reported as unwired — never as a provider error.
     assert result.outcome in {BrokerOutcome.APPROVAL_REQUIRED, BrokerOutcome.NO_PROVIDER}
     assert result.outcome is not BrokerOutcome.PROVIDER_ERROR
+
+
+async def test_an_oauth_app_registered_but_no_account_connected_is_distinguished(monkeypatch) -> None:
+    """"App registered" and "usable" are not the same thing for OAuth.
+
+    is_provider_configured("github") only means CLIENT_ID/SECRET are set — no
+    user has necessarily clicked Authorize. Routing a capability to a
+    connector in that state would invoke an adapter with no token at all.
+    """
+    from app.integrations import broker as broker_module
+
+    monkeypatch.setattr(broker_module, "is_provider_configured", lambda provider: True)
+    monkeypatch.setattr(broker_module, "_oauth_connected", lambda cid: False)
+
+    called = False
+
+    async def perform(*_args):
+        nonlocal called
+        called = True
+
+    # repo.metadata.read is declared only by github/gitlab, both OAuth2, so the
+    # routing choice is unambiguous once every provider reports "configured".
+    broker, audit = _broker(perform)
+    result = await broker.execute("repo.metadata.read")
+
+    assert result.outcome is BrokerOutcome.NOT_CONNECTED
+    assert called is False, "an adapter was invoked with no account connected"
+    assert "no account is connected" in result.error
+    # Nothing here is a missing environment variable — the app IS configured.
+    assert result.missing_configuration == []
+    assert audit.rows[-1]["success"] is False
+
+
+async def test_an_oauth_connector_with_an_account_connected_is_treated_as_configured(monkeypatch) -> None:
+    from app.integrations import broker as broker_module
+
+    monkeypatch.setattr(broker_module, "is_provider_configured", lambda provider: True)
+    monkeypatch.setattr(broker_module, "_oauth_connected", lambda cid: True)
+
+    async def perform(connector, capability, arguments):
+        return [{"full_name": "octocat/hello-world"}]
+
+    broker, _ = _broker(perform)
+    result = await broker.execute("repo.metadata.read")
+
+    assert result.outcome is BrokerOutcome.OK
+    assert result.connector == "github"
