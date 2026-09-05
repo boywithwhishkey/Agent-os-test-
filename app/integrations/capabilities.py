@@ -96,6 +96,8 @@ CAPABILITIES: dict[str, Capability] = {
         _high("chat.template.send", "Send a message template"),
         # --- Social publishing --------------------------------------------
         _high("social.post.publish", "Publish a social post"),
+        # --- Advertising --------------------------------------------------
+        _read("ads.account.list", "List advertising accounts"),
         # --- Documents / knowledge ----------------------------------------
         _read("docs.page.read", "Read pages"),
         _write("docs.page.write", "Create or update a page"),

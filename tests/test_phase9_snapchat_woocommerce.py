@@ -25,6 +25,36 @@ async def test_snapchat_organization_discovery_is_read_only() -> None:
 
 
 @pytest.mark.anyio
+async def test_snapchat_lists_ad_accounts_without_enabling_mutations() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "request_status": "SUCCESS",
+                "organizations": [
+                    {
+                        "organization": {"id": "org-1"},
+                        "ad_accounts": [{"id": "ad-1", "name": "Demo"}],
+                    }
+                ],
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await SnapchatMarketingAdapter(access_token="snap-token", client=client).run_capability(
+            "ads.account.list", {}
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {
+        "provider": "snapchat",
+        "ad_accounts": [{"id": "ad-1", "name": "Demo"}],
+    }
+
+
+@pytest.mark.anyio
 async def test_woocommerce_lists_products_with_fixed_store_url() -> None:
     seen: list[tuple[str, str]] = []
 

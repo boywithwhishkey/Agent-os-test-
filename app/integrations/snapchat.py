@@ -32,9 +32,24 @@ class SnapchatMarketingAdapter(IntegrationAdapter):
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
-        if capability_id != "identity.account.read":
+        if capability_id not in {"identity.account.read", "ads.account.list"}:
             raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
-        return await self._get_organizations()
+        body = await self._get_organizations()
+        if capability_id == "identity.account.read":
+            return body
+        organizations = body.get("organizations") or []
+        ad_accounts: list[Any] = []
+        if isinstance(organizations, list):
+            for entry in organizations:
+                if not isinstance(entry, dict):
+                    continue
+                direct_accounts = entry.get("ad_accounts")
+                nested_org = entry.get("organization")
+                nested_accounts = nested_org.get("ad_accounts") if isinstance(nested_org, dict) else None
+                accounts = direct_accounts if isinstance(direct_accounts, list) else nested_accounts
+                if isinstance(accounts, list):
+                    ad_accounts.extend(accounts)
+        return {"provider": IntegrationProvider.SNAPCHAT.value, "ad_accounts": ad_accounts}
 
     async def _get_organizations(self) -> dict[str, Any]:
         own_client = self._client is None

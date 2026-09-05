@@ -194,6 +194,15 @@ contradicting note elsewhere.
   token, a configured phone number, and an approved WhatsApp template. No live
   message was sent in this pass.
 
+## SESSION 2026-09-05 — SNAPCHAT AD-ACCOUNT DISCOVERY
+
+- **IMPLEMENTED_TESTED:** Snapchat now maps the canonical read-only
+  `ads.account.list` capability to its fixed organization-discovery request and
+  normalizes accessible ad accounts from the response. Campaign creation,
+  media upload, and other advertising mutations remain disabled.
+- **CREDENTIAL_REQUIRED:** a Snapchat Marketing API OAuth access token and
+  platform allowlisting are still required; no live Snapchat request was made.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now

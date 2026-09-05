@@ -22,8 +22,9 @@ without that loop remain metadata only.
    foundations; Meta OAuth, business/creator account, comments and richer
    media/messaging remain permission- and capability-specific follow-ons.
 4. Snapchat Marketing/Public Profile APIs — implemented/tested read-only
-   organization foundation; OAuth, ad/profile scopes, and allowlist-dependent
-   features remain separate from generally available calls.
+   organization and ad-account discovery foundations; OAuth, ad/profile scopes,
+   and allowlist-dependent features remain separate from generally available
+   calls.
 5. Microsoft Teams — tested incoming-webhook send foundation; Graph OAuth and
    inbound/event capabilities remain follow-on work.
 6. Discord — completed send-only webhook adapter; OAuth/bot expansion follows
