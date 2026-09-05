@@ -109,6 +109,26 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 payload,
             )
 
+        if (
+            self.provider is IntegrationProvider.GOOGLE_CALENDAR
+            and capability_id == "calendar.event.update"
+        ):
+            calendar_id, event_id, payload = self._event_update_payload(arguments)
+            return await self._patch(
+                f"https://www.googleapis.com/calendar/v3/calendars/{quote(calendar_id, safe='')}/events/{quote(event_id, safe='')}",
+                payload,
+            )
+
+        if (
+            self.provider is IntegrationProvider.GOOGLE_CALENDAR
+            and capability_id == "calendar.event.delete"
+        ):
+            calendar_id, event_id = self._event_identifier(arguments)
+            await self._delete(
+                f"https://www.googleapis.com/calendar/v3/calendars/{quote(calendar_id, safe='')}/events/{quote(event_id, safe='')}"
+            )
+            return {"provider": self.provider.value, "event_id": event_id, "deleted": True}
+
         if self.provider is IntegrationProvider.GOOGLE_DRIVE and capability_id == "files.file.list":
             return await self._get(
                 "https://www.googleapis.com/drive/v3/files",
@@ -260,6 +280,32 @@ class GoogleOAuthAdapter(IntegrationAdapter):
             payload["end"]["timeZone"] = timezone.strip()
         return calendar_id.strip(), payload
 
+    @staticmethod
+    def _event_identifier(arguments: dict[str, Any]) -> tuple[str, str]:
+        calendar_id = arguments.get("calendar_id", "primary")
+        event_id = arguments.get("event_id")
+        if (
+            not isinstance(calendar_id, str)
+            or not 1 <= len(calendar_id.strip()) <= 200
+            or "/" in calendar_id
+            or "\\" in calendar_id
+        ):
+            raise ValueError("calendar_id must be a non-empty identifier without path separators")
+        if (
+            not isinstance(event_id, str)
+            or not 1 <= len(event_id.strip()) <= 1024
+            or "/" in event_id
+            or "\\" in event_id
+        ):
+            raise ValueError("event_id must be a non-empty identifier without path separators")
+        return calendar_id.strip(), event_id.strip()
+
+    @staticmethod
+    def _event_update_payload(arguments: dict[str, Any]) -> tuple[str, str, dict[str, Any]]:
+        calendar_id, event_id = GoogleOAuthAdapter._event_identifier(arguments)
+        _, payload = GoogleOAuthAdapter._event_payload(arguments)
+        return calendar_id, event_id, payload
+
     async def _get(self, url: str, *, params: dict[str, str] | None = None) -> dict[str, Any]:
         record = self._connection_store.get(self.provider.value)
         if not record.access_token:
@@ -339,6 +385,83 @@ class GoogleOAuthAdapter(IntegrationAdapter):
             if not isinstance(body, dict):
                 raise TypeError(f"{self.provider_name} returned an invalid response")
             return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(f"{self.provider_name} request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"{self.provider_name} request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _patch(self, url: str, payload: dict[str, Any]) -> dict[str, Any]:
+        record = self._connection_store.get(self.provider.value)
+        if not record.access_token:
+            raise RuntimeError(
+                f"Not authorized yet — use Authorize to connect a {self.provider_name} account."
+            )
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS[self.provider.value],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.patch(
+                    url,
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                    timeout=10.0,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError(
+                        f"{self.provider_name} rejected the stored token (HTTP 401) — authorize again"
+                    )
+                raise RuntimeError(f"{self.provider_name} returned HTTP {response.status_code}")
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise RuntimeError(f"{self.provider_name} returned a non-JSON response") from exc
+            if not isinstance(body, dict):
+                raise TypeError(f"{self.provider_name} returned an invalid response")
+            return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(f"{self.provider_name} request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"{self.provider_name} request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _delete(self, url: str) -> None:
+        record = self._connection_store.get(self.provider.value)
+        if not record.access_token:
+            raise RuntimeError(
+                f"Not authorized yet — use Authorize to connect a {self.provider_name} account."
+            )
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS[self.provider.value],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.delete(
+                    url,
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=10.0,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError(
+                        f"{self.provider_name} rejected the stored token (HTTP 401) — authorize again"
+                    )
+                raise RuntimeError(f"{self.provider_name} returned HTTP {response.status_code}")
         except httpx.TimeoutException as exc:
             raise RuntimeError(f"{self.provider_name} request timed out") from exc
         except httpx.HTTPError as exc:

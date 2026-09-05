@@ -483,6 +483,16 @@ contradicting note elsewhere.
   WRITE and requires broker approval/audit. No live Salesforce request was
   made.
 
+## SESSION 2026-09-05 — GOOGLE CALENDAR GOVERNED EVENT LIFECYCLE
+
+- **IMPLEMENTED_TESTED:** Google Calendar now supports the full canonical event
+  lifecycle: create, update, and delete, using fixed `events.insert`,
+  `events.patch`, and `events.delete` endpoints with validated calendar/event
+  identifiers and event payloads.
+- Update remains WRITE and delete remains HIGH_RISK, so both stay behind broker
+  approval and audit. Existing OAuth connections must reauthorize with
+  `calendar.events`; no live Google request was made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

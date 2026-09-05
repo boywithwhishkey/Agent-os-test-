@@ -179,6 +179,50 @@ def test_google_calendar_event_arguments_are_validated(
 
 
 @pytest.mark.anyio
+async def test_google_calendar_event_update_and_delete_use_fixed_endpoints() -> None:
+    seen: list[tuple[str, str, bytes]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.method, request.url.path, request.content))
+        if request.method == "PATCH":
+            return httpx.Response(200, json={"id": "event_1", "summary": "Updated"})
+        return httpx.Response(204)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GOOGLE_CALENDAR,
+            connection_store=_connected_store(IntegrationProvider.GOOGLE_CALENDAR),
+            client=client,
+        )
+        updated = await adapter.run_capability(
+            "calendar.event.update",
+            {
+                "calendar_id": "primary",
+                "event_id": "event_1",
+                "summary": "Updated",
+                "start": "2026-09-05T10:00:00+05:30",
+                "end": "2026-09-05T11:00:00+05:30",
+            },
+        )
+        deleted = await adapter.run_capability(
+            "calendar.event.delete", {"calendar_id": "primary", "event_id": "event_1"}
+        )
+    finally:
+        await client.aclose()
+
+    assert updated["summary"] == "Updated"
+    assert deleted == {"provider": "google_calendar", "event_id": "event_1", "deleted": True}
+    assert seen[0][0:2] == ("PATCH", "/calendar/v3/calendars/primary/events/event_1")
+    assert seen[1][0:2] == ("DELETE", "/calendar/v3/calendars/primary/events/event_1")
+
+
+def test_google_calendar_event_identifier_is_validated() -> None:
+    with pytest.raises(ValueError, match="event_id"):
+        GoogleOAuthAdapter._event_identifier({"event_id": "bad/id"})
+
+
+@pytest.mark.anyio
 async def test_gmail_draft_create_posts_gmail_mime_payload() -> None:
     seen: dict[str, object] = {}
 

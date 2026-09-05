@@ -435,7 +435,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.OAUTH,
         icon="Calendar",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Read events", "Create events"],
+        capabilities=["Read events", "Create events", "Update events", "Delete events"],
         canonical_capabilities=[
             "identity.account.read",
             "calendar.event.list",
