@@ -503,6 +503,16 @@ contradicting note elsewhere.
   authorize again before uploads can run. The capability remains WRITE and
   requires broker approval/audit. No live Dropbox request was made.
 
+## SESSION 2026-09-05 — DROPBOX GOVERNED FILE DELETE
+
+- **IMPLEMENTED_TESTED:** Dropbox now supports canonical `files.file.delete`
+  through the fixed `/2/files/delete_v2` RPC endpoint. The path validator is
+  shared with uploads, and the adapter returns normalized metadata only after
+  Dropbox confirms deletion.
+- This is HIGH_RISK and remains behind broker approval and audit. The existing
+  `files.content.write` OAuth scope covers the operation; no live Dropbox
+  request was made.
+
 ## SESSION 2026-09-05 — ONEDRIVE GOVERNED FILE UPLOAD
 
 - **IMPLEMENTED_TESTED:** OneDrive now supports the canonical

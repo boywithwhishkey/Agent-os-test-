@@ -102,6 +102,37 @@ async def test_dropbox_file_write_uses_content_upload_endpoint() -> None:
     }
 
 
+@pytest.mark.anyio
+async def test_dropbox_file_delete_uses_governed_rpc_endpoint() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"metadata": {"name": "notes.txt", ".tag": "file"}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await DropboxOAuthAdapter(connection_store=_store("dropbox"), client=client).run_capability(
+            "files.file.delete", {"path": "/notes.txt"}
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {
+        "provider": "dropbox",
+        "path": "/notes.txt",
+        "deleted": True,
+        "metadata": {"name": "notes.txt", ".tag": "file"},
+    }
+    assert seen == {
+        "path": "/2/files/delete_v2",
+        "auth": "Bearer dropbox-access-token",
+        "body": {"path": "/notes.txt"},
+    }
+
+
 @pytest.mark.parametrize(
     ("arguments", "message"),
     [
@@ -116,6 +147,11 @@ def test_dropbox_file_arguments_are_validated(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         DropboxOAuthAdapter._file_payload(arguments)
+
+
+def test_dropbox_delete_path_is_validated() -> None:
+    with pytest.raises(ValueError, match="safe absolute"):
+        DropboxOAuthAdapter._path_argument({"path": "/../bad"}, operation="files.file.delete")
 
 
 @pytest.mark.anyio

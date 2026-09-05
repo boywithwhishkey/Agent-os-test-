@@ -43,6 +43,18 @@ class DropboxOAuthAdapter(IntegrationAdapter):
                 "https://api.dropboxapi.com/2/files/list_folder",
                 {"path": "", "recursive": False, "include_deleted": False, "limit": value},
             )
+        if capability_id == "files.file.delete":
+            path = self._path_argument(arguments, operation="files.file.delete")
+            body = await self._post(
+                "https://api.dropboxapi.com/2/files/delete_v2",
+                {"path": path},
+            )
+            return {
+                "provider": IntegrationProvider.DROPBOX.value,
+                "path": path,
+                "deleted": True,
+                "metadata": body.get("metadata"),
+            }
         if capability_id == "files.file.write":
             path, content, mode = self._file_payload(arguments)
             return await self._upload(path, content, mode)
@@ -50,6 +62,17 @@ class DropboxOAuthAdapter(IntegrationAdapter):
 
     @staticmethod
     def _file_payload(arguments: dict[str, Any]) -> tuple[str, bytes, str]:
+        path = DropboxOAuthAdapter._path_argument(arguments, operation="files.file.write")
+        content = arguments.get("content")
+        if not isinstance(content, str) or not 1 <= len(content.encode("utf-8")) <= 5_000_000:
+            raise ValueError("files.file.write requires text content up to 5000000 bytes")
+        mode = arguments.get("mode", "add")
+        if mode not in {"add", "overwrite"}:
+            raise ValueError("mode must be add or overwrite")
+        return path, content.encode("utf-8"), mode
+
+    @staticmethod
+    def _path_argument(arguments: dict[str, Any], *, operation: str) -> str:
         path = arguments.get("path")
         if (
             not isinstance(path, str)
@@ -58,14 +81,8 @@ class DropboxOAuthAdapter(IntegrationAdapter):
             or "\x00" in path
             or ".." in path.split("/")
         ):
-            raise ValueError("files.file.write requires a safe absolute Dropbox path")
-        content = arguments.get("content")
-        if not isinstance(content, str) or not 1 <= len(content.encode("utf-8")) <= 5_000_000:
-            raise ValueError("files.file.write requires text content up to 5000000 bytes")
-        mode = arguments.get("mode", "add")
-        if mode not in {"add", "overwrite"}:
-            raise ValueError("mode must be add or overwrite")
-        return path.strip(), content.encode("utf-8"), mode
+            raise ValueError(f"{operation} requires a safe absolute Dropbox path")
+        return path.strip()
 
     async def _post(self, url: str, payload: dict[str, Any]) -> dict[str, Any]:
         record = self._connection_store.get("dropbox")
