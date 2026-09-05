@@ -85,6 +85,18 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Stripe",
         "requires": ["STRIPE_SECRET_KEY"],
     },
+    IntegrationProvider.SNAPCHAT: {
+        "name": "Snapchat",
+        "requires": ["SNAPCHAT_ACCESS_TOKEN"],
+    },
+    IntegrationProvider.WOOCOMMERCE: {
+        "name": "WooCommerce",
+        "requires": [
+            "WOOCOMMERCE_STORE_URL",
+            "WOOCOMMERCE_CONSUMER_KEY",
+            "WOOCOMMERCE_CONSUMER_SECRET",
+        ],
+    },
 }
 
 
@@ -175,6 +187,14 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.stripe import StripeAdapter
 
         return StripeAdapter()
+    if normalized == "snapchat":
+        from app.integrations.snapchat import SnapchatMarketingAdapter
+
+        return SnapchatMarketingAdapter()
+    if normalized == "woocommerce":
+        from app.integrations.woocommerce import WooCommerceAdapter
+
+        return WooCommerceAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -232,4 +252,12 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.shopify_admin_access_token and settings.shopify_shop_domain)
     if provider == IntegrationProvider.STRIPE:
         return bool(settings.stripe_secret_key)
+    if provider == IntegrationProvider.SNAPCHAT:
+        return bool(settings.snapchat_access_token)
+    if provider == IntegrationProvider.WOOCOMMERCE:
+        return bool(
+            settings.woocommerce_store_url
+            and settings.woocommerce_consumer_key
+            and settings.woocommerce_consumer_secret
+        )
     return False

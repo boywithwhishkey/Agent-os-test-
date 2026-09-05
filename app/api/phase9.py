@@ -190,6 +190,16 @@ def _stripe_live_status() -> dict:
     return _status_store_backed_status("stripe", configured=is_provider_configured(provider))
 
 
+def _snapchat_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "snapchat")
+    return _status_store_backed_status("snapchat", configured=is_provider_configured(provider))
+
+
+def _woocommerce_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "woocommerce")
+    return _status_store_backed_status("woocommerce", configured=is_provider_configured(provider))
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -239,6 +249,8 @@ _LIVE_STATUS_RESOLVERS = {
     "teams": _teams_live_status,
     "shopify": _shopify_live_status,
     "stripe": _stripe_live_status,
+    "snapchat": _snapchat_live_status,
+    "woocommerce": _woocommerce_live_status,
 }
 
 

@@ -19,8 +19,9 @@ without that loop remain metadata only.
    message templates and inbound webhook verification.
 3. Instagram Graph API — implemented/tested text foundation; Meta OAuth, business/creator account, publishing,
    comments and messaging where the approved permissions allow it.
-4. Snapchat Marketing/Public Profile APIs — OAuth, ad/profile scopes, and
-   allowlist-dependent features kept separate from generally available calls.
+4. Snapchat Marketing/Public Profile APIs — implemented/tested read-only
+   organization foundation; OAuth, ad/profile scopes, and allowlist-dependent
+   features remain separate from generally available calls.
 5. Microsoft Teams — tested incoming-webhook send foundation; Graph OAuth and
    inbound/event capabilities remain follow-on work.
 6. Discord — completed send-only webhook adapter; OAuth/bot expansion follows
@@ -34,8 +35,8 @@ without that loop remain metadata only.
    foundation; merchant OAuth, inventory, and webhook subscriptions follow.
 2. Amazon Selling Partner API — Login with Amazon/OAuth, marketplace-aware
    endpoints, sandbox tests, and restricted-role handling.
-3. WooCommerce — store URL plus consumer key/secret, order/product reads and
-   approval-gated writes.
+3. WooCommerce — implemented/tested read-only store/product/order foundation;
+   approval-gated writes follow.
 4. Stripe — implemented/tested read-only account/payment/subscription
    foundation; customers and refunds require separate approved capabilities.
 5. Razorpay — API credentials, payment/order reads and approval-gated refunds.
@@ -85,11 +86,11 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 32 catalog entries. Twenty have adapters and tests; PostgreSQL
+THYNACT now has 34 catalog entries. Twenty-two have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. Fourteen catalog entries still need real
-adapters, beginning with Amazon SP-API and WooCommerce after the Shopify/Stripe
-read-only foundations.
+adapters, beginning with Amazon SP-API and the remaining social/productivity
+providers after the Shopify/Stripe/WooCommerce foundations.
 
 ## Operator prerequisites
 

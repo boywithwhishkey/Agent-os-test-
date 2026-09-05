@@ -57,6 +57,16 @@ contradicting note elsewhere.
 - Product/order mutations and payment actions remain disabled until their own
   high-risk capability and approval contracts exist.
 
+## SESSION 2026-09-05 — SNAPCHAT AND WOOCOMMERCE CONNECTORS
+
+- **IMPLEMENTED_TESTED:** Snapchat now has a read-only Marketing API
+  organization discovery adapter. WooCommerce now has a fixed-HTTPS-store
+  REST adapter for store identity, products, and orders.
+- Both remain **CREDENTIAL_REQUIRED**. Snapchat also depends on platform
+  OAuth/allowlist permissions; no live Snapchat or WooCommerce request was made.
+- Ad creation, collaboration messaging, inventory/order mutations, and payment
+  actions remain disabled until their own approved capabilities exist.
+
 ## SESSION 2026-09-05 — STRIPE READ-ONLY COMMERCE CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Stripe now has a secret-key adapter for account

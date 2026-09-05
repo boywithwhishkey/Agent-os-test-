@@ -609,6 +609,42 @@ CATALOG: list[CatalogSpec] = [
         implemented=True,
         requires=["SHOPIFY_ADMIN_ACCESS_TOKEN", "SHOPIFY_SHOP_DOMAIN"],
     ),
+    CatalogSpec(
+        id="snapchat",
+        name="Snapchat",
+        description="Verify a Snapchat Marketing API organization and ad accounts.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.API,
+        icon="Ghost",
+        auth_type=ConnectorAuthType.BEARER,
+        capabilities=["Verify marketing account"],
+        canonical_capabilities=["identity.account.read"],
+        documentation_url="https://developers.snap.com/marketing-api/home",
+        implemented=True,
+        requires=["SNAPCHAT_ACCESS_TOKEN"],
+    ),
+    CatalogSpec(
+        id="woocommerce",
+        name="WooCommerce",
+        description="Read a WooCommerce store, products, and orders.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.API,
+        icon="ShoppingCart",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["Verify store", "List products", "List orders"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "commerce.product.list",
+            "commerce.order.list",
+        ],
+        documentation_url="https://woocommerce.github.io/woocommerce-rest-api-docs/",
+        implemented=True,
+        requires=[
+            "WOOCOMMERCE_STORE_URL",
+            "WOOCOMMERCE_CONSUMER_KEY",
+            "WOOCOMMERCE_CONSUMER_SECRET",
+        ],
+    ),
 ]
 
 

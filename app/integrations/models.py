@@ -27,6 +27,8 @@ class IntegrationProvider(StrEnum):
     TEAMS = "teams"
     SHOPIFY = "shopify"
     STRIPE = "stripe"
+    SNAPCHAT = "snapchat"
+    WOOCOMMERCE = "woocommerce"
 
 
 class IntegrationRequest(BaseModel):
