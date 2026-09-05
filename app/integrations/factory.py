@@ -65,6 +65,14 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Telegram",
         "requires": ["TELEGRAM_BOT_TOKEN"],
     },
+    IntegrationProvider.WHATSAPP: {
+        "name": "WhatsApp Cloud",
+        "requires": ["META_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"],
+    },
+    IntegrationProvider.INSTAGRAM: {
+        "name": "Instagram",
+        "requires": ["META_ACCESS_TOKEN", "INSTAGRAM_BUSINESS_ACCOUNT_ID"],
+    },
 }
 
 
@@ -135,6 +143,14 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.telegram import TelegramBotAdapter
 
         return TelegramBotAdapter()
+    if normalized == "whatsapp":
+        from app.integrations.whatsapp import WhatsAppCloudAdapter
+
+        return WhatsAppCloudAdapter()
+    if normalized == "instagram":
+        from app.integrations.instagram import InstagramGraphAdapter
+
+        return InstagramGraphAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -182,4 +198,8 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.discord_webhook_url)
     if provider == IntegrationProvider.TELEGRAM:
         return bool(settings.telegram_bot_token)
+    if provider == IntegrationProvider.WHATSAPP:
+        return bool(settings.meta_access_token and settings.whatsapp_phone_number_id)
+    if provider == IntegrationProvider.INSTAGRAM:
+        return bool(settings.meta_access_token and settings.instagram_business_account_id)
     return False

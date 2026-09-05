@@ -25,6 +25,18 @@ contradicting note elsewhere.
 - It remains **CREDENTIAL_REQUIRED** until `TELEGRAM_BOT_TOKEN` is supplied
   and `getMe` succeeds. No real Telegram request was made in this pass.
 
+## SESSION 2026-09-05 — META MESSAGING CONNECTORS
+
+- **IMPLEMENTED_TESTED:** WhatsApp Cloud and Instagram now use a shared,
+  secret-safe Meta Graph transport with fixed server-configured resource IDs.
+  Both expose identity verification and governed text messaging only; neither
+  accepts an arbitrary Graph URL from workflow arguments.
+- WhatsApp requires `META_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`.
+  Instagram requires `META_ACCESS_TOKEN` and `INSTAGRAM_BUSINESS_ACCOUNT_ID`.
+  Both remain **CREDENTIAL_REQUIRED**; no live Meta request was made.
+- Media publishing, templates, inbound webhook verification, comments, and
+  campaign operations remain separate follow-on capabilities.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

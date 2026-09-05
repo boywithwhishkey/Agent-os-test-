@@ -13,10 +13,11 @@ without that loop remain metadata only.
 
 ### Social and messaging
 
-1. Telegram Bot API — bot token, chat/message operations, webhook support.
-2. WhatsApp Cloud API — Meta app/OAuth or system-user token, business phone,
+1. Telegram Bot API — implemented/tested send-only foundation; bot token and
+   live `getMe` validation remain.
+2. WhatsApp Cloud API — implemented/tested text foundation; Meta app/OAuth or system-user token, business phone,
    message templates and inbound webhook verification.
-3. Instagram Graph API — Meta OAuth, business/creator account, publishing,
+3. Instagram Graph API — implemented/tested text foundation; Meta OAuth, business/creator account, publishing,
    comments and messaging where the approved permissions allow it.
 4. Snapchat Marketing/Public Profile APIs — OAuth, ad/profile scopes, and
    allowlist-dependent features kept separate from generally available calls.
@@ -83,10 +84,10 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 29 catalog entries. Fifteen have adapters and tests; PostgreSQL
+THYNACT now has 31 catalog entries. Seventeen have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. Fourteen catalog entries still need real
-adapters, beginning with WhatsApp Cloud and Instagram after Telegram.
+adapters, beginning with Teams and the commerce providers after the Meta batch.
 
 ## Operator prerequisites
 

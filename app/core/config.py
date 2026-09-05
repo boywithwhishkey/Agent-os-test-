@@ -55,6 +55,14 @@ class Settings(BaseSettings):
     telegram_default_chat_id: str | None = Field(
         default=None, validation_alias="TELEGRAM_DEFAULT_CHAT_ID"
     )
+    meta_access_token: str | None = Field(default=None, validation_alias="META_ACCESS_TOKEN")
+    meta_graph_api_version: str = Field(default="v23.0", validation_alias="META_GRAPH_API_VERSION")
+    whatsapp_phone_number_id: str | None = Field(
+        default=None, validation_alias="WHATSAPP_PHONE_NUMBER_ID"
+    )
+    instagram_business_account_id: str | None = Field(
+        default=None, validation_alias="INSTAGRAM_BUSINESS_ACCOUNT_ID"
+    )
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

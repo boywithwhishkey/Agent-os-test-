@@ -22,6 +22,8 @@ class IntegrationProvider(StrEnum):
     MAKE = "make"
     DISCORD = "discord"
     TELEGRAM = "telegram"
+    WHATSAPP = "whatsapp"
+    INSTAGRAM = "instagram"
 
 
 class IntegrationRequest(BaseModel):

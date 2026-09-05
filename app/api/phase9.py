@@ -165,6 +165,16 @@ def _telegram_live_status() -> dict:
     return _status_store_backed_status("telegram", configured=is_provider_configured(provider))
 
 
+def _whatsapp_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "whatsapp")
+    return _status_store_backed_status("whatsapp", configured=is_provider_configured(provider))
+
+
+def _instagram_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "instagram")
+    return _status_store_backed_status("instagram", configured=is_provider_configured(provider))
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -209,6 +219,8 @@ _LIVE_STATUS_RESOLVERS = {
     "make": _make_live_status,
     "discord": _discord_live_status,
     "telegram": _telegram_live_status,
+    "whatsapp": _whatsapp_live_status,
+    "instagram": _instagram_live_status,
 }
 
 
