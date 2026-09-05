@@ -515,6 +515,16 @@ contradicting note elsewhere.
   WRITE and requires broker approval/audit. No live Salesforce request was
   made.
 
+## SESSION 2026-09-05 — SALESFORCE DEAL READ
+
+- **IMPLEMENTED_TESTED:** Salesforce now supports canonical `crm.deal.list`.
+  The adapter uses a fixed, server-defined Opportunity SOQL projection with a
+  bounded limit and deterministic ordering; callers cannot submit arbitrary
+  SOQL.
+- This is a READ capability and requires no approval. No live Salesforce
+  request was made; mocked tests cover the versioned query endpoint and bearer
+  auth.
+
 ## SESSION 2026-09-05 — GOOGLE CALENDAR GOVERNED EVENT LIFECYCLE
 
 - **IMPLEMENTED_TESTED:** Google Calendar now supports the full canonical event

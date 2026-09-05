@@ -60,6 +60,11 @@ class SalesforceOAuthAdapter(IntegrationAdapter):
                 "SELECT Id, FirstName, LastName, Email FROM Contact "
                 f"LIMIT {self._limit(arguments)}"
             )
+        if capability_id == "crm.deal.list":
+            return await self._query(
+                "SELECT Id, Name, StageName, Amount, CloseDate FROM Opportunity "
+                f"ORDER BY LastModifiedDate DESC LIMIT {self._limit(arguments)}"
+            )
         if capability_id == "crm.contact.update":
             contact_id, fields = self._contact_update_payload(arguments)
             return await self._patch_contact(contact_id, fields)

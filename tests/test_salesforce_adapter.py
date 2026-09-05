@@ -30,11 +30,13 @@ async def test_salesforce_identity_and_contacts_use_fixed_soql() -> None:
         )
         identity = await adapter.run_capability("identity.account.read", {})
         contacts = await adapter.run_capability("crm.contact.list", {"limit": 5})
+        deals = await adapter.run_capability("crm.deal.list", {"limit": 7})
     finally:
         await client.aclose()
 
     assert identity["records"][0]["Id"] == "org-1"
     assert contacts["totalSize"] == 1
+    assert deals["totalSize"] == 1
     assert seen == [
         (
             "/services/data/v61.0/query",
@@ -44,6 +46,11 @@ async def test_salesforce_identity_and_contacts_use_fixed_soql() -> None:
         (
             "/services/data/v61.0/query",
             "SELECT Id, FirstName, LastName, Email FROM Contact LIMIT 5",
+            "Bearer salesforce-access-token",
+        ),
+        (
+            "/services/data/v61.0/query",
+            "SELECT Id, Name, StageName, Amount, CloseDate FROM Opportunity ORDER BY LastModifiedDate DESC LIMIT 7",
             "Bearer salesforce-access-token",
         ),
     ]
