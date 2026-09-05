@@ -255,6 +255,19 @@ contradicting note elsewhere.
   mocked tests cover payload construction, fixed cloud routing, validation,
   unauthorized handling, and 204 responses.
 
+## SESSION 2026-09-05 — WOOCOMMERCE PRODUCT CREATION
+
+- **IMPLEMENTED_TESTED:** WooCommerce now supports the WRITE capability
+  `commerce.product.create` in addition to store/product/order reads. Product
+  name, type, status, price, SKU, and description are explicitly validated;
+  the default status is `draft` and the shared broker approval/audit path gates
+  the mutation.
+- Orders, payments, inventory deletion, and other mutations remain separate
+  capabilities and are not accepted through arbitrary request payloads.
+- **CREDENTIAL_REQUIRED:** no WooCommerce store credentials were available
+  for a live create request; mocked tests cover fixed routing, auth, payload
+  bounds, and provider errors.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now

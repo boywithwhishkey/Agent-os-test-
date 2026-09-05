@@ -131,6 +131,7 @@ CAPABILITIES: dict[str, Capability] = {
         _read("commerce.payment.list", "List payments"),
         _read("commerce.subscription.list", "List subscriptions"),
         _read("commerce.product.list", "List products"),
+        _write("commerce.product.create", "Create a product"),
         _read("commerce.order.list", "List orders"),
         _high("commerce.refund.create", "Issue a refund"),
         # --- Cloud / deployment -------------------------------------------------

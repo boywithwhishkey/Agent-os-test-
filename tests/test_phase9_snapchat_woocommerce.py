@@ -76,6 +76,47 @@ async def test_woocommerce_lists_products_with_fixed_store_url() -> None:
     assert seen == [("/wp-json/wc/v3/products", "per_page=5")]
 
 
+@pytest.mark.anyio
+async def test_woocommerce_creates_a_draft_product_with_bounded_payload() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        assert request.url.path == "/wp-json/wc/v3/products"
+        assert request.headers["content-type"] == "application/json"
+        assert request.content == (
+            b'{"name":"Demo product","type":"simple","status":"draft",'
+            b'"regular_price":"19.99","sku":"DEMO-1","description":"A short description."}'
+        )
+        return httpx.Response(201, json={"id": 42, "name": "Demo product", "status": "draft"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await WooCommerceAdapter(
+            store_url="https://shop.example",
+            consumer_key="ck_test",
+            consumer_secret="cs_test",
+            client=client,
+        ).run_capability(
+            "commerce.product.create",
+            {
+                "name": "Demo product",
+                "regular_price": "19.99",
+                "sku": "DEMO-1",
+                "description": "A short description.",
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {"id": 42, "name": "Demo product", "status": "draft"}
+
+
+def test_woocommerce_product_create_validates_price_and_status() -> None:
+    with pytest.raises(ValueError, match="non-negative decimal"):
+        WooCommerceAdapter._product_payload({"name": "Demo", "regular_price": "-1"})
+    with pytest.raises(ValueError, match="status is unsupported"):
+        WooCommerceAdapter._product_payload({"name": "Demo", "status": "live"})
+
+
 def test_commerce_connectors_require_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("app.integrations.snapchat.settings.snapchat_access_token", None)
     with pytest.raises(RuntimeError, match="SNAPCHAT_ACCESS_TOKEN"):

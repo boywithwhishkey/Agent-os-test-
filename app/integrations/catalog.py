@@ -682,15 +682,16 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="woocommerce",
         name="WooCommerce",
-        description="Read a WooCommerce store, products, and orders.",
+        description="Read a WooCommerce store, list products/orders, and create products with approval.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.API,
         icon="ShoppingCart",
         auth_type=ConnectorAuthType.API_KEY,
-        capabilities=["Verify store", "List products", "List orders"],
+        capabilities=["Verify store", "List products", "Create product", "List orders"],
         canonical_capabilities=[
             "identity.account.read",
             "commerce.product.list",
+            "commerce.product.create",
             "commerce.order.list",
         ],
         documentation_url="https://woocommerce.github.io/woocommerce-rest-api-docs/",
