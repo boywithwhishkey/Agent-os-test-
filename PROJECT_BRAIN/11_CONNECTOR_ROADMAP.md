@@ -118,6 +118,8 @@ credential-gated and require the shared broker approval/audit path at runtime.
 Google Drive, Dropbox, and OneDrive now have bounded `files.file.read`
 operations; Dropbox connections must re-authorize for the expanded content-read
 scope.
+Render now has fixed service listing and governed deploy-trigger operations;
+live use requires a staging-safe service id and API key.
 Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a

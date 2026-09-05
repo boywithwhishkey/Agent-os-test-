@@ -65,6 +65,9 @@ tested read-only foundations. Vercel remains read-only; Linear now has
 governed issue create/update mutations as well as read capabilities.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
+Render now has fixed service listing and governed deploy-trigger operations;
+`RENDER_API_KEY` plus a staging-safe `RENDER_SERVICE_ID` are required for a
+real deployment.
 Phase 1 continues with Meta inbound/webhook capabilities; Stripe now has a
 read-only foundation, Google Gmail/Calendar/Drive and Jira now have shared
 OAuth read-only adapters, followed by Amazon SP-API sandbox/order capabilities.
@@ -166,6 +169,7 @@ time, highest first.
 4. Optional connector credentials, each unlocking exactly one connector:
    `GEMINI_API_KEY` (+ `AGENT_OS_LLM_PROVIDER=gemini`), `OPENAI_API_KEY`,
    `ANTHROPIC_API_KEY`, `CLOUDFLARE_API_TOKEN`, `RENDER_API_KEY`,
+   `RENDER_SERVICE_ID`,
    `N8N_BASE_URL`, `MAKE_WEBHOOK_URL`, and the OAuth pairs for GitHub, GitLab,
    Slack and Notion.
 
@@ -281,7 +285,7 @@ In rough priority order:
   never allowed to block correctness work.
 
 ## 3. Standing verification commands
-- Backend: `uv run pytest tests/ -q` (528 passing, 13 skipped, verified
+- Backend: `uv run pytest tests/ -q` (533 passing, 13 skipped, verified
   2026-09-05).
 - Frontend from `frontend/`: `pnpm typecheck && pnpm lint && pnpm test &&
   pnpm build` (109 passing, typecheck/build clean, 9 pre-existing lint

@@ -2642,7 +2642,7 @@ build all clean.
   bounded and identifier-validated; GraphQL variables are used instead of
   interpolating workflow data; unsuccessful mutation payloads fail closed.
 - Focused connector, capability, and broker checks for Linear: **34 passed**.
-  The full gate after the file-read work is **531 backend tests passed, 13
+  The full gate after the Render work is **533 backend tests passed, 13
   skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors / 9 existing warnings**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
@@ -2650,6 +2650,10 @@ build all clean.
 - Google Drive, Dropbox, and OneDrive now implement bounded `files.file.read`
   responses using fixed provider download routes. These tests are mocked only;
   no provider credentials or live file content were used.
+- Render now implements fixed `cloud.service.read` and approval-gated
+  `cloud.deploy.trigger` calls. Deploys require `RENDER_SERVICE_ID` (or a
+  validated service argument), optional SHA/deploy-mode/cache controls, and
+  remain untested against a live account.
 - Code and tests are pushed to the isolated branch
-  `claude/thynact-postgres-correctness` at commit `d76c5db`. Ride&Glide and
+  `claude/thynact-postgres-correctness` at commit `56dedcc`. Ride&Glide and
   production remain untouched.
