@@ -56,12 +56,12 @@ async def test_an_unknown_capability_is_refused_and_never_reaches_a_provider() -
 
 
 async def test_a_declared_but_unimplemented_capability_says_so_plainly() -> None:
-    # Gmail declares mail.message.send in the catalog; no adapter exists.
+    # HubSpot and Salesforce declare crm.contact.list in the catalog; neither
+    # has an adapter yet.
     broker, _ = _broker()
-    result = await broker.execute("mail.message.send", approval_id=None)
+    result = await broker.execute("crm.contact.list", approval_id=None)
 
-    assert result.outcome in {BrokerOutcome.NO_PROVIDER, BrokerOutcome.APPROVAL_REQUIRED}
-    # Whichever gate catches it first, it must never report success.
+    assert result.outcome is BrokerOutcome.NO_PROVIDER
     assert result.success is False
 
 

@@ -103,13 +103,11 @@ keep the `ambient-*` tokens (decorative) and `--color-accent-red`
   LIVE_VALIDATED (postgresql, redis); Discord is now implemented and remains
   credential-gated.
   Discord now has a tested send-only webhook adapter and is credential-gated
-  by `DISCORD_WEBHOOK_URL`; it has not been live-validated here. The remaining
-  OAuth catalog entries (Gmail, Google Calendar, Google Drive,
-  Jira, HubSpot, Salesforce, Dropbox, OneDrive) follow the same pattern —
-  **still don't add these speculatively**; do the next one only when there is a
-  concrete product need or the operator actually wants that account connected.
-  Google's three entries can likely share one OAuth app with different `scope`
-  strings — verify before assuming three client id/secret pairs.
+  by `DISCORD_WEBHOOK_URL`; it has not been live-validated here. Gmail, Google
+  Calendar, and Google Drive now share one OAuth app configuration and have
+  tested read-only identity/list adapters. The remaining catalog-only entries
+  (Jira, HubSpot, Salesforce, Dropbox, OneDrive, Supabase, and Zapier) should
+  be implemented only with the same adapter/capability/test contract.
 - `execute()` is intentionally "not supported" on every non-webhook
   adapter added this session (OpenAI, Anthropic, Cloudflare, Render,
   GitHub, Gemini, Postgres, Redis) — they only verify identity/

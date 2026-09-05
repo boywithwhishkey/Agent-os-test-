@@ -412,6 +412,8 @@ CATALOG: list[CatalogSpec] = [
         ],
         popular=True,
         documentation_url="https://mail.google.com",
+        implemented=True,
+        requires=["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     ),
     CatalogSpec(
         id="google_calendar",
@@ -431,6 +433,8 @@ CATALOG: list[CatalogSpec] = [
         ],
         popular=True,
         documentation_url="https://calendar.google.com",
+        implemented=True,
+        requires=["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     ),
     CatalogSpec(
         id="google_drive",
@@ -450,6 +454,8 @@ CATALOG: list[CatalogSpec] = [
         ],
         popular=True,
         documentation_url="https://drive.google.com",
+        implemented=True,
+        requires=["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     ),
     # --- Data ---
     CatalogSpec(

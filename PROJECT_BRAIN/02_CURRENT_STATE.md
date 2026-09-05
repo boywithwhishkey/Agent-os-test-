@@ -5,6 +5,25 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-05 — GOOGLE OAUTH READ CONNECTORS
+
+- **IMPLEMENTED_TESTED:** Gmail, Google Calendar, and Google Drive now use the
+  shared OAuth authorize/callback flow plus a provider-specific read adapter in
+  `app/integrations/google.py`. Each adapter performs a real, fixed-endpoint
+  identity probe and one bounded list operation (`mail.message.list`,
+  `calendar.event.list`, or `files.file.list`).
+- Google uses one server-side OAuth client pair with provider-specific
+  read-only scopes. Access tokens remain in the existing process-local OAuth
+  store; encrypted durable token storage and tenant isolation are still
+  prerequisites for multi-user production use.
+- **CREDENTIAL_REQUIRED:** no Google OAuth client or user token was available
+  in this environment, so no live Google request was made. The mocked suite
+  covers authorization headers, endpoint/parameter routing, missing-token
+  behavior, bounded limits, timeout/error handling, and token-safe errors.
+- Catalog truth after this session: **35 entries, 28 implemented/tested, 7
+  catalog-only**. PostgreSQL and Redis remain the only live-validated
+  providers in the local development environment.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

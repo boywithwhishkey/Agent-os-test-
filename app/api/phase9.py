@@ -215,6 +215,18 @@ def _amazon_live_status() -> dict:
     return _status_store_backed_status("amazon", configured=is_provider_configured(provider))
 
 
+def _gmail_live_status() -> dict:
+    return _oauth_live_status("gmail")
+
+
+def _google_calendar_live_status() -> dict:
+    return _oauth_live_status("google_calendar")
+
+
+def _google_drive_live_status() -> dict:
+    return _oauth_live_status("google_drive")
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -269,6 +281,9 @@ _LIVE_STATUS_RESOLVERS = {
     "vercel": _vercel_live_status,
     "linear": _linear_live_status,
     "amazon": _amazon_live_status,
+    "gmail": _gmail_live_status,
+    "google_calendar": _google_calendar_live_status,
+    "google_drive": _google_drive_live_status,
 }
 
 

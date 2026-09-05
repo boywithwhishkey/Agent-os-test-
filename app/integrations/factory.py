@@ -115,6 +115,18 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
             "AMAZON_AWS_SECRET_ACCESS_KEY",
         ],
     },
+    IntegrationProvider.GMAIL: {
+        "name": "Gmail",
+        "requires": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+    },
+    IntegrationProvider.GOOGLE_CALENDAR: {
+        "name": "Google Calendar",
+        "requires": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+    },
+    IntegrationProvider.GOOGLE_DRIVE: {
+        "name": "Google Drive",
+        "requires": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+    },
 }
 
 
@@ -225,6 +237,13 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.amazon import AmazonSPAPIAdapter
 
         return AmazonSPAPIAdapter()
+    if normalized in {"gmail", "google_calendar", "google_drive"}:
+        from app.integrations.google import GoogleOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return GoogleOAuthAdapter(
+            provider=IntegrationProvider(normalized), connection_store=oauth_connection_store
+        )
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -302,4 +321,10 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
             and settings.amazon_aws_access_key_id
             and settings.amazon_aws_secret_access_key
         )
+    if provider in {
+        IntegrationProvider.GMAIL,
+        IntegrationProvider.GOOGLE_CALENDAR,
+        IntegrationProvider.GOOGLE_DRIVE,
+    }:
+        return bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
     return False

@@ -48,6 +48,36 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="GITLAB_OAUTH_CLIENT_ID",
         client_secret_env="GITLAB_OAUTH_CLIENT_SECRET",
     ),
+    "gmail": OAuthProviderConfig(
+        id="gmail",
+        name="Gmail",
+        authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
+        token_url="https://oauth2.googleapis.com/token",
+        scope="https://www.googleapis.com/auth/gmail.readonly",
+        client_id_env="GOOGLE_OAUTH_CLIENT_ID",
+        client_secret_env="GOOGLE_OAUTH_CLIENT_SECRET",
+        extra_authorize_params={"access_type": "offline", "prompt": "consent"},
+    ),
+    "google_calendar": OAuthProviderConfig(
+        id="google_calendar",
+        name="Google Calendar",
+        authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
+        token_url="https://oauth2.googleapis.com/token",
+        scope="https://www.googleapis.com/auth/calendar.readonly",
+        client_id_env="GOOGLE_OAUTH_CLIENT_ID",
+        client_secret_env="GOOGLE_OAUTH_CLIENT_SECRET",
+        extra_authorize_params={"access_type": "offline", "prompt": "consent"},
+    ),
+    "google_drive": OAuthProviderConfig(
+        id="google_drive",
+        name="Google Drive",
+        authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
+        token_url="https://oauth2.googleapis.com/token",
+        scope="https://www.googleapis.com/auth/drive.readonly",
+        client_id_env="GOOGLE_OAUTH_CLIENT_ID",
+        client_secret_env="GOOGLE_OAUTH_CLIENT_SECRET",
+        extra_authorize_params={"access_type": "offline", "prompt": "consent"},
+    ),
 }
 
 

@@ -87,11 +87,12 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 35 catalog entries. Twenty-five have adapters and tests; PostgreSQL
+THYNACT now has 35 catalog entries. Twenty-eight have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
-providers are credential/auth gated. Fourteen catalog entries still need real
-adapters, beginning with Amazon SP-API, Jira, and the remaining social/productivity
-providers after the Shopify/Stripe/WooCommerce foundations.
+providers are credential/auth gated. Seven catalog entries still need real
+adapters: Zapier, Jira, Supabase, Dropbox, OneDrive, HubSpot, and Salesforce.
+Google Gmail/Calendar/Drive now share one OAuth client configuration and have
+read-only identity/list adapters; write capabilities remain separately gated.
 
 ## Operator prerequisites
 

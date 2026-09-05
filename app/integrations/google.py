@@ -1,0 +1,155 @@
+from __future__ import annotations
+
+import time
+from typing import Any
+
+import httpx
+
+from app.integrations.base import CapabilityNotWired, IntegrationAdapter, unsupported_execute_result
+from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
+from app.integrations.oauth.store import OAuthConnectionStore
+
+_IDENTITY_ENDPOINTS = {
+    IntegrationProvider.GMAIL: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+    IntegrationProvider.GOOGLE_CALENDAR: (
+        "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=1"
+    ),
+    IntegrationProvider.GOOGLE_DRIVE: (
+        "https://www.googleapis.com/drive/v3/about?fields=user"
+    ),
+}
+
+
+class GoogleOAuthAdapter(IntegrationAdapter):
+    """Read-only Google API operations using a stored OAuth access token.
+
+    OAuth authorization and token exchange are deliberately handled by the
+    shared routes in ``app/integrations/oauth``. This adapter only consumes a
+    token that has already been recorded by that flow and never accepts an
+    arbitrary endpoint from workflow arguments.
+    """
+
+    def __init__(
+        self,
+        *,
+        provider: IntegrationProvider,
+        connection_store: OAuthConnectionStore,
+        client: httpx.AsyncClient | None = None,
+    ) -> None:
+        if provider not in _IDENTITY_ENDPOINTS:
+            raise ValueError(f"Unsupported Google provider: {provider}")
+        self.provider = provider
+        self._connection_store = connection_store
+        self._client = client
+
+    async def execute(self, request: IntegrationRequest) -> IntegrationResult:
+        return unsupported_execute_result(
+            self.provider,
+            request,
+            reason=(
+                f"{self.provider_name} mutations are not enabled; use governed read capabilities."
+            ),
+        )
+
+    @property
+    def provider_name(self) -> str:
+        return {
+            IntegrationProvider.GMAIL: "Gmail",
+            IntegrationProvider.GOOGLE_CALENDAR: "Google Calendar",
+            IntegrationProvider.GOOGLE_DRIVE: "Google Drive",
+        }[self.provider]
+
+    async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
+        if capability_id == "identity.account.read":
+            return await self._get(_IDENTITY_ENDPOINTS[self.provider])
+
+        if self.provider is IntegrationProvider.GMAIL and capability_id == "mail.message.list":
+            return await self._get(
+                "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+                params=self._limit_params(arguments),
+            )
+
+        if (
+            self.provider is IntegrationProvider.GOOGLE_CALENDAR
+            and capability_id == "calendar.event.list"
+        ):
+            params = {"maxResults": str(self._max_results(arguments))}
+            if isinstance(arguments.get("time_min"), str) and arguments["time_min"].strip():
+                params["timeMin"] = arguments["time_min"].strip()
+            if isinstance(arguments.get("time_max"), str) and arguments["time_max"].strip():
+                params["timeMax"] = arguments["time_max"].strip()
+            params.update({"singleEvents": "true", "orderBy": "startTime"})
+            return await self._get(
+                "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+                params=params,
+            )
+
+        if self.provider is IntegrationProvider.GOOGLE_DRIVE and capability_id == "files.file.list":
+            return await self._get(
+                "https://www.googleapis.com/drive/v3/files",
+                params={
+                    "pageSize": str(self._max_results(arguments)),
+                    "fields": "files(id,name,mimeType,modifiedTime)",
+                },
+            )
+
+        raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
+
+    @staticmethod
+    def _max_results(arguments: dict[str, Any]) -> int:
+        value = arguments.get("max_results", 25)
+        if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 100:
+            raise ValueError("max_results must be an integer between 1 and 100")
+        return value
+
+    def _limit_params(self, arguments: dict[str, Any]) -> dict[str, str]:
+        params = {"maxResults": str(self._max_results(arguments))}
+        query = arguments.get("query")
+        if isinstance(query, str) and query.strip():
+            params["q"] = query.strip()
+        return params
+
+    async def _get(self, url: str, *, params: dict[str, str] | None = None) -> dict[str, Any]:
+        record = self._connection_store.get(self.provider.value)
+        if not record.access_token:
+            raise RuntimeError(
+                f"Not authorized yet — use Authorize to connect a {self.provider_name} account."
+            )
+
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await client.get(
+                url,
+                params=params,
+                headers={"Authorization": f"Bearer {record.access_token}"},
+                timeout=10.0,
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError(
+                        f"{self.provider_name} rejected the stored token (HTTP 401) — authorize again"
+                    )
+                raise RuntimeError(f"{self.provider_name} returned HTTP {response.status_code}")
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise RuntimeError(f"{self.provider_name} returned a non-JSON response") from exc
+            if not isinstance(body, dict):
+                raise TypeError(f"{self.provider_name} returned an invalid response")
+            return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(f"{self.provider_name} request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"{self.provider_name} request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def test_connection(self) -> tuple[bool, float | None, str | None]:
+        started = time.perf_counter()
+        try:
+            await self.run_capability("identity.account.read", {})
+            return True, (time.perf_counter() - started) * 1000, None
+        except RuntimeError as exc:
+            return False, (time.perf_counter() - started) * 1000, str(exc)

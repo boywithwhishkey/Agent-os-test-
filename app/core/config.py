@@ -100,6 +100,12 @@ class Settings(BaseSettings):
         default=None, validation_alias="AMAZON_AWS_SESSION_TOKEN"
     )
     amazon_region: str = Field(default="na", validation_alias="AMAZON_REGION")
+    google_oauth_client_id: str | None = Field(
+        default=None, validation_alias="GOOGLE_OAUTH_CLIENT_ID"
+    )
+    google_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="GOOGLE_OAUTH_CLIENT_SECRET"
+    )
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

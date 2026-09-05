@@ -32,6 +32,9 @@ class IntegrationProvider(StrEnum):
     VERCEL = "vercel"
     LINEAR = "linear"
     AMAZON = "amazon"
+    GMAIL = "gmail"
+    GOOGLE_CALENDAR = "google_calendar"
+    GOOGLE_DRIVE = "google_drive"
 
 
 class IntegrationRequest(BaseModel):

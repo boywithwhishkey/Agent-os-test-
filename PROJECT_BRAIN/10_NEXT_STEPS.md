@@ -63,7 +63,8 @@ Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel and Linear now have read-only foundations.
 Phase 1 continues with Meta inbound/webhook capabilities; Stripe now has a
-read-only foundation, followed by Amazon SP-API sandbox/order capabilities and
+read-only foundation, Google Gmail/Calendar/Drive now have shared OAuth
+read-only adapters, followed by Amazon SP-API sandbox/order capabilities and
 Jira. Every entry
 must pass the adapter/capability/approval/audit/test/live-validation contract;
 the goal is not to inflate the catalog with unconnected cards.
@@ -94,9 +95,11 @@ The capability layer, risk classification and SSRF guard are in
    GitLab, Slack, Notion) by mapping their canonical capabilities to real
    operations. Today each adapter only verifies identity; `repo.issue.create`
    and `chat.message.send` are declared but not wired.
-5. **Then** expand to new providers, highest-value first (Gmail, Google
-   Calendar, Google Drive, Telegram, Stripe). Discord and Teams now have
-   tested send-only adapters but still need real webhook URLs for validation.
+5. **Then** expand to new providers, highest-value first (Jira, Dropbox,
+   OneDrive, HubSpot, Salesforce, Supabase, and Zapier). Gmail, Google
+   Calendar, Google Drive, Telegram, Stripe, Discord, and Teams now have
+   tested adapter foundations but still need real credentials or OAuth consent
+   for live validation.
    Each new provider needs the full loop, not a card: transport, capability mapping, credential, risk, approval,
    audit, test, real call. One finished connector beats ten declared ones.
 
