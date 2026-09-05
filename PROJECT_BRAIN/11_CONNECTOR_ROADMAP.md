@@ -85,7 +85,7 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 33 catalog entries. Twenty have adapters and tests; PostgreSQL
+THYNACT now has 32 catalog entries. Twenty have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. Fourteen catalog entries still need real
 adapters, beginning with Amazon SP-API and WooCommerce after the Shopify/Stripe
