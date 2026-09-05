@@ -1,9 +1,23 @@
-# CURRENT STATE — verified as of 2026-09-05, Google connector checkpoint
+# CURRENT STATE — verified as of 2026-09-05, Slack messaging checkpoint
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
+
+## SESSION 2026-09-05 — SLACK OAUTH MESSAGE CAPABILITIES
+
+- **IMPLEMENTED_TESTED:** Slack now uses the shared OAuth flow for identity,
+  bounded `chat.message.list` reads through `conversations.history`, and the
+  approval-gated `chat.message.send` capability. Listing accepts only a
+  server-routed channel, limit, and optional pagination cursor; provider
+  methods and URLs are never workflow-controlled.
+- Slack OAuth requests the conversation-history scopes needed for public,
+  private, and direct-message conversations. Existing installations must
+  re-authorize to grant newly requested scopes.
+- **CREDENTIAL_REQUIRED:** no Slack OAuth app or user token was available
+  here, so no live Slack request was made. Mocked tests cover fixed routing,
+  bounded limits/cursors, pagination metadata, and secret-safe errors.
 
 ## SESSION 2026-09-05 — GOOGLE OAUTH READ CONNECTORS
 

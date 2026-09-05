@@ -82,6 +82,51 @@ async def test_slack_adapter_posts_a_governed_message():
 
 
 @pytest.mark.asyncio
+async def test_slack_adapter_lists_bounded_channel_messages():
+    store = OAuthConnectionStore()
+    store.record_success(
+        "slack",
+        access_token="xoxb-test",
+        token_type="bearer",
+        scope="chat:write channels:history",
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://slack.com/api/conversations.history?channel=C123&limit=20"
+        assert request.headers["Authorization"] == "Bearer xoxb-test"
+        return httpx.Response(
+            200,
+            json={
+                "ok": True,
+                "channel": "C123",
+                "messages": [{"type": "message", "ts": "123.456", "text": "hello"}],
+                "has_more": True,
+                "response_metadata": {"next_cursor": "next-page"},
+            },
+        )
+
+    async with _client(handler) as client:
+        adapter = SlackOAuthAdapter(connection_store=store, client=client)
+        result = await adapter.run_capability("chat.message.list", {"channel": "C123"})
+
+    assert result == {
+        "provider": "slack",
+        "channel": "C123",
+        "messages": [{"type": "message", "ts": "123.456", "text": "hello"}],
+        "has_more": True,
+        "next_cursor": "next-page",
+    }
+
+
+@pytest.mark.asyncio
+async def test_slack_adapter_rejects_unbounded_message_list_limit():
+    adapter = SlackOAuthAdapter(connection_store=OAuthConnectionStore())
+
+    with pytest.raises(ValueError, match="between 1 and 100"):
+        await adapter.run_capability("chat.message.list", {"channel": "C123", "limit": 101})
+
+
+@pytest.mark.asyncio
 async def test_slack_adapter_execute_is_unsupported():
     adapter = SlackOAuthAdapter(connection_store=OAuthConnectionStore())
     result = await adapter.execute(IntegrationRequest(workflow="anything"))
