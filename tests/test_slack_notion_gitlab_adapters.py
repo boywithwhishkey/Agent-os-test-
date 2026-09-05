@@ -252,6 +252,44 @@ async def test_gitlab_adapter_verifies_stored_token():
 
 
 @pytest.mark.asyncio
+async def test_gitlab_adapter_reads_project_metadata_and_repository_file():
+    store = OAuthConnectionStore()
+    store.record_success("gitlab", access_token="glpat-test", token_type="bearer", scope="read_api")
+    seen: list[str] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        assert request.headers["Authorization"] == "Bearer glpat-test"
+        if request.url.path.endswith("/repository/files/docs/README.md"):
+            return httpx.Response(200, json={"file_name": "README.md", "encoding": "base64"})
+        return httpx.Response(200, json={"path_with_namespace": "group/project", "visibility": "private"})
+
+    async with _client(handler) as client:
+        adapter = GitLabOAuthAdapter(connection_store=store, client=client)
+        metadata = await adapter.run_capability("repo.metadata.read", {"project": "group/project"})
+        content = await adapter.run_capability(
+            "repo.content.read", {"project": "group/project", "path": "docs/README.md", "ref": "main"}
+        )
+
+    assert metadata["path_with_namespace"] == "group/project"
+    assert content["file_name"] == "README.md"
+    assert seen == [
+        "https://gitlab.com/api/v4/projects/group%2Fproject",
+        "https://gitlab.com/api/v4/projects/group%2Fproject/repository/files/docs%2FREADME.md?ref=main",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_gitlab_adapter_rejects_parent_traversal_in_project_path():
+    store = OAuthConnectionStore()
+    store.record_success("gitlab", access_token="glpat-test", token_type="bearer", scope="read_api")
+    adapter = GitLabOAuthAdapter(connection_store=store)
+
+    with pytest.raises(ValueError, match="safe GitLab project path"):
+        await adapter.run_capability("repo.metadata.read", {"project": "group/../secret"})
+
+
+@pytest.mark.asyncio
 async def test_gitlab_adapter_execute_is_unsupported():
     adapter = GitLabOAuthAdapter(connection_store=OAuthConnectionStore())
     result = await adapter.execute(IntegrationRequest(workflow="anything"))

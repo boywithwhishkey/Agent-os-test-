@@ -216,6 +216,18 @@ contradicting note elsewhere.
   repository request in this pass; mocked tests cover auth, fixed routing,
   response handling, and path safety.
 
+## SESSION 2026-09-05 — GITLAB REPOSITORY READ CAPABILITIES
+
+- **IMPLEMENTED_TESTED:** GitLab now supports canonical identity, project
+  metadata, and repository-file reads through fixed API routes with shared
+  OAuth refresh handling. Project paths, repository paths, and refs are
+  bounded and URL-encoded; arbitrary GitLab URLs are not accepted.
+- Issue/MR creation and branch merges remain unwired and are no longer
+  advertised in the catalog until their own write/high-risk contracts exist.
+- **CREDENTIAL_REQUIRED:** no GitLab OAuth token was available for a live
+  repository request in this pass; mocked tests cover routing, auth, path
+  safety, and response handling.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now
