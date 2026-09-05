@@ -45,6 +45,18 @@ contradicting note elsewhere.
 - It remains **CREDENTIAL_REQUIRED** until `TEAMS_WEBHOOK_URL` is supplied and
   a real probe succeeds. This pass made no live Teams request.
 
+## SESSION 2026-09-05 — SHOPIFY READ-ONLY COMMERCE CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Shopify now has a fixed-domain GraphQL Admin adapter
+  for shop identity, product listing, and order listing. It rejects arbitrary
+  domains, does not accept caller-supplied GraphQL, and keeps access tokens out
+  of errors.
+- It remains **CREDENTIAL_REQUIRED** until `SHOPIFY_ADMIN_ACCESS_TOKEN` and a
+  `*.myshopify.com` domain are supplied and the identity query succeeds. No
+  live Shopify request was made.
+- Product/order mutations and payment actions remain disabled until their own
+  high-risk capability and approval contracts exist.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

@@ -77,6 +77,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Microsoft Teams",
         "requires": ["TEAMS_WEBHOOK_URL"],
     },
+    IntegrationProvider.SHOPIFY: {
+        "name": "Shopify",
+        "requires": ["SHOPIFY_ADMIN_ACCESS_TOKEN", "SHOPIFY_SHOP_DOMAIN"],
+    },
 }
 
 
@@ -159,6 +163,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.teams import TeamsWebhookAdapter
 
         return TeamsWebhookAdapter()
+    if normalized == "shopify":
+        from app.integrations.shopify import ShopifyAdminAdapter
+
+        return ShopifyAdminAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -212,4 +220,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.meta_access_token and settings.instagram_business_account_id)
     if provider == IntegrationProvider.TEAMS:
         return bool(settings.teams_webhook_url)
+    if provider == IntegrationProvider.SHOPIFY:
+        return bool(settings.shopify_admin_access_token and settings.shopify_shop_domain)
     return False

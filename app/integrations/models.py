@@ -25,6 +25,7 @@ class IntegrationProvider(StrEnum):
     WHATSAPP = "whatsapp"
     INSTAGRAM = "instagram"
     TEAMS = "teams"
+    SHOPIFY = "shopify"
 
 
 class IntegrationRequest(BaseModel):

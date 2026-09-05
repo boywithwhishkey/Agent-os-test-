@@ -64,6 +64,11 @@ class Settings(BaseSettings):
         default=None, validation_alias="INSTAGRAM_BUSINESS_ACCOUNT_ID"
     )
     teams_webhook_url: str | None = Field(default=None, validation_alias="TEAMS_WEBHOOK_URL")
+    shopify_admin_access_token: str | None = Field(
+        default=None, validation_alias="SHOPIFY_ADMIN_ACCESS_TOKEN"
+    )
+    shopify_shop_domain: str | None = Field(default=None, validation_alias="SHOPIFY_SHOP_DOMAIN")
+    shopify_api_version: str = Field(default="2025-07", validation_alias="SHOPIFY_API_VERSION")
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

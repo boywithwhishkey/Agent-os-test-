@@ -30,8 +30,8 @@ without that loop remain metadata only.
 
 ### Commerce and payments
 
-1. Shopify Admin API — merchant OAuth, products/orders/inventory with narrow
-   scopes and webhook subscriptions.
+1. Shopify Admin API — implemented/tested read-only shop/products/orders
+   foundation; merchant OAuth, inventory, and webhook subscriptions follow.
 2. Amazon Selling Partner API — Login with Amazon/OAuth, marketplace-aware
    endpoints, sandbox tests, and restricted-role handling.
 3. WooCommerce — store URL plus consumer key/secret, order/product reads and
@@ -85,10 +85,11 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 31 catalog entries. Eighteen have adapters and tests; PostgreSQL
+THYNACT now has 32 catalog entries. Nineteen have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. Fourteen catalog entries still need real
-adapters, beginning with Teams and the commerce providers after the Meta batch.
+adapters, beginning with Amazon SP-API, WooCommerce, and Stripe after the
+Shopify read-only foundation.
 
 ## Operator prerequisites
 

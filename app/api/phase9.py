@@ -180,6 +180,11 @@ def _teams_live_status() -> dict:
     return _status_store_backed_status("teams", configured=is_provider_configured(provider))
 
 
+def _shopify_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "shopify")
+    return _status_store_backed_status("shopify", configured=is_provider_configured(provider))
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -227,6 +232,7 @@ _LIVE_STATUS_RESOLVERS = {
     "whatsapp": _whatsapp_live_status,
     "instagram": _instagram_live_status,
     "teams": _teams_live_status,
+    "shopify": _shopify_live_status,
 }
 
 

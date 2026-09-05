@@ -589,6 +589,24 @@ CATALOG: list[CatalogSpec] = [
         ],
         documentation_url="https://stripe.com",
     ),
+    CatalogSpec(
+        id="shopify",
+        name="Shopify",
+        description="Read a Shopify store, products, and orders through the Admin API.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.API,
+        icon="ShoppingBag",
+        auth_type=ConnectorAuthType.BEARER,
+        capabilities=["Verify store", "List products", "List orders"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "commerce.product.list",
+            "commerce.order.list",
+        ],
+        documentation_url="https://shopify.dev/docs/api/admin-graphql",
+        implemented=True,
+        requires=["SHOPIFY_ADMIN_ACCESS_TOKEN", "SHOPIFY_SHOP_DOMAIN"],
+    ),
 ]
 
 
