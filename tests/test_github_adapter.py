@@ -69,6 +69,54 @@ async def test_github_adapter_reads_repository_metadata_and_content():
 
 
 @pytest.mark.asyncio
+async def test_github_adapter_creates_bounded_issue_with_fixed_route():
+    store = OAuthConnectionStore()
+    store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["url"] = str(request.url)
+        seen["auth"] = request.headers["Authorization"]
+        seen["version"] = request.headers["X-GitHub-Api-Version"]
+        seen["body"] = request.content
+        return httpx.Response(201, json={"number": 42, "title": "Bug report"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await GitHubOAuthAdapter(connection_store=store, client=client).run_capability(
+            "repo.issue.create",
+            {
+                "owner": "octocat",
+                "repo": "hello-world",
+                "title": "Bug report",
+                "body": "Please investigate.",
+                "labels": ["bug", "triage"],
+            },
+        )
+
+    assert result == {"number": 42, "title": "Bug report"}
+    assert seen == {
+        "method": "POST",
+        "url": "https://api.github.com/repos/octocat/hello-world/issues",
+        "auth": "Bearer gho_test",
+        "version": "2022-11-28",
+        "body": b'{"title":"Bug report","body":"Please investigate.","labels":["bug","triage"]}',
+    }
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"title": ""}, "title"),
+        ({"title": "x", "labels": ["bad"] * 21}, "20"),
+    ],
+)
+def test_github_issue_arguments_are_validated(arguments: dict[str, object], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        GitHubOAuthAdapter._issue_payload(arguments)
+
+
+@pytest.mark.asyncio
 async def test_github_adapter_rejects_parent_traversal_in_content_path():
     store = OAuthConnectionStore()
     store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")

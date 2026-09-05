@@ -14,10 +14,7 @@ from app.integrations.oauth.store import OAuthConnectionStore
 
 
 class GitHubOAuthAdapter(IntegrationAdapter):
-    """Verifies a stored GitHub OAuth token by fetching the authenticated
-    user — a free, read-only identity check. The token itself is obtained
-    through the separate authorize/callback OAuth flow (see
-    app/integrations/oauth/), not by this adapter."""
+    """Run fixed, bounded GitHub identity, repository, and issue operations."""
 
     def __init__(self, *, connection_store: OAuthConnectionStore, client: httpx.AsyncClient | None = None) -> None:
         self._connection_store = connection_store
@@ -27,7 +24,7 @@ class GitHubOAuthAdapter(IntegrationAdapter):
         return unsupported_execute_result(
             IntegrationProvider.GITHUB,
             request,
-            reason="GitHub actions (issues, PRs) are not yet wired to a triggered workflow.",
+            reason="GitHub actions must use governed canonical capabilities.",
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
@@ -39,6 +36,12 @@ class GitHubOAuthAdapter(IntegrationAdapter):
                 return await self._get(f"https://api.github.com/repos/{owner}/{repo}")
             encoded_path = quote(self._content_path(arguments), safe="/")
             return await self._get(f"https://api.github.com/repos/{owner}/{repo}/contents/{encoded_path}")
+        if capability_id == "repo.issue.create":
+            owner, repo = self._repository(arguments)
+            return await self._post(
+                f"https://api.github.com/repos/{owner}/{repo}/issues",
+                self._issue_payload(arguments),
+            )
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
 
     @staticmethod
@@ -76,6 +79,31 @@ class GitHubOAuthAdapter(IntegrationAdapter):
             raise ValueError("repo.content.read requires a safe repository-relative path")
         return path.strip()
 
+    @staticmethod
+    def _issue_payload(arguments: dict[str, Any]) -> dict[str, Any]:
+        title = arguments.get("title")
+        if not isinstance(title, str) or not 1 <= len(title.strip()) <= 256:
+            raise ValueError("repo.issue.create requires a title of 256 characters or fewer")
+        payload: dict[str, Any] = {"title": title.strip()}
+        body = arguments.get("body")
+        if body is not None:
+            if not isinstance(body, str) or len(body) > 65_536:
+                raise ValueError("repo.issue.create body must be 65536 characters or fewer")
+            payload["body"] = body
+        labels = arguments.get("labels")
+        if labels is not None:
+            if (
+                not isinstance(labels, list)
+                or len(labels) > 20
+                or any(
+                    not isinstance(label, str) or not 1 <= len(label.strip()) <= 100
+                    for label in labels
+                )
+            ):
+                raise ValueError("repo.issue.create labels must contain at most 20 short strings")
+            payload["labels"] = [label.strip() for label in labels]
+        return payload
+
     async def _get(self, url: str) -> dict[str, Any] | list[Any]:
         record = self._connection_store.get("github")
         if not record.access_token:
@@ -94,6 +122,48 @@ class GitHubOAuthAdapter(IntegrationAdapter):
                         "Accept": "application/vnd.github+json",
                         "X-GitHub-Api-Version": "2022-11-28",
                     },
+                    timeout=10.0,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError("GitHub rejected the stored token (HTTP 401) — authorize again")
+                raise RuntimeError(f"GitHub returned HTTP {response.status_code}")
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise RuntimeError("GitHub returned a non-JSON response") from exc
+            if not isinstance(body, (dict, list)):
+                raise TypeError("GitHub returned an invalid response")
+            return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("GitHub request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"GitHub request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _post(self, url: str, payload: dict[str, Any]) -> dict[str, Any] | list[Any]:
+        record = self._connection_store.get("github")
+        if not record.access_token:
+            raise RuntimeError("Not authorized yet — use Authorize to connect a GitHub account.")
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["github"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.post(
+                    url,
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
                     timeout=10.0,
                 ),
             )

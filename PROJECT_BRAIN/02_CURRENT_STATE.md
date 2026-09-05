@@ -543,6 +543,15 @@ contradicting note elsewhere.
   integration still grants capabilities at the integration level rather than
   through a scope string. No live Notion request was made.
 
+## SESSION 2026-09-05 — GITHUB GOVERNED ISSUE CREATION
+
+- **IMPLEMENTED_TESTED:** GitHub now supports canonical `repo.issue.create`.
+  The adapter validates a repository owner/name, bounded issue title/body, and
+  a bounded label list before posting only to the fixed repository issues
+  endpoint.
+- This is WRITE and remains behind broker approval and audit. The existing
+  OAuth `repo` grant covers the operation; no live GitHub request was made.
+
 ## SESSION 2026-09-05 — HUBSPOT GOVERNED CONTACT UPDATE
 
 - **IMPLEMENTED_TESTED:** HubSpot now supports the canonical
