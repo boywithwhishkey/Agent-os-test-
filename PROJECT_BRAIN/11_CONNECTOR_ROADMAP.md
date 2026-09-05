@@ -124,6 +124,14 @@ Cloudflare now has fixed account and DNS-record reads; live use requires a
 token with the corresponding Zone/DNS read permissions.
 Vercel now has an approval-gated deploy-hook trigger; live use requires a
 staging-safe, host-validated `VERCEL_DEPLOY_HOOK_URL`.
+OpenAI, Anthropic, and Gemini now have bounded model-list/completion adapter
+paths through the canonical `ai.*` capabilities; completion remains approval
+gated and no provider credentials were available for live validation.
+Discord and Teams are intentionally send-only webhook connectors in the
+catalog; identity/list capabilities require a future OAuth or bot adapter.
+Supabase now supports bounded approval-gated writes to its one configured
+PostgREST table in addition to record reads; Auth/Storage remain separate
+capabilities until their own credentials and policies are wired.
 Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a

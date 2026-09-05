@@ -2641,10 +2641,11 @@ build all clean.
   capabilities are implemented in `app/integrations/linear.py`. Inputs are
   bounded and identifier-validated; GraphQL variables are used instead of
   interpolating workflow data; unsuccessful mutation payloads fail closed.
-- Focused connector, capability, and broker checks for Linear: **34 passed**.
-  The full gate after the Cloudflare work is **535 backend tests passed, 13
+- Focused connector, capability, and broker checks for the AI/catalog update:
+  **61 passed** (Linear's earlier focused set was 34).
+  The full gate after the AI connector work is **545 backend tests passed, 13
   skipped, 1 warning; 109 frontend tests passed; typecheck and production
-  build passed; lint 0 errors / 9 existing warnings**.
+  build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
   so no live Linear request or live credential validation was performed.
 - Google Drive, Dropbox, and OneDrive now implement bounded `files.file.read`
@@ -2660,6 +2661,14 @@ build all clean.
 - Vercel now implements `cloud.deploy.trigger` through a configured,
   host-validated Deploy Hook URL. The hook is never accepted from workflow
   input and no live Vercel deployment was triggered.
-- Code and tests are pushed to the isolated branch
-  `claude/thynact-postgres-correctness` at commit `f8be594`. Ride&Glide and
+- OpenAI, Anthropic, and Gemini now implement bounded, approval-routed
+  `ai.completion.create` calls with normalized text output; Gemini also has a
+  governed `ai.model.list` adapter path. Provider calls are mocked in tests;
+  no AI credentials or live requests were available.
+- Discord and Microsoft Teams catalog metadata now exposes only their actual
+  send-only webhook capability; unsupported identity/list claims were removed.
+- Supabase now has a bounded, approval-routed insert into its one configured
+  PostgREST table, with JSON-only records and fixed routes.
+- Verified local functional commits are `a8b3908` and `3104b1c`. The GitHub
+  publish is pending explicit destination confirmation; Ride&Glide and
   production remain untouched.

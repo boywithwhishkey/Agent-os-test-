@@ -137,9 +137,10 @@ worth doing:
 1. **Custom connector wizard** — untrusted by default, unknown capabilities
    DENY, no plaintext secrets in localStorage / logs / PROJECT_BRAIN / audit
    payloads / git / connector metadata returned to the UI.
-2. **AI provider management surface** — the catalog already carries Anthropic,
-   Gemini and OpenAI entries; this is a management view over what exists, not
-   a new registry.
+2. **AI provider management surface** — OpenAI, Anthropic, and Gemini now have
+   governed model-list and completion adapter paths; the remaining work is the
+   UI for selecting a provider/model and showing approval/audit receipts, not a
+   second registry.
 3. **Backend security tests** for the connector paths.
 4. **Privacy page long-form prose is still English only** — deliberate, and
    flagged for human legal review before it is translated.
@@ -289,7 +290,7 @@ In rough priority order:
   never allowed to block correctness work.
 
 ## 3. Standing verification commands
-- Backend: `uv run pytest tests/ -q` (537 passing, 13 skipped, verified
+- Backend: `uv run pytest tests/ -q` (545 passing, 13 skipped, verified
   2026-09-05).
 - Frontend from `frontend/`: `pnpm typecheck && pnpm lint && pnpm test &&
   pnpm build` (109 passing, typecheck/build clean, 9 pre-existing lint
