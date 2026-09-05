@@ -92,6 +92,7 @@ class StepRun(BaseModel):
 class WorkflowRun(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     workflow_id: str
+    correlation_id: str | None = None
     status: WorkflowStatus = WorkflowStatus.PENDING
     context: dict[str, Any] = Field(default_factory=dict)
     steps: dict[str, StepRun] = Field(default_factory=dict)

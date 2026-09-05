@@ -4,6 +4,22 @@ Read root `CLAUDE.md` first (permanent rules), then `00_START_HERE.md` and
 `02_CURRENT_STATE.md`. Run `bash scripts/project_doctor.sh` before planning —
 it answers most environment questions in seconds.
 
+## Workflow correlation-id propagation (verified 2026-09-05)
+
+- `WorkflowRun` now carries an optional `correlation_id`; `WorkflowEngine.start`
+  accepts/derives one and stamps it onto the run and its context,
+  `WorkflowEngine.resume` re-injects it into context on every resume, the
+  workflow `POST /run` API binds `request.state.correlation_id`, and
+  `handlers.run_tool` forwards it into `ToolExecutor.execute`. A workflow's
+  tool-step audit rows now share the same correlation id as the run.
+- Verified: focused `tests/test_phase8_workflows.py` 28 passed; full
+  `bash scripts/local_mac.sh test` — backend 369 passed / 5 skipped, frontend 109
+  tests passed, typecheck/build clean, lint 0 errors / 9 pre-existing warnings.
+- This closes the "thread the same correlation id through workflow runs"
+  follow-on noted under section 2 below. Runtime executions still do not
+  carry it — that remains open.
+- Not deployed; no credential or hardware change involved.
+
 ## Local Mac operation (verified 2026-09-04)
 
 - Start everything: `bash scripts/local_mac.sh start`
@@ -224,9 +240,10 @@ In rough priority order:
   ten-way concurrent consumption. Next, add targeted real-database coverage
   for memory hybrid ranking and workflow run resume.
 - ~~Audit correlation-ID quick-copy~~ **DONE** (migration 006, verified
-  against real PostgreSQL). Natural follow-on: thread the same correlation id
-  through workflow runs and runtime executions, whose types already declare a
-  `correlation_id` field, so one id traces a whole multi-step run.
+  against real PostgreSQL). ~~Thread the same correlation id through workflow
+  runs~~ **DONE 2026-09-05** — `WorkflowRun.correlation_id`, engine
+  start/resume, the workflow API, and tool-step handlers all propagate it now.
+  Runtime executions still do not carry it — that remains open.
 - **Observability foundations** (nine-point item 8) — structured request logs
   with correlation id, timing, tenant placeholder; no secrets in logs.
 - Bespoke UI follow-ups in `07_DEFERRED_GOALS.md` — optional visual depth only,

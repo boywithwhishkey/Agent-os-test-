@@ -38,11 +38,18 @@ class WorkflowEngine:
         self,
         definition: WorkflowDefinition,
         context: dict[str, Any] | None = None,
+        *,
+        correlation_id: str | None = None,
     ) -> WorkflowRun:
+        run_context = dict(context or {})
+        resolved_correlation_id = correlation_id or run_context.get("correlation_id")
+        if resolved_correlation_id is not None:
+            run_context["correlation_id"] = resolved_correlation_id
         run = WorkflowRun(
             workflow_id=definition.id,
+            correlation_id=resolved_correlation_id,
             status=WorkflowStatus.RUNNING,
-            context=context or {},
+            context=run_context,
             steps={
                 step.id: StepRun(step_id=step.id)
                 for step in definition.steps
@@ -61,6 +68,9 @@ class WorkflowEngine:
         run = await self.store.get(run_id)
         if run is None:
             raise KeyError(f"Unknown workflow run: {run_id}")
+
+        if run.correlation_id is not None:
+            run.context["correlation_id"] = run.correlation_id
 
         approvals = approvals or {}
         for step_id, approval_id in approvals.items():

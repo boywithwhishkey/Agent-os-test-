@@ -48,6 +48,7 @@ async def run_tool(
     result = await executor.execute(
         ToolCall(tool=tool, arguments=arguments),
         approval_id=approval_id,
+        correlation_id=context.get("correlation_id"),
     )
     if result.approval_required:
         return {"waiting_approval": True, "result": result.model_dump()}

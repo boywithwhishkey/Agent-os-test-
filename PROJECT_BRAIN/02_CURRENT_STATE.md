@@ -5,6 +5,36 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID
+
+Natural follow-on to the 2026-08-31 audit correlation-id work, which only
+threaded the id through direct tool calls. Workflow-run tool steps previously
+had no correlation id at all.
+
+- **IMPLEMENTED_TESTED:** `WorkflowRun` (`app/workflows/models.py`) gained an
+  optional `correlation_id: str | None = None` field.
+- `WorkflowEngine.start` (`app/workflows/engine.py`) takes an optional
+  `correlation_id` keyword, falls back to one already present in the passed
+  `context` dict, and stamps it onto both the new `WorkflowRun` and its
+  `context` so step handlers can read it. `WorkflowEngine.resume` re-injects
+  `run.correlation_id` into `run.context` on every resume, so a run started
+  with an id keeps surfacing it across resumes.
+- The workflow API (`app/api/phase8.py`) `POST /run` now takes `Request` and
+  passes `request.state.correlation_id` into `engine.start`, matching how the
+  direct tool-execution path already binds it per request.
+- Tool-step handling (`app/workflows/handlers.py:run_tool`) forwards
+  `context.get("correlation_id")` into `ToolExecutor.execute`, so a tool step
+  inside a workflow now produces an audit row carrying the same correlation id
+  as the run that triggered it.
+- **IMPLEMENTED_TESTED:** focused workflow suite (`tests/test_phase8_workflows.py`)
+  28 passed, covering the new correlation-id propagation through start/resume.
+- **IMPLEMENTED_TESTED:** full local verification (`bash scripts/local_mac.sh test`)
+  against real PostgreSQL/Redis: backend **369 passed, 5 skipped**; frontend
+  **109 tests passed**, typecheck clean, build clean; lint **0 errors, 9
+  pre-existing warnings**.
+- No deployment, credential, or hardware action taken or required this
+  session — purely a backend correctness change, not deployed anywhere.
+
 ## SESSION 2026-09-04 — ISOLATED MAC DEVELOPMENT SETUP
 
 - **IMPLEMENTED_TESTED:** `scripts/local_mac.sh` provides idempotent

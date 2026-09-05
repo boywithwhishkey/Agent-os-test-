@@ -10,9 +10,11 @@ from app.tools.executor import ToolExecutor
 from app.tools.policy import ToolPolicy
 from app.workflows.engine import WorkflowEngine
 from app.workflows.models import (
+    StepRun,
     StepStatus,
     StepType,
     WorkflowDefinition,
+    WorkflowRun,
     WorkflowStatus,
     WorkflowStep,
 )
@@ -132,6 +134,58 @@ async def test_parallel_ready_steps_execute_concurrently():
     run = await engine.start(wf)
     assert run.status == WorkflowStatus.COMPLETED
     assert started == 2
+
+
+@pytest.mark.asyncio
+async def test_start_binds_correlation_id_without_mutating_caller_context():
+    captured_payload = {}
+
+    async def capture_agent(payload):
+        captured_payload.update(payload)
+        return "ok"
+
+    engine, _ = make_engine(capture_agent)
+    wf = WorkflowDefinition(
+        name="correlation-start",
+        steps=[WorkflowStep(id="agent", type=StepType.AGENT)],
+    )
+    original_context = {"foo": "bar"}
+
+    run = await engine.start(wf, original_context, correlation_id="corr-1")
+
+    assert run.status == WorkflowStatus.COMPLETED
+    assert run.correlation_id == "corr-1"
+    assert captured_payload["workflow_context"]["correlation_id"] == run.correlation_id
+    assert original_context == {"foo": "bar"}
+
+
+@pytest.mark.asyncio
+async def test_resume_restores_correlation_id_into_context():
+    captured_payload = {}
+
+    async def capture_agent(payload):
+        captured_payload.update(payload)
+        return "ok"
+
+    engine, _ = make_engine(capture_agent)
+    wf = WorkflowDefinition(
+        name="correlation-resume",
+        steps=[WorkflowStep(id="agent", type=StepType.AGENT)],
+    )
+    pending_run = WorkflowRun(
+        workflow_id=wf.id,
+        correlation_id="corr-2",
+        status=WorkflowStatus.PENDING,
+        context={},
+        steps={"agent": StepRun(step_id="agent")},
+    )
+    await engine.store.save(pending_run)
+
+    run = await engine.resume(wf, pending_run.id)
+
+    assert run.status == WorkflowStatus.COMPLETED
+    assert run.context["correlation_id"] == "corr-2"
+    assert captured_payload["workflow_context"]["correlation_id"] == "corr-2"
 
 
 @pytest.mark.asyncio

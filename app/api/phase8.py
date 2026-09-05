@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.core.auth import require_api_key
@@ -24,9 +24,13 @@ class WorkflowResumeRequest(BaseModel):
 
 
 @router.post("/run", response_model=WorkflowRun)
-async def run_workflow(payload: WorkflowStartRequest) -> WorkflowRun:
+async def run_workflow(payload: WorkflowStartRequest, request: Request) -> WorkflowRun:
     await definitions.save(payload.definition)
-    return await engine.start(payload.definition, payload.context)
+    return await engine.start(
+        payload.definition,
+        payload.context,
+        correlation_id=request.state.correlation_id,
+    )
 
 
 @router.post("/runs/{run_id}/resume", response_model=WorkflowRun)
