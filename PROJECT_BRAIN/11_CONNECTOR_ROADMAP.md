@@ -17,8 +17,9 @@ without that loop remain metadata only.
    live `getMe` validation remain.
 2. WhatsApp Cloud API — implemented/tested text foundation; Meta app/OAuth or system-user token, business phone,
    message templates and inbound webhook verification.
-3. Instagram Graph API — implemented/tested text foundation; Meta OAuth, business/creator account, publishing,
-   comments and messaging where the approved permissions allow it.
+3. Instagram Graph API — implemented/tested text and image-publishing
+   foundations; Meta OAuth, business/creator account, comments and richer
+   media/messaging remain permission- and capability-specific follow-ons.
 4. Snapchat Marketing/Public Profile APIs — implemented/tested read-only
    organization foundation; OAuth, ad/profile scopes, and allowlist-dependent
    features remain separate from generally available calls.

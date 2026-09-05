@@ -169,6 +169,18 @@ contradicting note elsewhere.
   token with the requested scopes are configured; no live Slack request was
   made in this pass.
 
+## SESSION 2026-09-05 — INSTAGRAM IMAGE PUBLISHING
+
+- **IMPLEMENTED_TESTED:** Instagram now supports the high-risk canonical
+  `social.post.publish` capability through a fixed two-step Graph flow: create
+  an image media container, then publish that container. The broker's existing
+  approval and audit path governs the operation before either provider call.
+- Inputs are limited to an HTTPS image URL and a bounded caption; arbitrary
+  Graph paths, methods, and container ids are not accepted from workflows.
+- **CREDENTIAL_REQUIRED:** Meta access-token permissions and a professional
+  Instagram account are still required for live validation. No live publish
+  was attempted, and no production or Ride&Glide setting was changed.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now

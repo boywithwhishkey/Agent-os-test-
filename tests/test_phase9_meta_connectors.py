@@ -60,6 +60,53 @@ async def test_instagram_identity_and_send_are_fixed_to_configured_account() -> 
 
 
 @pytest.mark.anyio
+async def test_instagram_image_publish_uses_fixed_two_step_graph_flow() -> None:
+    seen: list[tuple[str, str, dict[str, str]]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.method, request.url.path, dict(request.url.params)))
+        if request.url.path.endswith("/media"):
+            return httpx.Response(200, json={"id": "container-1"})
+        return httpx.Response(200, json={"id": "media-1"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = InstagramGraphAdapter(
+            access_token=TOKEN, business_account_id="ig-1", api_version="v23.0", client=client
+        )
+        result = await adapter.run_capability(
+            "social.post.publish",
+            {"image_url": "https://cdn.example.test/photo.jpg", "caption": "hello"},
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {
+        "provider": "instagram",
+        "container_status_code": 200,
+        "publish_status_code": 200,
+        "container_id": "container-1",
+        "media_id": "media-1",
+    }
+    assert seen == [
+        (
+            "POST",
+            "/v23.0/ig-1/media",
+            {"image_url": "https://cdn.example.test/photo.jpg", "caption": "hello"},
+        ),
+        ("POST", "/v23.0/ig-1/media_publish", {"creation_id": "container-1"}),
+    ]
+
+
+@pytest.mark.anyio
+async def test_instagram_image_publish_rejects_non_https_urls() -> None:
+    adapter = InstagramGraphAdapter(access_token=TOKEN, business_account_id="ig-1")
+
+    with pytest.raises(ValueError, match="HTTPS image_url"):
+        await adapter.run_capability("social.post.publish", {"image_url": "http://localhost/photo.jpg"})
+
+
+@pytest.mark.anyio
 async def test_meta_errors_do_not_leak_access_token() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(401, json={"error": {"message": "bad token"}})

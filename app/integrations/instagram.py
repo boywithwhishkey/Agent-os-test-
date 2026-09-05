@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -48,6 +49,8 @@ class InstagramGraphAdapter(IntegrationAdapter):
                 "GET", self.business_account_id, params={"fields": "id,username,name"}
             )
             return body
+        if capability_id == "social.post.publish":
+            return await self._publish_image_post(arguments)
         if capability_id != "chat.message.send":
             raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
         recipient = arguments.get("recipient_id")
@@ -68,6 +71,54 @@ class InstagramGraphAdapter(IntegrationAdapter):
             "status_code": status_code,
             "message_id": body.get("message_id"),
         }
+
+    async def _publish_image_post(self, arguments: dict[str, Any]) -> object:
+        image_url = arguments.get("image_url")
+        if not isinstance(image_url, str) or not self._is_public_https_url(image_url):
+            raise ValueError("social.post.publish requires an HTTPS image_url")
+        if len(image_url) > 2048:
+            raise ValueError("social.post.publish image_url must be 2048 characters or fewer")
+        caption = arguments.get("caption", "")
+        if not isinstance(caption, str) or len(caption) > 2200:
+            raise ValueError("Instagram captions must be 2200 characters or fewer")
+
+        container_params = {"image_url": image_url}
+        if caption.strip():
+            container_params["caption"] = caption
+        container, container_status = await self._graph.request(
+            "POST",
+            f"{self.business_account_id}/media",
+            params=container_params,
+        )
+        creation_id = container.get("id")
+        if not isinstance(creation_id, str) or not creation_id.strip():
+            raise RuntimeError("Instagram did not return a media container id")
+        published, publish_status = await self._graph.request(
+            "POST",
+            f"{self.business_account_id}/media_publish",
+            params={"creation_id": creation_id},
+        )
+        media_id = published.get("id")
+        if not isinstance(media_id, str) or not media_id.strip():
+            raise RuntimeError("Instagram did not return a published media id")
+        return {
+            "provider": IntegrationProvider.INSTAGRAM.value,
+            "container_status_code": container_status,
+            "publish_status_code": publish_status,
+            "container_id": creation_id,
+            "media_id": media_id,
+        }
+
+    @staticmethod
+    def _is_public_https_url(value: str) -> bool:
+        parsed = urlsplit(value.strip())
+        return (
+            parsed.scheme == "https"
+            and bool(parsed.hostname)
+            and not parsed.username
+            and not parsed.password
+            and parsed.hostname.lower() not in {"localhost", "127.0.0.1", "::1"}
+        )
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:
         started = time.perf_counter()
