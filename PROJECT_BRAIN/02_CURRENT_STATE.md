@@ -406,6 +406,17 @@ contradicting note elsewhere.
   WRITE approval and audit path remains authoritative. No live Google request
   was made.
 
+## SESSION 2026-09-05 — GMAIL GOVERNED DRAFT CREATION
+
+- **IMPLEMENTED_TESTED:** Gmail now supports the canonical
+  `mail.draft.create` capability through the shared OAuth adapter. Drafts are
+  encoded as RFC-compliant MIME messages, sent to Gmail's fixed drafts
+  endpoint, and accept bounded To/Cc/Bcc recipients, subject, and body input.
+- The OAuth scope now combines Gmail read-only access with Gmail Compose access;
+  existing connections must authorize again before draft creation can run. The
+  capability remains WRITE and therefore cannot bypass broker approval/audit.
+  No live Gmail request was made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

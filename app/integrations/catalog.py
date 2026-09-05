@@ -414,7 +414,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.OAUTH,
         icon="Mail",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Read email", "Send email"],
+        capabilities=["Read email", "Create drafts", "Send email"],
         canonical_capabilities=[
             "identity.account.read",
             "mail.message.list",

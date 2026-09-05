@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 
 import httpx
@@ -175,6 +176,62 @@ def test_google_calendar_event_arguments_are_validated(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         GoogleOAuthAdapter._event_payload(arguments)
+
+
+@pytest.mark.anyio
+async def test_gmail_draft_create_posts_gmail_mime_payload() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        payload = json.loads(request.content)
+        raw = payload["message"]["raw"]
+        decoded = base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)).decode()
+        seen["mime"] = decoded
+        return httpx.Response(200, json={"id": "draft_1", "message": {"id": "msg_1"}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GMAIL,
+            connection_store=_connected_store(IntegrationProvider.GMAIL),
+            client=client,
+        )
+        result = await adapter.run_capability(
+            "mail.draft.create",
+            {
+                "to": ["person@example.com"],
+                "cc": "copy@example.com",
+                "subject": "Planning",
+                "body": "Let's meet tomorrow.",
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert result["id"] == "draft_1"
+    assert seen["method"] == "POST"
+    assert seen["path"] == "/gmail/v1/users/me/drafts"
+    assert seen["auth"] == "Bearer google-access-token"
+    assert "To: person@example.com" in seen["mime"]
+    assert "Cc: copy@example.com" in seen["mime"]
+    assert "Subject: Planning" in seen["mime"]
+    assert "Let's meet tomorrow." in seen["mime"]
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"to": "bad", "subject": "x", "body": "body"}, "recipients"),
+        ({"to": "a@example.com", "subject": "", "body": "body"}, "subject"),
+        ({"to": "a@example.com", "subject": "x", "body": "bad\nheader"}, "line breaks"),
+    ],
+)
+def test_gmail_draft_arguments_are_validated(arguments: dict[str, object], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        GoogleOAuthAdapter._draft_raw(arguments)
 
 
 @pytest.mark.anyio

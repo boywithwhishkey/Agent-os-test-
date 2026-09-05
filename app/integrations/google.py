@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import base64
 import time
 from datetime import datetime
+from email.message import EmailMessage
+from email.utils import parseaddr
 from typing import Any
 from urllib.parse import quote
 
@@ -73,6 +76,12 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 params=self._limit_params(arguments),
             )
 
+        if self.provider is IntegrationProvider.GMAIL and capability_id == "mail.draft.create":
+            return await self._post(
+                "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
+                {"message": {"raw": self._draft_raw(arguments)}},
+            )
+
         if (
             self.provider is IntegrationProvider.GOOGLE_CALENDAR
             and capability_id == "calendar.event.list"
@@ -122,6 +131,47 @@ class GoogleOAuthAdapter(IntegrationAdapter):
         if isinstance(query, str) and query.strip():
             params["q"] = query.strip()
         return params
+
+    @staticmethod
+    def _draft_raw(arguments: dict[str, Any]) -> str:
+        recipients = GoogleOAuthAdapter._recipients(arguments.get("to"), "to")
+        cc = GoogleOAuthAdapter._recipients(arguments.get("cc"), "cc", required=False)
+        bcc = GoogleOAuthAdapter._recipients(arguments.get("bcc"), "bcc", required=False)
+        subject = arguments.get("subject")
+        body = arguments.get("body")
+        if not isinstance(subject, str) or not 1 <= len(subject.strip()) <= 998:
+            raise ValueError("mail.draft.create requires a subject of 998 characters or fewer")
+        if not isinstance(body, str) or not 1 <= len(body) <= 200_000:
+            raise ValueError("mail.draft.create requires a body between 1 and 200000 characters")
+        if any("\r" in value or "\n" in value for value in [subject, body]):
+            raise ValueError("mail.draft.create subject and body must not contain raw line breaks")
+
+        message = EmailMessage()
+        message["To"] = ", ".join(recipients)
+        if cc:
+            message["Cc"] = ", ".join(cc)
+        if bcc:
+            message["Bcc"] = ", ".join(bcc)
+        message["Subject"] = subject.strip()
+        message.set_content(body)
+        return base64.urlsafe_b64encode(message.as_bytes()).decode("ascii").rstrip("=")
+
+    @staticmethod
+    def _recipients(value: Any, field: str, *, required: bool = True) -> list[str]:
+        if value is None and not required:
+            return []
+        values = [value] if isinstance(value, str) else value
+        if not isinstance(values, list) or not values or len(values) > 20:
+            raise ValueError(f"mail.draft.create requires 1-20 {field} recipients")
+        output: list[str] = []
+        for candidate in values:
+            if not isinstance(candidate, str) or "\r" in candidate or "\n" in candidate:
+                raise ValueError(f"mail.draft.create {field} recipients must be valid email addresses")
+            address = parseaddr(candidate.strip())[1]
+            if not address or "@" not in address or " " in address:
+                raise ValueError(f"mail.draft.create {field} recipients must be valid email addresses")
+            output.append(candidate.strip())
+        return output
 
     @staticmethod
     def _event_payload(arguments: dict[str, Any]) -> tuple[str, dict[str, Any]]:
