@@ -94,6 +94,8 @@ CAPABILITIES: dict[str, Capability] = {
         _read("chat.message.list", "Read channel messages"),
         _high("chat.message.send", "Post a message"),
         _high("chat.template.send", "Send a message template"),
+        _read("productivity.task.list", "List tasks"),
+        _write("productivity.task.create", "Create a task"),
         # --- Social publishing --------------------------------------------
         _high("social.post.publish", "Publish a social post"),
         # --- Advertising --------------------------------------------------

@@ -42,6 +42,7 @@ class IntegrationProvider(StrEnum):
     SALESFORCE = "salesforce"
     ZAPIER = "zapier"
     SUPABASE = "supabase"
+    TODOIST = "todoist"
 
 
 class IntegrationRequest(BaseModel):

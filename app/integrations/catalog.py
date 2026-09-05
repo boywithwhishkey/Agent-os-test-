@@ -520,6 +520,21 @@ CATALOG: list[CatalogSpec] = [
         implemented=True,
         requires=["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_READ_TABLE"],
     ),
+    CatalogSpec(
+        id="todoist",
+        name="Todoist",
+        description="List and approval-create tasks in a Todoist account.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.API,
+        icon="CheckSquare",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["List tasks", "Create task"],
+        canonical_capabilities=["productivity.task.list", "productivity.task.create"],
+        popular=True,
+        documentation_url="https://developer.todoist.com/api/v1/",
+        implemented=True,
+        requires=["TODOIST_API_TOKEN"],
+    ),
     # --- Other useful ---
     CatalogSpec(
         id="dropbox",

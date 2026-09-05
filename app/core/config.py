@@ -172,6 +172,7 @@ class Settings(BaseSettings):
     supabase_read_table: str | None = Field(
         default=None, validation_alias="SUPABASE_READ_TABLE"
     )
+    todoist_api_token: str | None = Field(default=None, validation_alias="TODOIST_API_TOKEN")
     oauth_storage_backend: str = Field(
         default="memory", validation_alias="AGENT_OS_OAUTH_STORAGE_BACKEND"
     )

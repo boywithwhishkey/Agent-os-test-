@@ -163,6 +163,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Supabase",
         "requires": ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_READ_TABLE"],
     },
+    IntegrationProvider.TODOIST: {
+        "name": "Todoist",
+        "requires": ["TODOIST_API_TOKEN"],
+    },
 }
 
 
@@ -313,6 +317,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.supabase import SupabaseAdapter
 
         return SupabaseAdapter()
+    if normalized == "todoist":
+        from app.integrations.todoist import TodoistAdapter
+
+        return TodoistAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -418,4 +426,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.zapier_webhook_url)
     if provider == IntegrationProvider.SUPABASE:
         return bool(settings.supabase_url and settings.supabase_anon_key and settings.supabase_read_table)
+    if provider == IntegrationProvider.TODOIST:
+        return bool(settings.todoist_api_token)
     return False
