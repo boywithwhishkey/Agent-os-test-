@@ -128,6 +128,46 @@ async def test_cloudflare_adapter_test_connection_rejects_invalid_token():
 
 
 @pytest.mark.asyncio
+async def test_cloudflare_identity_and_dns_reads_use_fixed_zone_routes():
+    seen: list[tuple[str, str, str]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.method, request.url.path, request.url.query.decode()))
+        if request.url.path == "/client/v4/user":
+            return httpx.Response(200, json={"success": True, "result": {"id": "user-1"}})
+        if request.url.path == "/client/v4/zones":
+            return httpx.Response(
+                200,
+                json={"success": True, "result": [{"id": "zone123", "name": "example.com"}]},
+            )
+        return httpx.Response(
+            200,
+            json={"success": True, "result": [{"type": "A", "name": "example.com"}]},
+        )
+
+    async with _client(handler) as client:
+        adapter = CloudflareAdapter(api_token="cf-test", client=client)
+        identity = await adapter.run_capability("identity.account.read", {})
+        dns = await adapter.run_capability(
+            "cloud.dns.read", {"zone_name": "example.com.", "max_results": 10}
+        )
+
+    assert identity["result"]["id"] == "user-1"
+    assert dns["zone"]["id"] == "zone123"
+    assert dns["records"]["result"][0]["type"] == "A"
+    assert seen == [
+        ("GET", "/client/v4/user", ""),
+        ("GET", "/client/v4/zones", "name=example.com&per_page=5&page=1"),
+        ("GET", "/client/v4/zones/zone123/dns_records", "per_page=10&page=1"),
+    ]
+
+
+def test_cloudflare_zone_name_is_strictly_validated():
+    with pytest.raises(ValueError, match="zone_name"):
+        CloudflareAdapter._zone_name({"zone_name": "http://example.com"})
+
+
+@pytest.mark.asyncio
 async def test_render_adapter_test_connection_success():
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["Authorization"] == "Bearer rnd-test"

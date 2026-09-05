@@ -202,7 +202,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.API,
         icon="Cloud",
         auth_type=ConnectorAuthType.API_KEY,
-        capabilities=["Verify API token"],
+        capabilities=["Verify API token", "Read account", "Read DNS records"],
         canonical_capabilities=[
             "identity.account.read",
             "cloud.dns.read",
