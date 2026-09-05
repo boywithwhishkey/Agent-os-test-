@@ -90,6 +90,7 @@ CAPABILITIES: dict[str, Capability] = {
         _write("files.file.write", "Create or update a file"),
         _high("files.file.delete", "Delete a file"),
         # --- Chat / messaging ---------------------------------------------
+        _read("chat.channel.list", "List chat channels"),
         _read("chat.message.list", "Read channel messages"),
         _high("chat.message.send", "Post a message"),
         # --- Documents / knowledge ----------------------------------------

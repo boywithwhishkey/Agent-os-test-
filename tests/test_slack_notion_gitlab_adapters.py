@@ -119,6 +119,54 @@ async def test_slack_adapter_lists_bounded_channel_messages():
 
 
 @pytest.mark.asyncio
+async def test_slack_adapter_lists_allowlisted_channels_with_pagination():
+    store = OAuthConnectionStore()
+    store.record_success(
+        "slack",
+        access_token="xoxb-test",
+        token_type="bearer",
+        scope="channels:read groups:read im:read mpim:read",
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert (
+            str(request.url)
+            == "https://slack.com/api/conversations.list?limit=20&exclude_archived=true&types=public_channel%2Cprivate_channel&cursor=next-page"
+        )
+        assert request.headers["Authorization"] == "Bearer xoxb-test"
+        return httpx.Response(
+            200,
+            json={
+                "ok": True,
+                "channels": [{"id": "C123", "name": "general", "is_channel": True}],
+                "response_metadata": {"next_cursor": "final-page"},
+            },
+        )
+
+    async with _client(handler) as client:
+        adapter = SlackOAuthAdapter(connection_store=store, client=client)
+        result = await adapter.run_capability(
+            "chat.channel.list",
+            {"types": "public_channel,private_channel", "cursor": "next-page"},
+        )
+
+    assert result == {
+        "provider": "slack",
+        "channels": [{"id": "C123", "name": "general", "is_channel": True}],
+        "has_more": False,
+        "next_cursor": "final-page",
+    }
+
+
+@pytest.mark.asyncio
+async def test_slack_adapter_rejects_unknown_channel_type():
+    adapter = SlackOAuthAdapter(connection_store=OAuthConnectionStore())
+
+    with pytest.raises(ValueError, match="unsupported conversation type"):
+        await adapter.run_capability("chat.channel.list", {"types": "public_channel,unknown"})
+
+
+@pytest.mark.asyncio
 async def test_slack_adapter_rejects_unbounded_message_list_limit():
     adapter = SlackOAuthAdapter(connection_store=OAuthConnectionStore())
 

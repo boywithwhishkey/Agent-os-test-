@@ -155,6 +155,20 @@ contradicting note elsewhere.
 - Channel listing and event subscriptions remain explicitly unwired; the
   catalog does not present them as implemented.
 
+## SESSION 2026-09-05 — SLACK CONVERSATION DISCOVERY
+
+- **IMPLEMENTED_TESTED:** Slack now also exposes the read-only canonical
+  `chat.channel.list` capability through the fixed `conversations.list`
+  endpoint. It validates pagination, excludes archived channels by default,
+  and accepts only Slack's four documented conversation types.
+- The Slack catalog now presents channel discovery alongside message reads and
+  governed message sends. Event subscriptions remain a separate follow-on
+  because they require an operator-configured Events API endpoint and event
+  allowlist.
+- **CREDENTIAL_REQUIRED:** this remains mocked-only until a Slack OAuth app and
+  token with the requested scopes are configured; no live Slack request was
+  made in this pass.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now

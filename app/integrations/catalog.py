@@ -252,9 +252,10 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.OAUTH,
         icon="MessageSquare",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Connect account", "Verify identity", "Read messages", "Post messages"],
+        capabilities=["Connect account", "Verify identity", "List channels", "Read messages", "Post messages"],
         canonical_capabilities=[
             "identity.account.read",
+            "chat.channel.list",
             "chat.message.list",
             "chat.message.send",
         ],

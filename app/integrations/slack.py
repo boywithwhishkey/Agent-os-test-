@@ -44,6 +44,8 @@ class SlackOAuthAdapter(IntegrationAdapter):
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
+        if capability_id == "chat.channel.list":
+            return await self._list_channels(arguments)
         if capability_id == "chat.message.list":
             return await self._list_messages(arguments)
         if capability_id != "chat.message.send":
@@ -138,6 +140,74 @@ class SlackOAuthAdapter(IntegrationAdapter):
                 "provider": IntegrationProvider.SLACK.value,
                 "channel": body.get("channel", channel.strip()),
                 "messages": messages,
+                "has_more": bool(body.get("has_more", False)),
+                "next_cursor": next_cursor or None,
+            }
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("Slack request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"Slack request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _list_channels(self, arguments: dict[str, Any]) -> object:
+        limit = arguments.get("limit", 20)
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("chat.channel.list limit must be an integer between 1 and 100")
+        cursor = arguments.get("cursor")
+        if cursor is not None and (
+            not isinstance(cursor, str) or not cursor.strip() or len(cursor) > 2000
+        ):
+            raise ValueError("chat.channel.list cursor must be a non-empty string of 2000 characters or fewer")
+        types = arguments.get("types", "public_channel")
+        if not isinstance(types, str) or not types.strip():
+            raise ValueError("chat.channel.list types must be a non-empty comma-separated string")
+        allowed_types = {"public_channel", "private_channel", "mpim", "im"}
+        requested_types = [item.strip() for item in types.split(",") if item.strip()]
+        if not requested_types or any(item not in allowed_types for item in requested_types):
+            raise ValueError("chat.channel.list types contains an unsupported conversation type")
+        if len(set(requested_types)) != len(requested_types):
+            raise ValueError("chat.channel.list types must not contain duplicates")
+
+        params = {
+            "limit": str(limit),
+            "exclude_archived": "true",
+            "types": ",".join(requested_types),
+        }
+        if cursor is not None:
+            params["cursor"] = cursor.strip()
+
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["slack"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.get(
+                    "https://slack.com/api/conversations.list",
+                    params=params,
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=10.0,
+                ),
+            )
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise RuntimeError("Slack returned a non-JSON response") from exc
+            if response.status_code >= 400 or not body.get("ok"):
+                raise RuntimeError(
+                    f"Slack rejected the channel list ({body.get('error', f'HTTP {response.status_code}')})"
+                )
+            channels = body.get("channels", [])
+            if not isinstance(channels, list):
+                raise TypeError("Slack returned an invalid channel list")
+            metadata = body.get("response_metadata") or {}
+            next_cursor = metadata.get("next_cursor") if isinstance(metadata, dict) else None
+            return {
+                "provider": IntegrationProvider.SLACK.value,
+                "channels": channels,
                 "has_more": bool(body.get("has_more", False)),
                 "next_cursor": next_cursor or None,
             }

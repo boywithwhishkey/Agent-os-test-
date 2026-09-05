@@ -23,7 +23,10 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         # Message history is split by conversation type in Slack. Request the
         # relevant read scopes up front; the adapter still accepts only a
         # bounded channel/cursor and fixed conversations.history method.
-        scope="chat:write channels:read channels:history groups:history im:history mpim:history",
+        scope=(
+            "chat:write channels:read groups:read im:read mpim:read "
+            "channels:history groups:history im:history mpim:history"
+        ),
         client_id_env="SLACK_OAUTH_CLIENT_ID",
         client_secret_env="SLACK_OAUTH_CLIENT_SECRET",
         # Slack always answers 200, even on failure — it reports errors as

@@ -26,9 +26,9 @@ without that loop remain metadata only.
    inbound/event capabilities remain follow-on work.
 6. Discord — completed send-only webhook adapter; OAuth/bot expansion follows
    only when a concrete Discord workflow needs it.
-7. Slack — OAuth identity, bounded `chat.message.list` history reads, and
-   governed `chat.message.send` are implemented; channel discovery and event
-   subscriptions remain follow-on work.
+7. Slack — OAuth identity, bounded `chat.channel.list` discovery and
+   `chat.message.list` history reads, plus governed `chat.message.send` are
+   implemented; event subscriptions remain follow-on work.
 
 ### Commerce and payments
 
@@ -113,7 +113,8 @@ fixed HTTPS webhook trigger foundation.
 Slack now also has an OAuth-backed, approval-gated message-send capability with
 bounded channel/text arguments and secret-safe provider errors. It also has a
 bounded OAuth-backed `conversations.history` read with cursor pagination;
-provider credentials and live Slack validation remain gated.
+provider credentials and live Slack validation remain gated. Channel discovery
+uses the fixed `conversations.list` endpoint with an allowlisted type filter.
 
 ## Operator prerequisites
 
