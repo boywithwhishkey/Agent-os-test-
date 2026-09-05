@@ -82,7 +82,10 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         name="Google Drive",
         authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
         token_url="https://oauth2.googleapis.com/token",
-        scope="https://www.googleapis.com/auth/drive.readonly",
+        scope=(
+            "https://www.googleapis.com/auth/drive.readonly "
+            "https://www.googleapis.com/auth/drive.file"
+        ),
         client_id_env="GOOGLE_OAUTH_CLIENT_ID",
         client_secret_env="GOOGLE_OAUTH_CLIENT_SECRET",
         extra_authorize_params={"access_type": "offline", "prompt": "consent"},

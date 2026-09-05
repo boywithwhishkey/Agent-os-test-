@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import base64
+import json
+import re
 import time
 from datetime import datetime
 from email.message import EmailMessage
@@ -116,6 +118,15 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 },
             )
 
+        if self.provider is IntegrationProvider.GOOGLE_DRIVE and capability_id == "files.file.write":
+            metadata, content, mime_type = self._file_payload(arguments)
+            return await self._post_multipart(
+                "https://www.googleapis.com/upload/drive/v3/files",
+                metadata=metadata,
+                content=content,
+                mime_type=mime_type,
+            )
+
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
 
     @staticmethod
@@ -172,6 +183,35 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 raise ValueError(f"mail.draft.create {field} recipients must be valid email addresses")
             output.append(candidate.strip())
         return output
+
+    @staticmethod
+    def _file_payload(arguments: dict[str, Any]) -> tuple[dict[str, Any], bytes, str]:
+        name = arguments.get("name")
+        if (
+            not isinstance(name, str)
+            or not 1 <= len(name.strip()) <= 255
+            or "/" in name
+            or "\\" in name
+        ):
+            raise ValueError("files.file.write requires a file name without path separators")
+        mime_type = arguments.get("mime_type", "text/plain")
+        if not isinstance(mime_type, str) or not re.fullmatch(r"[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+", mime_type):
+            raise ValueError("mime_type must be a valid MIME type")
+        content = arguments.get("content")
+        if not isinstance(content, str) or not 1 <= len(content.encode("utf-8")) <= 5_000_000:
+            raise ValueError("files.file.write requires text content up to 5000000 bytes")
+        metadata: dict[str, Any] = {"name": name.strip(), "mimeType": mime_type}
+        parent = arguments.get("parent_id")
+        if parent is not None:
+            if (
+                not isinstance(parent, str)
+                or not 1 <= len(parent.strip()) <= 200
+                or "/" in parent
+                or "\\" in parent
+            ):
+                raise ValueError("parent_id must be a valid Drive folder identifier")
+            metadata["parents"] = [parent.strip()]
+        return metadata, content.encode("utf-8"), mime_type
 
     @staticmethod
     def _event_payload(arguments: dict[str, Any]) -> tuple[str, dict[str, Any]]:
@@ -299,6 +339,71 @@ class GoogleOAuthAdapter(IntegrationAdapter):
             if not isinstance(body, dict):
                 raise TypeError(f"{self.provider_name} returned an invalid response")
             return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(f"{self.provider_name} request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"{self.provider_name} request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _post_multipart(
+        self,
+        url: str,
+        *,
+        metadata: dict[str, Any],
+        content: bytes,
+        mime_type: str,
+    ) -> dict[str, Any]:
+        record = self._connection_store.get(self.provider.value)
+        if not record.access_token:
+            raise RuntimeError(
+                f"Not authorized yet — use Authorize to connect a {self.provider_name} account."
+            )
+
+        boundary = "thynact-drive-boundary"
+        body = (
+            f"--{boundary}\r\n"
+            "Content-Type: application/json; charset=UTF-8\r\n\r\n"
+        ).encode("ascii")
+        body += json.dumps(metadata, separators=(",", ":")).encode("utf-8")
+        body += (
+            f"\r\n--{boundary}\r\nContent-Type: {mime_type}\r\n\r\n"
+        ).encode("ascii")
+        body += content
+        body += f"\r\n--{boundary}--\r\n".encode("ascii")
+
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS[self.provider.value],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.post(
+                    url,
+                    params={"uploadType": "multipart", "fields": "id,name,mimeType,size"},
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": f"multipart/related; boundary={boundary}",
+                    },
+                    content=body,
+                    timeout=30.0,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError(
+                        f"{self.provider_name} rejected the stored token (HTTP 401) — authorize again"
+                    )
+                raise RuntimeError(f"{self.provider_name} returned HTTP {response.status_code}")
+            try:
+                result = response.json()
+            except ValueError as exc:
+                raise RuntimeError(f"{self.provider_name} returned a non-JSON response") from exc
+            if not isinstance(result, dict):
+                raise TypeError(f"{self.provider_name} returned an invalid response")
+            return result
         except httpx.TimeoutException as exc:
             raise RuntimeError(f"{self.provider_name} request timed out") from exc
         except httpx.HTTPError as exc:

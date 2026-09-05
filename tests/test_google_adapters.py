@@ -235,6 +235,63 @@ def test_gmail_draft_arguments_are_validated(arguments: dict[str, object], messa
 
 
 @pytest.mark.anyio
+async def test_google_drive_file_write_uses_multipart_upload() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["query"] = request.url.query.decode()
+        seen["auth"] = request.headers["authorization"]
+        seen["content_type"] = request.headers["content-type"]
+        seen["body"] = request.content
+        return httpx.Response(200, json={"id": "file_1", "name": "notes.txt", "size": "12"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GOOGLE_DRIVE,
+            connection_store=_connected_store(IntegrationProvider.GOOGLE_DRIVE),
+            client=client,
+        )
+        result = await adapter.run_capability(
+            "files.file.write",
+            {
+                "name": "notes.txt",
+                "mime_type": "text/plain",
+                "content": "hello drive",
+                "parent_id": "folder_1",
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert result["id"] == "file_1"
+    assert seen["method"] == "POST"
+    assert seen["path"] == "/upload/drive/v3/files"
+    assert seen["query"] == "uploadType=multipart&fields=id%2Cname%2CmimeType%2Csize"
+    assert seen["auth"] == "Bearer google-access-token"
+    assert "multipart/related; boundary=thynact-drive-boundary" == seen["content_type"]
+    assert b'"name":"notes.txt","mimeType":"text/plain","parents":["folder_1"]' in seen["body"]
+    assert b"hello drive" in seen["body"]
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"name": "../bad", "content": "x"}, "file name"),
+        ({"name": "x.txt", "mime_type": "bad", "content": "x"}, "MIME"),
+        ({"name": "x.txt", "content": ""}, "text content"),
+    ],
+)
+def test_google_drive_file_arguments_are_validated(
+    arguments: dict[str, object], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        GoogleOAuthAdapter._file_payload(arguments)
+
+
+@pytest.mark.anyio
 async def test_google_missing_connection_is_explicit_and_secret_safe() -> None:
     store = OAuthConnectionStore()
     adapter = GoogleOAuthAdapter(

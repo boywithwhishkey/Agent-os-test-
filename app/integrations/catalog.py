@@ -456,7 +456,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.OAUTH,
         icon="HardDrive",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Read files", "Write files"],
+        capabilities=["Read files", "Create files", "Write files"],
         canonical_capabilities=[
             "identity.account.read",
             "files.file.list",

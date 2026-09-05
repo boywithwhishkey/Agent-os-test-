@@ -417,6 +417,17 @@ contradicting note elsewhere.
   capability remains WRITE and therefore cannot bypass broker approval/audit.
   No live Gmail request was made.
 
+## SESSION 2026-09-05 — GOOGLE DRIVE GOVERNED FILE CREATION
+
+- **IMPLEMENTED_TESTED:** Google Drive now supports the canonical
+  `files.file.write` capability through a fixed multipart upload endpoint.
+  Creation validates a bounded filename, MIME type, UTF-8 text payload, and
+  optional single parent folder before sending metadata and content together.
+- The OAuth scope now combines Drive read-only access with `drive.file` write
+  access; existing connections must authorize again before file creation can
+  run. The capability remains WRITE and requires broker approval/audit. No
+  live Drive request was made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only
