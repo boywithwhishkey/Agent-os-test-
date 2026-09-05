@@ -116,8 +116,30 @@ contradicting note elsewhere.
   defaults remain process-local memory.
 - **VERIFIED:** focused OAuth, persistence-safety, readiness, and durable-store
   tests pass. No production or Ride&Glide configuration was changed. Staging
-  still needs migration 008, a generated Fernet key, and restart/reconnect
+  still needs migrations 008 and 009, a generated Fernet key, and restart/reconnect
   validation before this is called live validated.
+
+## SESSION 2026-09-05 — OAUTH REFRESH AND EXPIRY LIFECYCLE
+
+- **IMPLEMENTED_TESTED:** OAuth exchanges now record provider expiry metadata;
+  migration `009_oauth_expiry.sql` adds `expires_at` without rewriting the
+  already-pushed migration 008.
+- On a provider HTTP 401, OAuth adapters attempt one refresh-token exchange,
+  persist rotated access/refresh tokens encrypted, and retry the original
+  request exactly once. Refresh failures are redacted, recorded, and still
+  surface the original unauthorized result. This covers GitHub, GitLab, Slack,
+  Notion, Google, Jira, Dropbox, OneDrive, HubSpot, and Salesforce flows.
+- Focused refresh and adapter regression tests pass. Live refresh behavior is
+  still credential-gated and has not been claimed as provider-live validation.
+
+## SESSION 2026-09-05 — SLACK GOVERNED MESSAGE CAPABILITY
+
+- **IMPLEMENTED_TESTED:** Slack now maps the canonical high-risk
+  `chat.message.send` capability to `chat.postMessage`, with bounded channel and
+  text inputs, shared OAuth refresh-on-401, redacted failures, and audit/policy
+  enforcement through the connector broker.
+- Channel listing and event subscriptions remain explicitly unwired; the
+  catalog does not present them as implemented.
 
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 

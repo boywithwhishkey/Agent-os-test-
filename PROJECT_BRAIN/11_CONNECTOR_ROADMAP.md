@@ -26,8 +26,8 @@ without that loop remain metadata only.
    inbound/event capabilities remain follow-on work.
 6. Discord — completed send-only webhook adapter; OAuth/bot expansion follows
    only when a concrete Discord workflow needs it.
-7. Slack — existing OAuth identity adapter; governed message actions remain a
-   separate implementation batch.
+7. Slack — OAuth identity and governed `chat.message.send` are implemented;
+   channel-listing and event subscriptions remain follow-on work.
 
 ### Commerce and payments
 
@@ -92,8 +92,10 @@ creating one-off integrations.
 THYNACT now has 35 catalog entries. All thirty-five have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. There are no catalog-only entries left;
-the next work is capability depth, durable encrypted OAuth storage, tenant
-isolation, inbound webhooks, sandbox validation, and live credential checks.
+the next work is capability depth, multi-user tenant isolation, inbound
+webhook verification, sandbox validation, and live credential checks. OAuth
+refresh-on-401 and encrypted expiry metadata are now implemented and tested;
+live provider refresh is still credential-gated.
 Google Gmail/Calendar/Drive now share one OAuth client configuration and have
 read-only identity/list adapters; write capabilities remain separately gated.
 Jira now has the same read-only OAuth foundation with a server-configured cloud
@@ -106,6 +108,8 @@ Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a
 fixed HTTPS webhook trigger foundation.
+Slack now also has an OAuth-backed, approval-gated message-send capability with
+bounded channel/text arguments and secret-safe provider errors.
 
 ## Operator prerequisites
 

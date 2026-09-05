@@ -88,7 +88,7 @@ The capability layer, risk classification and SSRF guard are in
 2. **Credential vault.** The connector branch now has an encrypted,
    tenant-keyed PostgreSQL OAuth store, selected with
    `AGENT_OS_OAUTH_STORAGE_BACKEND=postgres`. Before production, configure a
-   Fernet `AGENT_OS_OAUTH_ENCRYPTION_KEY`, run migration 008, and validate
+   Fernet `AGENT_OS_OAUTH_ENCRYPTION_KEY`, run migrations 008 and 009, and validate
    restart/reconnect behavior against staging.
 3. **Tenant model.** Not a connector feature — the precondition for one. The
    current OAuth key is deployment-scoped, not multi-user isolation. See
@@ -98,8 +98,8 @@ The capability layer, risk classification and SSRF guard are in
    GitLab, Slack, Notion) by mapping their canonical capabilities to real
    operations. Today each adapter only verifies identity; `repo.issue.create`
    and `chat.message.send` are declared but not wired.
-5. **Then** deepen the complete provider set systematically: encrypted OAuth
-   token persistence, tenant isolation, inbound webhook verification,
+5. **Then** deepen the complete provider set systematically: tenant isolation,
+   inbound webhook verification,
    provider sandbox runs, and real credential-backed live validation. Gmail,
    Google
    Calendar, Google Drive, Telegram, Stripe, Discord, and Teams now have

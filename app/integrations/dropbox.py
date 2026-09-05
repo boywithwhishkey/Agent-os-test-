@@ -7,6 +7,8 @@ import httpx
 
 from app.integrations.base import CapabilityNotWired, IntegrationAdapter, unsupported_execute_result
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
+from app.integrations.oauth.config import OAUTH_PROVIDERS
+from app.integrations.oauth.service import request_with_oauth_refresh
 from app.integrations.oauth.store import OAuthConnectionStore
 
 
@@ -49,11 +51,16 @@ class DropboxOAuthAdapter(IntegrationAdapter):
         own_client = self._client is None
         client = self._client or httpx.AsyncClient()
         try:
-            response = await client.post(
-                url,
-                json=payload,
-                headers={"Authorization": f"Bearer {record.access_token}"},
-                timeout=10.0,
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["dropbox"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.post(
+                    url,
+                    json=payload,
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=10.0,
+                ),
             )
             if response.status_code >= 400:
                 if response.status_code == 401:

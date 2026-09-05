@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 
@@ -59,6 +61,24 @@ async def test_slack_adapter_detects_ok_false_despite_http_200():
 
     assert connected is False
     assert "invalid_auth" in (error or "")
+
+
+@pytest.mark.asyncio
+async def test_slack_adapter_posts_a_governed_message():
+    store = OAuthConnectionStore()
+    store.record_success("slack", access_token="xoxb-test", token_type="bearer", scope="chat:write")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://slack.com/api/chat.postMessage"
+        assert request.headers["Authorization"] == "Bearer xoxb-test"
+        assert json.loads(request.content) == {"channel": "C123", "text": "hello"}
+        return httpx.Response(200, json={"ok": True, "channel": "C123", "ts": "123.456"})
+
+    async with _client(handler) as client:
+        adapter = SlackOAuthAdapter(connection_store=store, client=client)
+        result = await adapter.run_capability("chat.message.send", {"channel": "C123", "text": "hello"})
+
+    assert result == {"provider": "slack", "channel": "C123", "message_id": "123.456"}
 
 
 @pytest.mark.asyncio

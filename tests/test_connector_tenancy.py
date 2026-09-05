@@ -39,6 +39,8 @@ def test_oauth_connections_are_scoped_to_the_deployment_not_a_principal() -> Non
         "token_type",
         "scope",
         "refresh_token",
+        "expires_in",
+        "expires_at",
     }
 
     # Consequence, stated explicitly: a second authorisation replaces the first

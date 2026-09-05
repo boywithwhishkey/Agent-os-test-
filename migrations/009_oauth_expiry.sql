@@ -1,0 +1,2 @@
+ALTER TABLE oauth_connections
+    ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ NULL;

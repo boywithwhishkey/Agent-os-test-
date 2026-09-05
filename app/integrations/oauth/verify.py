@@ -5,6 +5,8 @@ from collections.abc import Callable
 
 import httpx
 
+from app.integrations.oauth.config import get_oauth_provider
+from app.integrations.oauth.service import request_with_oauth_refresh
 from app.integrations.oauth.store import OAuthConnectionStore
 
 InterpretFn = Callable[[httpx.Response], tuple[bool, str | None]]
@@ -41,7 +43,20 @@ async def verify_oauth_identity(
     http_client = client or httpx.AsyncClient()
     started = time.perf_counter()
     try:
-        response = await http_client.get(identity_url, headers=build_headers(record.access_token), timeout=10.0)
+        config = get_oauth_provider(provider_id)
+        if config is None:
+            response = await http_client.get(
+                identity_url, headers=build_headers(record.access_token), timeout=10.0
+            )
+        else:
+            response = await request_with_oauth_refresh(
+                config,
+                connection_store=connection_store,
+                client=http_client,
+                send=lambda token: http_client.get(
+                    identity_url, headers=build_headers(token), timeout=10.0
+                ),
+            )
         latency_ms = (time.perf_counter() - started) * 1000
         ok, error = interpret(response)
         return ok, latency_ms, error

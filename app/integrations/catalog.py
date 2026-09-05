@@ -158,7 +158,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.OAUTH,
         icon="Github",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Connect account", "Verify identity"],
+        capabilities=["Connect account", "Verify identity", "Post messages"],
         canonical_capabilities=[
             "identity.account.read",
             "repo.metadata.read",
@@ -252,7 +252,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.OAUTH,
         icon="MessageSquare",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Connect account", "Verify identity"],
+        capabilities=["Connect account", "Verify identity", "Post messages"],
         canonical_capabilities=[
             "identity.account.read",
             "chat.message.list",

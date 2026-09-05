@@ -6,6 +6,8 @@ import httpx
 
 from app.integrations.base import IntegrationAdapter, unsupported_execute_result
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
+from app.integrations.oauth.config import OAUTH_PROVIDERS
+from app.integrations.oauth.service import request_with_oauth_refresh
 from app.integrations.oauth.store import OAuthConnectionStore
 
 
@@ -35,13 +37,18 @@ class GitHubOAuthAdapter(IntegrationAdapter):
         client = self._client or httpx.AsyncClient()
         started = time.perf_counter()
         try:
-            response = await client.get(
-                "https://api.github.com/user",
-                headers={
-                    "Authorization": f"Bearer {record.access_token}",
-                    "Accept": "application/vnd.github+json",
-                },
-                timeout=10.0,
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["github"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.get(
+                    "https://api.github.com/user",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/vnd.github+json",
+                    },
+                    timeout=10.0,
+                ),
             )
             latency_ms = (time.perf_counter() - started) * 1000
             if response.status_code == 200:

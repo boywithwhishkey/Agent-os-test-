@@ -45,6 +45,7 @@ class OAuthConnectionRecord:
     refresh_token: str | None = None
     token_type: str | None = None
     scope: str | None = None
+    expires_at: str | None = None
     connected_at: str | None = None
     last_error: str | None = None
 

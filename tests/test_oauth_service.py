@@ -6,7 +6,11 @@ import pytest
 from app.core.config import settings
 from app.integrations.oauth import service
 from app.integrations.oauth.config import OAUTH_PROVIDERS
-from app.integrations.oauth.service import OAuthExchangeError, OAuthNotConfigured
+from app.integrations.oauth.service import (
+    OAuthExchangeError,
+    OAuthNotConfigured,
+    refresh_access_token,
+)
 from app.integrations.oauth.store import OAuthConnectionStore, OAuthStateStore
 
 GITHUB = OAUTH_PROVIDERS["github"]
@@ -82,6 +86,45 @@ async def test_exchange_code_preserves_existing_refresh_token_when_provider_omit
     record = connection_store.get("github")
     assert record.access_token == "gho_rotated"
     assert record.refresh_token == "refresh-stable"
+
+
+@pytest.mark.asyncio
+async def test_refresh_access_token_rotates_and_records_expiry(monkeypatch):
+    monkeypatch.setattr(settings, "github_oauth_client_id", "client-123")
+    monkeypatch.setattr(settings, "github_oauth_client_secret", "secret-456")
+    store = OAuthConnectionStore()
+    store.record_success(
+        "github",
+        access_token="expired-access",
+        refresh_token="refresh-old",
+        token_type="bearer",
+        scope="repo",
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url == "https://github.com/login/oauth/access_token"
+        assert request.headers["Accept"] == "application/json"
+        assert request.content == (
+            b"grant_type=refresh_token&refresh_token=refresh-old&client_id=client-123&client_secret=secret-456"
+        )
+        return httpx.Response(
+            200,
+            json={
+                "access_token": "access-new",
+                "refresh_token": "refresh-new",
+                "token_type": "bearer",
+                "expires_in": 3600,
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        token = await refresh_access_token(GITHUB, connection_store=store, client=client)
+
+    record = store.get("github")
+    assert token == "access-new"
+    assert record.access_token == "access-new"
+    assert record.refresh_token == "refresh-new"
+    assert record.expires_at is not None
 
 
 @pytest.mark.asyncio

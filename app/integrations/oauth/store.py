@@ -85,7 +85,7 @@ class OAuthConnectionStore:
         rows = await self._database.fetch(
             """
             SELECT provider, access_token_ciphertext, refresh_token_ciphertext,
-                   token_type, scope, connected_at, last_error
+                   token_type, scope, expires_at, connected_at, last_error
             FROM oauth_connections
             WHERE tenant_id = $1
             """,
@@ -103,6 +103,7 @@ class OAuthConnectionStore:
                 ),
                 token_type=row.get("token_type"),
                 scope=row.get("scope"),
+                expires_at=str(row["expires_at"]) if row.get("expires_at") else None,
                 connected_at=str(row["connected_at"]) if row.get("connected_at") else None,
                 last_error=row.get("last_error"),
             )
@@ -118,12 +119,23 @@ class OAuthConnectionStore:
         token_type: str | None,
         scope: str | None,
         refresh_token: str | None = None,
+        expires_in: float | None = None,
+        expires_at: str | None = None,
     ) -> None:
         record = self.get(provider)
         record.access_token = access_token
         record.refresh_token = refresh_token
         record.token_type = token_type
         record.scope = scope
+        if expires_at is not None:
+            record.expires_at = expires_at
+        elif expires_in is not None:
+            try:
+                record.expires_at = (utcnow() + timedelta(seconds=float(expires_in))).isoformat()
+            except (TypeError, ValueError):
+                record.expires_at = None
+        else:
+            record.expires_at = None
         record.connected_at = utcnow().isoformat()
         record.last_error = None
 
@@ -154,13 +166,14 @@ class OAuthConnectionStore:
             """
             INSERT INTO oauth_connections (
                 tenant_id, provider, access_token_ciphertext, refresh_token_ciphertext,
-                token_type, scope, connected_at, last_error
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+                token_type, scope, expires_at, connected_at, last_error
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
             ON CONFLICT (tenant_id, provider) DO UPDATE SET
                 access_token_ciphertext = EXCLUDED.access_token_ciphertext,
                 refresh_token_ciphertext = EXCLUDED.refresh_token_ciphertext,
                 token_type = EXCLUDED.token_type,
                 scope = EXCLUDED.scope,
+                expires_at = EXCLUDED.expires_at,
                 connected_at = EXCLUDED.connected_at,
                 last_error = EXCLUDED.last_error
             """,
@@ -170,6 +183,7 @@ class OAuthConnectionStore:
             self._cipher.encrypt(record.refresh_token) if record.refresh_token else None,
             record.token_type,
             record.scope,
+            datetime.fromisoformat(record.expires_at) if record.expires_at else None,
             connected_at,
             record.last_error,
         )
