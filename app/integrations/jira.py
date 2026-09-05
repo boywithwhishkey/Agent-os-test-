@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 import time
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -14,7 +16,7 @@ from app.integrations.oauth.store import OAuthConnectionStore
 
 
 class JiraOAuthAdapter(IntegrationAdapter):
-    """Read-only Jira Cloud REST operations using an OAuth 2.0 (3LO) token."""
+    """Governed Jira Cloud issue operations using an OAuth 2.0 (3LO) token."""
 
     def __init__(
         self,
@@ -53,6 +55,32 @@ class JiraOAuthAdapter(IntegrationAdapter):
                     "fields": ["summary", "status", "issuetype", "project"],
                 },
             )
+        if capability_id == "tracker.issue.create":
+            fields: dict[str, Any] = {
+                "project": {"key": self._project_key(arguments)},
+                "summary": self._summary(arguments),
+                "issuetype": {"name": self._issue_type(arguments)},
+            }
+            description = self._description(arguments)
+            if description:
+                fields["description"] = self._adf(description)
+            return await self._request("POST", "/issue", json={"fields": fields})
+        if capability_id == "tracker.issue.update":
+            issue_key = self._issue_key(arguments)
+            fields = {}
+            if "summary" in arguments:
+                fields["summary"] = self._summary(arguments)
+            if "description" in arguments:
+                description = self._description(arguments)
+                fields["description"] = self._adf(description) if description else None
+            if not fields:
+                raise ValueError("tracker.issue.update requires summary or description")
+            await self._request(
+                "PUT",
+                f"/issue/{quote(issue_key, safe='-')}",
+                json={"fields": fields},
+            )
+            return {"provider": IntegrationProvider.JIRA.value, "issue_key": issue_key, "status_code": 204}
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
 
     @staticmethod
@@ -68,6 +96,55 @@ class JiraOAuthAdapter(IntegrationAdapter):
         if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 100:
             raise ValueError("max_results must be an integer between 1 and 100")
         return value
+
+    @staticmethod
+    def _project_key(arguments: dict[str, Any]) -> str:
+        value = arguments.get("project_key")
+        if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,49}", value.strip()):
+            raise ValueError("project_key must be a valid Jira project key")
+        return value.strip()
+
+    @staticmethod
+    def _issue_key(arguments: dict[str, Any]) -> str:
+        value = arguments.get("issue_key")
+        if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,49}-[0-9]+", value.strip()):
+            raise ValueError("issue_key must be a valid Jira issue key")
+        return value.strip()
+
+    @staticmethod
+    def _summary(arguments: dict[str, Any]) -> str:
+        value = arguments.get("summary")
+        if not isinstance(value, str) or not value.strip() or len(value.strip()) > 255:
+            raise ValueError("summary must be non-empty and 255 characters or fewer")
+        return value.strip()
+
+    @staticmethod
+    def _description(arguments: dict[str, Any]) -> str:
+        value = arguments.get("description", "")
+        if not isinstance(value, str) or len(value) > 10000:
+            raise ValueError("description must be 10000 characters or fewer")
+        return value.strip()
+
+    @staticmethod
+    def _issue_type(arguments: dict[str, Any]) -> str:
+        value = arguments.get("issue_type", "Task")
+        if not isinstance(value, str) or not value.strip() or len(value.strip()) > 100:
+            raise ValueError("issue_type must be non-empty and 100 characters or fewer")
+        return value.strip()
+
+    @staticmethod
+    def _adf(text: str) -> dict[str, Any]:
+        return {
+            "type": "doc",
+            "version": 1,
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": line}],
+                }
+                for line in text.splitlines() or [""]
+            ],
+        }
 
     async def _request(
         self,
@@ -103,6 +180,8 @@ class JiraOAuthAdapter(IntegrationAdapter):
                 if response.status_code == 401:
                     raise RuntimeError("Jira rejected the stored token (HTTP 401) — authorize again")
                 raise RuntimeError(f"Jira returned HTTP {response.status_code}")
+            if response.status_code == 204:
+                return {}
             try:
                 body = response.json()
             except ValueError as exc:

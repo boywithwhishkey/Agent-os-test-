@@ -63,6 +63,77 @@ async def test_jira_issue_list_posts_bounded_jql() -> None:
 
 
 @pytest.mark.anyio
+async def test_jira_issue_create_builds_bounded_adf_payload() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        assert request.url.path.endswith("/issue")
+        assert json.loads(request.content) == {
+            "fields": {
+                "project": {"key": "THY"},
+                "summary": "Ship connectors",
+                "issuetype": {"name": "Task"},
+                "description": {
+                    "type": "doc",
+                    "version": 1,
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "content": [{"type": "text", "text": "First line"}],
+                        },
+                        {
+                            "type": "paragraph",
+                            "content": [{"type": "text", "text": "Second line"}],
+                        },
+                    ],
+                },
+            }
+        }
+        return httpx.Response(201, json={"id": "10001", "key": "THY-1"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await JiraOAuthAdapter(
+            cloud_id="cloud-123", connection_store=_store(), client=client
+        ).run_capability(
+            "tracker.issue.create",
+            {"project_key": "THY", "summary": "Ship connectors", "description": "First line\nSecond line"},
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {"id": "10001", "key": "THY-1"}
+
+
+@pytest.mark.anyio
+async def test_jira_issue_update_uses_fixed_issue_key_and_handles_204() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "PUT"
+        assert request.url.path.endswith("/issue/THY-1")
+        assert json.loads(request.content) == {"fields": {"summary": "Updated summary"}}
+        return httpx.Response(204)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await JiraOAuthAdapter(
+            cloud_id="cloud-123", connection_store=_store(), client=client
+        ).run_capability("tracker.issue.update", {"issue_key": "THY-1", "summary": "Updated summary"})
+    finally:
+        await client.aclose()
+
+    assert result == {"provider": "jira", "issue_key": "THY-1", "status_code": 204}
+
+
+def test_jira_issue_mutations_validate_identifiers_and_fields() -> None:
+    adapter = JiraOAuthAdapter(cloud_id="cloud-123", connection_store=OAuthConnectionStore())
+    with pytest.raises(ValueError, match="project key"):
+        adapter._project_key({"project_key": "THY/NO"})
+    with pytest.raises(ValueError, match="issue key"):
+        adapter._issue_key({"issue_key": "../secret"})
+    with pytest.raises(ValueError, match="summary"):
+        adapter._summary({"summary": ""})
+
+
+@pytest.mark.anyio
 async def test_jira_unauthorized_response_is_secret_safe() -> None:
     async def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(401, json={"error": "invalid_token"})

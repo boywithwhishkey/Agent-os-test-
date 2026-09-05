@@ -240,6 +240,21 @@ contradicting note elsewhere.
   page request in this pass; mocked tests cover search/read routing, bounded
   pagination, auth headers, and page-id validation.
 
+## SESSION 2026-09-05 — JIRA ISSUE MUTATIONS
+
+- **IMPLEMENTED_TESTED:** Jira now supports the existing canonical issue-list,
+  issue-create, and issue-update capabilities. Create/update inputs are
+  bounded and identifier-validated; descriptions are translated into Jira's
+  structured document format. HTTP 204 updates are handled without assuming
+  a response body.
+- The OAuth request now includes `write:jira-work`; existing installations
+  must re-authorize before mutations can work. Broker policy still requires a
+  valid approval for these WRITE capabilities and audit receipts remain on the
+  shared execution path.
+- **CREDENTIAL_REQUIRED:** no Jira OAuth token or live project was available;
+  mocked tests cover payload construction, fixed cloud routing, validation,
+  unauthorized handling, and 204 responses.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now

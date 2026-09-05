@@ -368,12 +368,12 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="jira",
         name="Jira",
-        description="Read Jira identity and search issues through the Cloud API.",
+        description="Read, create, and update Jira issues through the Cloud API.",
         category=ConnectorCategory.PRODUCTIVITY,
         connector_type=ConnectorType.OAUTH,
         icon="Bug",
         auth_type=ConnectorAuthType.OAUTH2,
-        capabilities=["Create issue", "Update issue"],
+        capabilities=["Search issues", "Create issue", "Update issue"],
         canonical_capabilities=[
             "tracker.issue.list",
             "tracker.issue.create",
