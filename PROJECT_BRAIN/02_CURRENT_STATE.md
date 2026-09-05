@@ -382,13 +382,17 @@ contradicting note elsewhere.
 - Orders, listings, fulfillment, and restricted-role operations remain separate
   capabilities pending sandbox coverage and approval requirements.
 
-## SESSION 2026-09-05 — STRIPE READ-ONLY COMMERCE CONNECTOR
+## SESSION 2026-09-05 — STRIPE GOVERNED REFUND CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Stripe now has a secret-key adapter for account
-  identity, payment-intent listing, and subscription listing. Refunds remain
-  unwired and therefore cannot bypass the high-risk approval path.
+  identity, payment-intent listing, subscription listing, and the canonical
+  `commerce.refund.create` operation. Refunds accept exactly one Charge or
+  PaymentIntent, an optional bounded amount, an allowlisted reason, and a
+  caller-supplied idempotency key. The capability remains HIGH_RISK and is
+  executable only after the broker approval and audit path succeeds.
 - It remains **CREDENTIAL_REQUIRED** until `STRIPE_SECRET_KEY` is supplied and
-  the account probe succeeds. No live Stripe request was made.
+  the account probe succeeds. Tests use mocked Stripe responses; no live Stripe
+  request was made.
 
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 

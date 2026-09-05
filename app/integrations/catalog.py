@@ -611,12 +611,12 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="stripe",
         name="Stripe",
-        description="Read payments/subscriptions and react to billing events.",
+        description="Read payments/subscriptions and create approval-gated refunds.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.API,
         icon="CreditCard",
         auth_type=ConnectorAuthType.API_KEY,
-        capabilities=["Payments", "Subscriptions", "Webhooks"],
+        capabilities=["Payments", "Subscriptions", "Refunds", "Webhooks"],
         canonical_capabilities=[
             "identity.account.read",
             "commerce.payment.list",

@@ -42,8 +42,8 @@ without that loop remain metadata only.
    handling follow.
 3. WooCommerce — implemented/tested read-only store/product/order foundation;
    approval-gated writes follow.
-4. Stripe — implemented/tested read-only account/payment/subscription
-   foundation; customers and refunds require separate approved capabilities.
+4. Stripe — implemented/tested account/payment/subscription reads plus an
+   approval-gated refund capability; customer operations remain follow-on work.
 5. Razorpay — API credentials, payment/order reads and approval-gated refunds.
 
 ### Daily productivity
