@@ -27,6 +27,45 @@ async def test_vercel_identity_and_projects_are_read_only() -> None:
 
 
 @pytest.mark.anyio
+async def test_vercel_deploy_hook_is_fixed_and_supports_explicit_cache_control() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["query"] = request.url.query.decode()
+        seen["authorization"] = request.headers.get("authorization")
+        return httpx.Response(200, json={"job": {"id": "job-1", "state": "PENDING"}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = VercelAdapter(api_token="vercel-token", client=client)
+        adapter.deploy_hook_url = "https://api.vercel.com/v1/integrations/deploy/prj_1/hook_1"
+        result = await adapter.run_capability("cloud.deploy.trigger", {"build_cache": False})
+    finally:
+        await client.aclose()
+
+    assert result == {"job": {"id": "job-1", "state": "PENDING"}}
+    assert seen == {
+        "method": "POST",
+        "path": "/v1/integrations/deploy/prj_1/hook_1",
+        "query": "buildCache=false",
+        "authorization": None,
+    }
+
+
+@pytest.mark.anyio
+async def test_vercel_deploy_hook_rejects_untrusted_urls_and_types() -> None:
+    adapter = VercelAdapter(api_token="vercel-token")
+    adapter.deploy_hook_url = "https://attacker.example/hook"
+    with pytest.raises(RuntimeError, match="valid Vercel deploy hook"):
+        adapter._validated_hook_url()
+    adapter.deploy_hook_url = "https://api.vercel.com/v1/integrations/deploy/prj_1/hook_1"
+    with pytest.raises(TypeError, match="build_cache"):
+        await adapter.run_capability("cloud.deploy.trigger", {"build_cache": "false"})
+
+
+@pytest.mark.anyio
 async def test_linear_identity_and_issues_are_fixed_queries() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         body = request.read().decode()

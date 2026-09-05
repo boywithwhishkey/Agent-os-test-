@@ -244,7 +244,7 @@ CATALOG: list[CatalogSpec] = [
         ],
         documentation_url="https://vercel.com",
         implemented=True,
-        requires=["VERCEL_API_TOKEN"],
+        requires=["VERCEL_API_TOKEN", "VERCEL_DEPLOY_HOOK_URL"],
     ),
     # --- Productivity ---
     CatalogSpec(

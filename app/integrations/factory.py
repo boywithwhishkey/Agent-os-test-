@@ -99,7 +99,7 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
     },
     IntegrationProvider.VERCEL: {
         "name": "Vercel",
-        "requires": ["VERCEL_API_TOKEN"],
+        "requires": ["VERCEL_API_TOKEN", "VERCEL_DEPLOY_HOOK_URL"],
     },
     IntegrationProvider.LINEAR: {
         "name": "Linear",

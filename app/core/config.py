@@ -96,6 +96,9 @@ class Settings(BaseSettings):
     )
     vercel_api_token: str | None = Field(default=None, validation_alias="VERCEL_API_TOKEN")
     vercel_team_id: str | None = Field(default=None, validation_alias="VERCEL_TEAM_ID")
+    vercel_deploy_hook_url: str | None = Field(
+        default=None, validation_alias="VERCEL_DEPLOY_HOOK_URL"
+    )
     linear_api_key: str | None = Field(default=None, validation_alias="LINEAR_API_KEY")
     amazon_lwa_client_id: str | None = Field(
         default=None, validation_alias="AMAZON_LWA_CLIENT_ID"
