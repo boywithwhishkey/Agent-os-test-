@@ -109,3 +109,16 @@ def test_thynacts_own_infrastructure_is_not_presented_as_a_user_connector() -> N
     assert kinds["redis"] is ConnectorKind.SYSTEM_INFRASTRUCTURE
     assert kinds["slack"] is ConnectorKind.USER_CONNECTOR
     assert kinds["stripe"] is ConnectorKind.USER_CONNECTOR
+
+
+def test_webhook_catalogs_only_expose_operations_the_adapters_can_run() -> None:
+    by_id = {spec.id: spec for spec in list_catalog()}
+    assert by_id["discord"].canonical_capabilities == ["chat.message.send"]
+    assert by_id["teams"].canonical_capabilities == ["chat.message.send"]
+
+
+def test_model_provider_catalogs_expose_the_completion_capability() -> None:
+    by_id = {spec.id: spec for spec in list_catalog()}
+    for provider in ("openai", "anthropic", "gemini"):
+        assert "ai.model.list" in by_id[provider].canonical_capabilities
+        assert "ai.completion.create" in by_id[provider].canonical_capabilities

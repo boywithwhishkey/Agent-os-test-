@@ -74,6 +74,52 @@ async def test_openai_adapter_requires_api_key():
 
 
 @pytest.mark.asyncio
+async def test_openai_completion_is_bounded_and_normalized():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1/chat/completions"
+        assert request.headers["Authorization"] == "Bearer sk-test"
+        payload = json.loads(request.content)
+        assert payload["model"] == "gpt-test"
+        assert payload["messages"] == [{"role": "user", "content": "hello"}]
+        assert payload["max_tokens"] == 32
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": "world"}, "finish_reason": "stop"}],
+                "usage": {"total_tokens": 3},
+            },
+        )
+
+    async with _client(handler) as client:
+        adapter = OpenAIAdapter(api_key="sk-test", client=client)
+        result = await adapter.run_capability(
+            "ai.completion.create",
+            {"model": "gpt-test", "messages": [{"role": "user", "content": "hello"}], "max_tokens": 32},
+        )
+
+    assert result == {
+        "provider": "openai",
+        "model": "gpt-test",
+        "text": "world",
+        "finish_reason": "stop",
+        "usage": {"total_tokens": 3},
+    }
+
+
+def test_openai_completion_rejects_unbounded_input():
+    with pytest.raises(ValueError, match="100000"):
+        OpenAIAdapter._completion_payload(
+            {
+                "model": "gpt-test",
+                "messages": [
+                    {"role": "user", "content": "x" * 20_000}
+                    for _ in range(6)
+                ],
+            }
+        )
+
+
+@pytest.mark.asyncio
 async def test_anthropic_adapter_test_connection_success():
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["x-api-key"] == "sk-ant-test"
@@ -99,6 +145,41 @@ async def test_anthropic_adapter_test_connection_rejects_bad_key():
 
     assert connected is False
     assert "401" in (error or "")
+
+
+@pytest.mark.asyncio
+async def test_anthropic_completion_extracts_text_and_system_instruction():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1/messages"
+        assert request.headers["x-api-key"] == "sk-ant-test"
+        payload = json.loads(request.content)
+        assert payload["system"] == "Be concise."
+        assert payload["messages"] == [{"role": "user", "content": "hello"}]
+        return httpx.Response(
+            200,
+            json={
+                "content": [{"type": "text", "text": "world"}],
+                "stop_reason": "end_turn",
+                "usage": {"output_tokens": 2},
+            },
+        )
+
+    async with _client(handler) as client:
+        adapter = AnthropicAdapter(api_key="sk-ant-test", client=client)
+        result = await adapter.run_capability(
+            "ai.completion.create",
+            {
+                "model": "claude-test",
+                "messages": [
+                    {"role": "system", "content": "Be concise."},
+                    {"role": "user", "content": "hello"},
+                ],
+            },
+        )
+
+    assert result["provider"] == "anthropic"
+    assert result["text"] == "world"
+    assert result["stop_reason"] == "end_turn"
 
 
 @pytest.mark.asyncio
@@ -269,3 +350,43 @@ async def test_gemini_adapter_test_connection_rejects_bad_key():
 
     assert connected is False
     assert "400" in (error or "")
+
+
+@pytest.mark.asyncio
+async def test_gemini_model_list_uses_header_and_completion_uses_fixed_model_route():
+    seen: list[tuple[str, str]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.method, request.url.path))
+        assert request.headers["x-goog-api-key"] == "gm-test"
+        if request.method == "GET":
+            return httpx.Response(200, json={"models": [{"name": "models/gemini-test"}]})
+        payload = json.loads(request.content)
+        assert payload["contents"] == [{"role": "user", "parts": [{"text": "hello"}]}]
+        return httpx.Response(
+            200,
+            json={
+                "candidates": [
+                    {
+                        "content": {"parts": [{"text": "world"}]},
+                        "finishReason": "STOP",
+                    }
+                ]
+            },
+        )
+
+    async with _client(handler) as client:
+        adapter = GeminiAdapter(api_key="gm-test", client=client)
+        models = await adapter.run_capability("ai.model.list", {})
+        result = await adapter.run_capability(
+            "ai.completion.create",
+            {"model": "models/gemini-test", "messages": [{"role": "user", "content": "hello"}]},
+        )
+
+    assert models == {"models": ["gemini-test"]}
+    assert result["provider"] == "gemini"
+    assert result["text"] == "world"
+    assert seen == [
+        ("GET", "/v1beta/models"),
+        ("POST", "/v1beta/models/gemini-test:generateContent"),
+    ]

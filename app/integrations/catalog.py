@@ -103,7 +103,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.API,
         icon="Bot",
         auth_type=ConnectorAuthType.API_KEY,
-        capabilities=["Verify API key", "List models"],
+        capabilities=["Verify API key", "List models", "Run approval-gated completion"],
         canonical_capabilities=[
             "ai.model.list",
             "ai.completion.create",
@@ -121,7 +121,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.API,
         icon="Sparkles",
         auth_type=ConnectorAuthType.API_KEY,
-        capabilities=["Verify API key", "List models"],
+        capabilities=["Verify API key", "List models", "Run approval-gated completion"],
         canonical_capabilities=[
             "ai.model.list",
             "ai.completion.create",
@@ -139,7 +139,7 @@ CATALOG: list[CatalogSpec] = [
         connector_type=ConnectorType.API,
         icon="Gem",
         auth_type=ConnectorAuthType.API_KEY,
-        capabilities=["Chat completion", "Multi-agent reasoning"],
+        capabilities=["List models", "Run approval-gated completion", "Multi-agent reasoning"],
         canonical_capabilities=[
             "ai.model.list",
             "ai.completion.create",
@@ -276,11 +276,7 @@ CATALOG: list[CatalogSpec] = [
         icon="MessagesSquare",
         auth_type=ConnectorAuthType.WEBHOOK_SECRET,
         capabilities=["Post message"],
-        canonical_capabilities=[
-            "identity.account.read",
-            "chat.message.list",
-            "chat.message.send",
-        ],
+        canonical_capabilities=["chat.message.send"],
         documentation_url="https://discord.com",
         implemented=True,
         requires=["DISCORD_WEBHOOK_URL"],
@@ -404,11 +400,7 @@ CATALOG: list[CatalogSpec] = [
         icon="Users",
         auth_type=ConnectorAuthType.WEBHOOK_SECRET,
         capabilities=["Post message"],
-        canonical_capabilities=[
-            "identity.account.read",
-            "chat.message.list",
-            "chat.message.send",
-        ],
+        canonical_capabilities=["chat.message.send"],
         implemented=True,
         requires=["TEAMS_WEBHOOK_URL"],
         documentation_url="https://www.microsoft.com/microsoft-teams",
