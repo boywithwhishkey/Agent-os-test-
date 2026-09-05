@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -40,6 +42,89 @@ async def test_linear_identity_and_issues_are_fixed_queries() -> None:
     finally:
         await client.aclose()
     assert issues["issues"]["nodes"] == [{"id": "i1"}]
+
+
+@pytest.mark.anyio
+async def test_linear_issue_mutations_use_governed_graphql_variables() -> None:
+    requests: list[dict[str, object]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content.decode())
+        requests.append(payload)
+        query = payload["query"]
+        if "IssueCreate" in query:
+            return httpx.Response(
+                200,
+                json={
+                    "data": {
+                        "issueCreate": {
+                            "success": True,
+                            "issue": {"id": "i2", "identifier": "THY-2", "title": "Ship"},
+                        }
+                    }
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "issueUpdate": {
+                        "success": True,
+                        "issue": {"id": "i2", "identifier": "THY-2", "title": "Shipped"},
+                    }
+                }
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = LinearAdapter(api_key="linear-token", client=client)
+        created = await adapter.run_capability(
+            "tracker.issue.create",
+            {
+                "team_id": "team-1",
+                "title": "Ship",
+                "description": "Release it",
+                "state_id": "state-1",
+            },
+        )
+        updated = await adapter.run_capability(
+            "tracker.issue.update",
+            {"issue_id": "THY-2", "title": "Shipped", "description": "Done"},
+        )
+    finally:
+        await client.aclose()
+
+    assert created["issueCreate"]["issue"]["identifier"] == "THY-2"
+    assert updated["issueUpdate"]["issue"]["title"] == "Shipped"
+    assert requests[0]["variables"] == {
+        "input": {
+            "teamId": "team-1",
+            "title": "Ship",
+            "description": "Release it",
+            "stateId": "state-1",
+        }
+    }
+    assert requests[1]["variables"] == {
+        "id": "THY-2",
+        "input": {"title": "Shipped", "description": "Done"},
+    }
+
+
+@pytest.mark.anyio
+async def test_linear_issue_mutations_validate_bounded_inputs() -> None:
+    adapter = LinearAdapter(api_key="linear-token", client=httpx.AsyncClient())
+    try:
+        with pytest.raises(ValueError, match="team_id"):
+            await adapter.run_capability("tracker.issue.create", {"title": "Missing team"})
+        with pytest.raises(ValueError, match="title"):
+            await adapter.run_capability("tracker.issue.create", {"team_id": "team-1", "title": ""})
+        with pytest.raises(ValueError, match="requires title"):
+            await adapter.run_capability("tracker.issue.update", {"issue_id": "THY-1"})
+        with pytest.raises(ValueError, match="valid issue_id"):
+            await adapter.run_capability("tracker.issue.update", {"issue_id": "bad id", "title": "x"})
+    finally:
+        await adapter._client.aclose()
 
 
 def test_daily_connectors_require_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
