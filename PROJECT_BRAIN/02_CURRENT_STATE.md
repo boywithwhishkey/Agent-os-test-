@@ -428,6 +428,17 @@ contradicting note elsewhere.
   run. The capability remains WRITE and requires broker approval/audit. No
   live Drive request was made.
 
+## SESSION 2026-09-05 — SHOPIFY GOVERNED PRODUCT CREATION
+
+- **IMPLEMENTED_TESTED:** Shopify now supports the canonical
+  `commerce.product.create` capability through the Admin GraphQL
+  `productCreate` mutation. Inputs are bounded and validated for title,
+  description, vendor/type, handle, status, and tags; Shopify user errors are
+  surfaced without exposing the access token.
+- The capability remains WRITE and therefore requires broker approval and an
+  audit receipt. The configured token must include Shopify's product-write
+  permission; no live Shopify request was made.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only

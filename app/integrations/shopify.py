@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 from typing import Any
 from urllib.parse import urlsplit
@@ -12,7 +13,7 @@ from app.integrations.models import IntegrationProvider, IntegrationRequest, Int
 
 
 class ShopifyAdminAdapter(IntegrationAdapter):
-    """Read-only Shopify Admin GraphQL operations for one configured store."""
+    """Governed Shopify Admin GraphQL operations for one configured store."""
 
     def __init__(
         self,
@@ -50,7 +51,7 @@ class ShopifyAdminAdapter(IntegrationAdapter):
         return unsupported_execute_result(
             IntegrationProvider.SHOPIFY,
             request,
-            reason="Shopify mutations are not enabled; use governed read capabilities.",
+            reason="Shopify actions must use governed canonical capabilities.",
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
@@ -65,15 +66,73 @@ class ShopifyAdminAdapter(IntegrationAdapter):
                 "query { orders(first: 50, sortKey: CREATED_AT, reverse: true) "
                 "{ nodes { id name createdAt displayFinancialStatus } } }"
             )
+        if capability_id == "commerce.product.create":
+            payload = self._product_payload(arguments)
+            result = await self._query(
+                "mutation productCreate($product: ProductCreateInput!) { "
+                "productCreate(product: $product) { "
+                "product { id title handle status } "
+                "userErrors { field message } } }",
+                variables={"product": payload},
+            )
+            created = result.get("productCreate")
+            if not isinstance(created, dict):
+                raise TypeError("Shopify returned an invalid productCreate response")
+            errors = created.get("userErrors") or []
+            if errors:
+                messages = [
+                    item.get("message", "unknown validation error")
+                    for item in errors[:3]
+                    if isinstance(item, dict)
+                ]
+                raise RuntimeError("Shopify product creation was rejected: " + "; ".join(messages))
+            return created
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
 
-    async def _query(self, query: str) -> dict[str, Any]:
+    @staticmethod
+    def _product_payload(arguments: dict[str, Any]) -> dict[str, Any]:
+        title = arguments.get("title")
+        if not isinstance(title, str) or not 1 <= len(title.strip()) <= 255:
+            raise ValueError("commerce.product.create requires a title of 255 characters or fewer")
+        payload: dict[str, Any] = {"title": title.strip(), "status": "DRAFT"}
+        for key, max_length in (("descriptionHtml", 10_000), ("vendor", 255), ("productType", 255)):
+            value = arguments.get(key) if key in arguments else arguments.get(_snake_case(key))
+            if value is not None:
+                if not isinstance(value, str) or len(value) > max_length:
+                    raise ValueError(f"{key} must be a string of {max_length} characters or fewer")
+                payload[key] = value
+        status = arguments.get("status")
+        if status is not None:
+            if status not in {"ACTIVE", "ARCHIVED", "DRAFT"}:
+                raise ValueError("status must be ACTIVE, ARCHIVED, or DRAFT")
+            payload["status"] = status
+        handle = arguments.get("handle")
+        if handle is not None:
+            if (
+                not isinstance(handle, str)
+                or not 1 <= len(handle) <= 255
+                or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", handle)
+            ):
+                raise ValueError("handle must be a lowercase hyphenated identifier")
+            payload["handle"] = handle
+        tags = arguments.get("tags")
+        if tags is not None:
+            if (
+                not isinstance(tags, list)
+                or len(tags) > 20
+                or any(not isinstance(tag, str) or not 1 <= len(tag.strip()) <= 100 for tag in tags)
+            ):
+                raise ValueError("tags must contain at most 20 non-empty values of 100 characters or fewer")
+            payload["tags"] = [tag.strip() for tag in tags]
+        return payload
+
+    async def _query(self, query: str, *, variables: dict[str, Any] | None = None) -> dict[str, Any]:
         own_client = self._client is None
         client = self._client or httpx.AsyncClient()
         try:
             response = await client.post(
                 self._endpoint,
-                json={"query": query},
+                json={"query": query, "variables": variables or {}},
                 headers={
                     "Authorization": f"Bearer {self.access_token}",
                     "Content-Type": "application/json",
@@ -99,6 +158,10 @@ class ShopifyAdminAdapter(IntegrationAdapter):
         finally:
             if own_client:
                 await client.aclose()
+
+
+def _snake_case(value: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", value).lower()
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:
         started = time.perf_counter()

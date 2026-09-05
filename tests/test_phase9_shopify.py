@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -49,6 +51,74 @@ async def test_shopify_graphql_errors_do_not_leak_token() -> None:
     finally:
         await client.aclose()
     assert TOKEN not in str(exc.value)
+
+
+@pytest.mark.anyio
+async def test_shopify_product_create_uses_mutation_variables() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content)
+        seen.update(payload)
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "productCreate": {
+                        "product": {"id": "gid://shopify/Product/1", "title": "Desk"},
+                        "userErrors": [],
+                    }
+                }
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = ShopifyAdminAdapter(access_token=TOKEN, shop_domain=DOMAIN, client=client)
+        result = await adapter.run_capability(
+            "commerce.product.create",
+            {
+                "title": "Desk",
+                "description_html": "<p>Oak desk</p>",
+                "vendor": "THYNACT",
+                "product_type": "Furniture",
+                "handle": "oak-desk",
+                "status": "DRAFT",
+                "tags": ["office", "wood"],
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert result["product"]["id"] == "gid://shopify/Product/1"
+    assert "productCreate" in seen["query"]
+    assert seen["variables"] == {
+        "product": {
+            "title": "Desk",
+            "status": "DRAFT",
+            "descriptionHtml": "<p>Oak desk</p>",
+            "vendor": "THYNACT",
+            "productType": "Furniture",
+            "handle": "oak-desk",
+            "tags": ["office", "wood"],
+        }
+    }
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"title": ""}, "title"),
+        ({"title": "Desk", "status": "PUBLISHED"}, "status"),
+        ({"title": "Desk", "handle": "Not Valid"}, "handle"),
+        ({"title": "Desk", "tags": [""]}, "tags"),
+    ],
+)
+def test_shopify_product_arguments_are_validated(
+    arguments: dict[str, object], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        ShopifyAdminAdapter._product_payload(arguments)
 
 
 def test_shopify_requires_valid_domain_and_token(monkeypatch: pytest.MonkeyPatch) -> None:

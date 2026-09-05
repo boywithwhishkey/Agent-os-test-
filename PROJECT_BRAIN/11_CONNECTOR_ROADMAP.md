@@ -35,8 +35,9 @@ without that loop remain metadata only.
 
 ### Commerce and payments
 
-1. Shopify Admin API — implemented/tested read-only shop/products/orders
-   foundation; merchant OAuth, inventory, and webhook subscriptions follow.
+1. Shopify Admin API — implemented/tested shop/products/orders reads plus a
+   governed product-create foundation; merchant OAuth, inventory, and webhook
+   subscriptions follow.
 2. Amazon Selling Partner API — implemented/tested LWA + SigV4 seller-identity
    foundation; marketplace-aware orders, sandbox tests, and restricted-role
    handling follow.

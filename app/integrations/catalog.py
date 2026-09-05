@@ -630,15 +630,16 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="shopify",
         name="Shopify",
-        description="Read a Shopify store, products, and orders through the Admin API.",
+        description="Read a Shopify store and create approval-gated products through the Admin API.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.API,
         icon="ShoppingBag",
         auth_type=ConnectorAuthType.BEARER,
-        capabilities=["Verify store", "List products", "List orders"],
+        capabilities=["Verify store", "List products", "Create products", "List orders"],
         canonical_capabilities=[
             "identity.account.read",
             "commerce.product.list",
+            "commerce.product.create",
             "commerce.order.list",
         ],
         documentation_url="https://shopify.dev/docs/api/admin-graphql",
