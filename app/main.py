@@ -16,6 +16,7 @@ from app.api.phase8 import router as phase8_router
 from app.api.phase9 import public_router as phase9_public_router
 from app.api.phase9 import router as phase9_router
 from app.api.phase10 import router as phase10_router
+from app.api.webhooks import router as webhooks_router
 from app.api.router import api_router
 from app.core import lifecycle
 from app.core.config import settings
@@ -171,6 +172,7 @@ app.include_router(phase8_router)
 app.include_router(phase9_public_router)
 app.include_router(phase9_router)
 app.include_router(phase10_router)
+app.include_router(webhooks_router)
 
 
 # ---------------------------------------------------------

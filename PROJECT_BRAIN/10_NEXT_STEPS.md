@@ -99,7 +99,7 @@ The capability layer, risk classification and SSRF guard are in
    operations. Today each adapter only verifies identity; `repo.issue.create`
    and `chat.message.send` are declared but not wired.
 5. **Then** deepen the complete provider set systematically: tenant isolation,
-   inbound webhook verification,
+   durable webhook queueing/replay protection,
    provider sandbox runs, and real credential-backed live validation. Gmail,
    Google
    Calendar, Google Drive, Telegram, Stripe, Discord, and Teams now have

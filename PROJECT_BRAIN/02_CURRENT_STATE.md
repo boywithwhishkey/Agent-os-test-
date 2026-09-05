@@ -141,6 +141,17 @@ contradicting note elsewhere.
 - Channel listing and event subscriptions remain explicitly unwired; the
   catalog does not present them as implemented.
 
+## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
+
+- **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now
+  require provider-specific verification material. Meta supports the
+  subscribe/challenge handshake plus `X-Hub-Signature-256`; Telegram requires
+  `X-Telegram-Bot-Api-Secret-Token`.
+- Accepted requests return a deterministic, non-sensitive delivery id. The
+  routes intentionally do not claim durable queueing or replay deduplication;
+  those require a configured Redis/PostgreSQL event sink and are the next
+  webhook slice. Invalid or unconfigured verification fails closed.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

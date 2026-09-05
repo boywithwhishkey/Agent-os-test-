@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     telegram_default_chat_id: str | None = Field(
         default=None, validation_alias="TELEGRAM_DEFAULT_CHAT_ID"
     )
+    telegram_webhook_secret_token: str | None = Field(
+        default=None, validation_alias="TELEGRAM_WEBHOOK_SECRET_TOKEN"
+    )
+    meta_app_secret: str | None = Field(default=None, validation_alias="META_APP_SECRET")
+    meta_webhook_verify_token: str | None = Field(
+        default=None, validation_alias="META_WEBHOOK_VERIFY_TOKEN"
+    )
     meta_access_token: str | None = Field(default=None, validation_alias="META_ACCESS_TOKEN")
     meta_graph_api_version: str = Field(default="v23.0", validation_alias="META_GRAPH_API_VERSION")
     whatsapp_phone_number_id: str | None = Field(

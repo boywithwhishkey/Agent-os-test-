@@ -102,7 +102,8 @@ curl -sS --max-time 2 -o /dev/null http://127.0.0.1:3000/ 2>/dev/null \
 head_ "Credential presence (names only — values never printed)"
 for v in AGENT_OS_API_KEY DATABASE_URL REDIS_URL GEMINI_API_KEY OPENAI_API_KEY \
          ANTHROPIC_API_KEY CLOUDFLARE_API_TOKEN RENDER_API_KEY N8N_BASE_URL \
-         GITHUB_OAUTH_CLIENT_ID GITHUB_OAUTH_CLIENT_SECRET; do
+         GITHUB_OAUTH_CLIENT_ID GITHUB_OAUTH_CLIENT_SECRET META_APP_SECRET \
+         META_WEBHOOK_VERIFY_TOKEN TELEGRAM_WEBHOOK_SECRET_TOKEN; do
   if [ -n "${!v:-}" ]; then good "$v" "set"; else row "$v" "not set"; fi
 done
 
