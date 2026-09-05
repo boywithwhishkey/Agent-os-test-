@@ -1797,6 +1797,72 @@ blocked.
 Tests after this work: **106 frontend** (was 95). Typecheck, lint (0 errors)
 and build clean.
 
+## OAUTH CREDENTIAL PERSISTENCE + OAUTH-CONNECTED ROUTING (2026-09-05, latest)
+
+Branch `claude/thynact-env-audit-fjinfj`. Not yet merged to `main` this pass —
+pending explicit go-ahead (see CLAUDE.md section 9: pushing to `main` needs
+authorization, never a side effect of finishing a task).
+
+### The gap this closes
+
+Item 2 of the connector priority list: OAuth access tokens lived in process
+memory only (`InMemoryOAuthConnectionStore`) and were lost on every restart —
+a user who authorized GitHub would have to redo it after every deploy.
+
+### What changed
+
+- **`OAuthConnectionStore` is now an ABC** with two implementations:
+  `InMemoryOAuthConnectionStore` (renamed, behavior unchanged, still the
+  default) and `PostgresOAuthConnectionStore` (new). Every method is async
+  now — including the in-memory one, which does no real I/O — so a
+  Postgres-backed store is a drop-in without ~10 call sites needing to know
+  which one they got.
+- **Migration 008** (`oauth_connections`): `provider` primary key, encrypted
+  access token, plaintext token_type/scope/timestamps. **Scoped by provider
+  only — no tenant_id column.** This is deliberate: THYNACT has no tenant
+  model (`tests/test_connector_tenancy.py` pins that), and persistence must
+  not quietly invent per-user scoping the rest of the system does not have.
+- **Encryption at rest**: `app/integrations/credential_crypto.py`, Fernet
+  keyed by `AGENT_OS_CREDENTIAL_ENCRYPTION_KEY`. Missing/wrong key raises
+  rather than falling back to plaintext or returning garbage.
+  **`cryptography` added as an explicit dependency** (was already present
+  transitively via `google-auth`; now imported directly). Selected via
+  `AGENT_OS_OAUTH_BACKEND=memory|postgres`, same factory pattern as every
+  other subsystem (`task_backend`, `workflow_backend`, etc.) — folded into
+  `ephemeral_subsystems`/`persistence_mode`/`/health`'s backends dict/`/ready`'s
+  postgres-detection, all in one pass rather than leaving oauth as an
+  undetected 8th backend nobody's readiness check knew about.
+- **Real-Postgres tests** (`tests/test_oauth_postgres_store.py`, 7 tests,
+  LOCAL_REAL_VALIDATED): restart durability, the access token is actually
+  ciphertext in the raw column (not just "a bytes column exists"), a wrong
+  key refuses rather than returning garbage, a failure never clobbers a
+  working token, disconnect/get-unknown-provider semantics. Verified the
+  postgres backend end-to-end via `AGENT_OS_OAUTH_BACKEND=postgres` for
+  real, not just by constructing the class directly.
+- **The broker now distinguishes "OAuth app registered" from "account
+  connected."** `is_provider_configured("github")` only checks
+  CLIENT_ID/SECRET; the broker previously treated that as "usable," which
+  could have routed a capability to an adapter holding no access token at
+  all. `NOT_CONNECTED` now carries the honest message for each real cause.
+- Every ripple from making the store interface async is applied:
+  `providers_for`/`_configured`/`_oauth_connected` in broker.py, all four
+  OAuth-status resolvers + `_resolve_entry` in phase9.py, all call sites in
+  `oauth/service.py`, and every affected test (46 tests touched this session
+  needed an `await` or a store-construction fix — tracked, not glossed).
+
+### Verified numbers
+
+Backend **388 passed, 0 skipped** (was 380). Frontend unaffected (109, unchanged
+— no frontend files touched this pass). ruff, typecheck, lint, build clean.
+Full local gate green against real PostgreSQL + Redis.
+
+### Not done this pass
+
+Production/staging were **not** flipped to `AGENT_OS_OAUTH_BACKEND=postgres` —
+that is a real behavior change to a live service (new required secret,
+different failure mode on a wrong key) and stayed out of scope for an
+autonomous pass. See NEXT_STEPS.
+
 ## CONNECTOR BROKER + LOCAL GATE + TWO REAL BUGS (2026-09-04, latest)
 
 Branch `claude/thynact-env-audit-fjinfj`, HEAD `f8ee417`, pushed.

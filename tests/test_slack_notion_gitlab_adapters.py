@@ -4,7 +4,7 @@ import pytest
 from app.integrations.gitlab import GitLabOAuthAdapter
 from app.integrations.models import IntegrationRequest
 from app.integrations.notion import NotionOAuthAdapter
-from app.integrations.oauth.store import OAuthConnectionStore
+from app.integrations.oauth.store import InMemoryOAuthConnectionStore
 from app.integrations.slack import SlackOAuthAdapter
 
 
@@ -17,7 +17,7 @@ def _client(handler):
 
 @pytest.mark.asyncio
 async def test_slack_adapter_reports_not_connected_when_no_token():
-    adapter = SlackOAuthAdapter(connection_store=OAuthConnectionStore())
+    adapter = SlackOAuthAdapter(connection_store=InMemoryOAuthConnectionStore())
     connected, latency_ms, error = await adapter.test_connection()
 
     assert connected is False
@@ -27,8 +27,8 @@ async def test_slack_adapter_reports_not_connected_when_no_token():
 
 @pytest.mark.asyncio
 async def test_slack_adapter_verifies_stored_token():
-    store = OAuthConnectionStore()
-    store.record_success("slack", access_token="xoxb-test", token_type="bearer", scope="chat:write")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("slack", access_token="xoxb-test", token_type="bearer", scope="chat:write")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["Authorization"] == "Bearer xoxb-test"
@@ -47,8 +47,8 @@ async def test_slack_adapter_verifies_stored_token():
 async def test_slack_adapter_detects_ok_false_despite_http_200():
     # Slack's Web API always answers HTTP 200 — failures are only visible in
     # the JSON body. A naive status-code check would wrongly report success.
-    store = OAuthConnectionStore()
-    store.record_success("slack", access_token="xoxb-revoked", token_type="bearer", scope="chat:write")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("slack", access_token="xoxb-revoked", token_type="bearer", scope="chat:write")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"ok": False, "error": "invalid_auth"})
@@ -63,7 +63,7 @@ async def test_slack_adapter_detects_ok_false_despite_http_200():
 
 @pytest.mark.asyncio
 async def test_slack_adapter_execute_is_unsupported():
-    adapter = SlackOAuthAdapter(connection_store=OAuthConnectionStore())
+    adapter = SlackOAuthAdapter(connection_store=InMemoryOAuthConnectionStore())
     result = await adapter.execute(IntegrationRequest(workflow="anything"))
     assert result.success is False
 
@@ -73,8 +73,8 @@ async def test_slack_adapter_execute_is_unsupported():
 
 @pytest.mark.asyncio
 async def test_notion_adapter_verifies_stored_token_with_version_header():
-    store = OAuthConnectionStore()
-    store.record_success("notion", access_token="secret_notion", token_type="bearer", scope=None)
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("notion", access_token="secret_notion", token_type="bearer", scope=None)
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["Authorization"] == "Bearer secret_notion"
@@ -93,7 +93,7 @@ async def test_notion_adapter_verifies_stored_token_with_version_header():
 
 @pytest.mark.asyncio
 async def test_notion_adapter_reports_not_connected_when_no_token():
-    adapter = NotionOAuthAdapter(connection_store=OAuthConnectionStore())
+    adapter = NotionOAuthAdapter(connection_store=InMemoryOAuthConnectionStore())
     connected, _, error = await adapter.test_connection()
 
     assert connected is False
@@ -102,8 +102,8 @@ async def test_notion_adapter_reports_not_connected_when_no_token():
 
 @pytest.mark.asyncio
 async def test_notion_adapter_reports_rejected_token():
-    store = OAuthConnectionStore()
-    store.record_success("notion", access_token="secret_revoked", token_type="bearer", scope=None)
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("notion", access_token="secret_revoked", token_type="bearer", scope=None)
 
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(401, json={"message": "unauthorized"})
@@ -121,8 +121,8 @@ async def test_notion_adapter_reports_rejected_token():
 
 @pytest.mark.asyncio
 async def test_gitlab_adapter_verifies_stored_token():
-    store = OAuthConnectionStore()
-    store.record_success("gitlab", access_token="glpat-test", token_type="bearer", scope="read_api")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("gitlab", access_token="glpat-test", token_type="bearer", scope="read_api")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["Authorization"] == "Bearer glpat-test"
@@ -140,6 +140,6 @@ async def test_gitlab_adapter_verifies_stored_token():
 
 @pytest.mark.asyncio
 async def test_gitlab_adapter_execute_is_unsupported():
-    adapter = GitLabOAuthAdapter(connection_store=OAuthConnectionStore())
+    adapter = GitLabOAuthAdapter(connection_store=InMemoryOAuthConnectionStore())
     result = await adapter.execute(IntegrationRequest(workflow="anything"))
     assert result.success is False

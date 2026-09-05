@@ -3,12 +3,12 @@ import pytest
 
 from app.integrations.github import GitHubOAuthAdapter
 from app.integrations.models import IntegrationRequest
-from app.integrations.oauth.store import OAuthConnectionStore
+from app.integrations.oauth.store import InMemoryOAuthConnectionStore
 
 
 @pytest.mark.asyncio
 async def test_github_adapter_reports_not_authorized_when_no_token():
-    adapter = GitHubOAuthAdapter(connection_store=OAuthConnectionStore())
+    adapter = GitHubOAuthAdapter(connection_store=InMemoryOAuthConnectionStore())
     connected, latency_ms, error = await adapter.test_connection()
 
     assert connected is False
@@ -18,8 +18,8 @@ async def test_github_adapter_reports_not_authorized_when_no_token():
 
 @pytest.mark.asyncio
 async def test_github_adapter_verifies_stored_token():
-    store = OAuthConnectionStore()
-    store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["Authorization"] == "Bearer gho_test"
@@ -37,8 +37,8 @@ async def test_github_adapter_verifies_stored_token():
 
 @pytest.mark.asyncio
 async def test_github_adapter_reports_revoked_token():
-    store = OAuthConnectionStore()
-    store.record_success("github", access_token="gho_revoked", token_type="bearer", scope="repo")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("github", access_token="gho_revoked", token_type="bearer", scope="repo")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(401, json={"message": "Bad credentials"})
@@ -53,15 +53,15 @@ async def test_github_adapter_reports_revoked_token():
 
 @pytest.mark.asyncio
 async def test_github_adapter_execute_is_unsupported():
-    adapter = GitHubOAuthAdapter(connection_store=OAuthConnectionStore())
+    adapter = GitHubOAuthAdapter(connection_store=InMemoryOAuthConnectionStore())
     result = await adapter.execute(IntegrationRequest(workflow="anything"))
     assert result.success is False
 
 
 @pytest.mark.asyncio
 async def test_github_run_capability_lists_repos_with_only_the_safe_fields():
-    store = OAuthConnectionStore()
-    store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == "https://api.github.com/user/repos?per_page=100"
@@ -90,8 +90,8 @@ async def test_github_run_capability_lists_repos_with_only_the_safe_fields():
 
 @pytest.mark.asyncio
 async def test_github_run_capability_identity_read_matches_the_verify_call():
-    store = OAuthConnectionStore()
-    store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == "https://api.github.com/user"
@@ -108,8 +108,8 @@ async def test_github_run_capability_identity_read_matches_the_verify_call():
 async def test_github_run_capability_refuses_an_unwired_write_capability():
     from app.integrations.base import CapabilityNotWired
 
-    store = OAuthConnectionStore()
-    store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
     adapter = GitHubOAuthAdapter(connection_store=store)
 
     with pytest.raises(CapabilityNotWired):

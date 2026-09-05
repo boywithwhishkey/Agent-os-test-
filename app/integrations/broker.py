@@ -85,13 +85,18 @@ class BrokerResult:
         return self.outcome is BrokerOutcome.OK
 
 
-def providers_for(capability_id: str) -> list[str]:
+async def providers_for(capability_id: str) -> list[str]:
     """Connector ids that declare this capability and have an adapter.
 
     Ordered: connectors that are configured come first, so the broker picks
     something that can actually work rather than the first alphabetically.
     System infrastructure is excluded — PostgreSQL and Redis are the running
     system, not a provider an agent routes user work to.
+
+    Async because `_configured` may need a real credential-store read for an
+    OAuth connector — `sorted()`'s key function can't await, so the configured
+    check for every candidate is resolved first and the sort itself stays
+    synchronous over that precomputed map.
     """
     candidates = [
         spec.id
@@ -100,7 +105,8 @@ def providers_for(capability_id: str) -> list[str]:
         and spec.kind is not ConnectorKind.SYSTEM_INFRASTRUCTURE
         and capability_id in spec.canonical_capabilities
     ]
-    return sorted(candidates, key=lambda cid: (not _configured(cid), cid))
+    configured = {cid: await _configured(cid) for cid in candidates}
+    return sorted(candidates, key=lambda cid: (not configured[cid], cid))
 
 
 def _auth_type(connector_id: str) -> ConnectorAuthType | None:
@@ -110,7 +116,7 @@ def _auth_type(connector_id: str) -> ConnectorAuthType | None:
     return None
 
 
-def _oauth_connected(connector_id: str) -> bool:
+async def _oauth_connected(connector_id: str) -> bool:
     """A user has actually completed Authorize for this connector.
 
     Distinct from `is_provider_configured`, which for an OAuth connector only
@@ -119,16 +125,17 @@ def _oauth_connected(connector_id: str) -> bool:
     an account, and treating "app registered" as "usable" would route a
     capability to a connector that can't yet do anything.
     """
-    return bool(oauth_connection_store.get(connector_id).access_token)
+    record = await oauth_connection_store.get(connector_id)
+    return bool(record.access_token)
 
 
-def _configured(connector_id: str) -> bool:
+async def _configured(connector_id: str) -> bool:
     for provider in list_providers():
         if provider.value == connector_id:
             if not is_provider_configured(provider):
                 return False
             if _auth_type(connector_id) is ConnectorAuthType.OAUTH2:
-                return _oauth_connected(connector_id)
+                return await _oauth_connected(connector_id)
             return True
     return False
 
@@ -184,7 +191,7 @@ class ConnectorBroker:
             await self._record(result, correlation_id)
             return result
 
-        providers = providers_for(capability_id)
+        providers = await providers_for(capability_id)
         if not providers:
             result = BrokerResult(
                 outcome=BrokerOutcome.NO_PROVIDER,
@@ -199,7 +206,7 @@ class ConnectorBroker:
             return result
 
         connector = providers[0]
-        if not _configured(connector):
+        if not await _configured(connector):
             result = self._not_connected(capability_id, connector, capability.risk)
             await self._record(result, correlation_id)
             return result

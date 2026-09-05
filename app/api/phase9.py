@@ -93,12 +93,12 @@ def _status_store_backed_status(provider_id: str, *, configured: bool, force_con
     }
 
 
-def _n8n_live_status() -> dict:
+async def _n8n_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "n8n")
     return _status_store_backed_status("n8n", configured=is_provider_configured(provider))
 
 
-def _gemini_live_status() -> dict:
+async def _gemini_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "gemini")
     active = settings.llm_provider.lower().strip() == "gemini"
     return _status_store_backed_status(
@@ -106,7 +106,7 @@ def _gemini_live_status() -> dict:
     )
 
 
-def _postgresql_live_status() -> dict:
+async def _postgresql_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "postgresql")
     backends = {
         settings.memory_backend,
@@ -122,7 +122,7 @@ def _postgresql_live_status() -> dict:
     )
 
 
-def _redis_live_status() -> dict:
+async def _redis_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "redis")
     in_use = settings.queue_backend.lower().strip() == "redis"
     return _status_store_backed_status(
@@ -130,57 +130,57 @@ def _redis_live_status() -> dict:
     )
 
 
-def _openai_live_status() -> dict:
+async def _openai_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "openai")
     return _status_store_backed_status("openai", configured=is_provider_configured(provider))
 
 
-def _anthropic_live_status() -> dict:
+async def _anthropic_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "anthropic")
     return _status_store_backed_status("anthropic", configured=is_provider_configured(provider))
 
 
-def _cloudflare_live_status() -> dict:
+async def _cloudflare_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "cloudflare")
     return _status_store_backed_status("cloudflare", configured=is_provider_configured(provider))
 
 
-def _render_live_status() -> dict:
+async def _render_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "render")
     return _status_store_backed_status("render", configured=is_provider_configured(provider))
 
 
-def _make_live_status() -> dict:
+async def _make_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "make")
     return _status_store_backed_status("make", configured=is_provider_configured(provider))
 
 
-def _oauth_live_status(provider_id: str) -> dict:
+async def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
     regardless of whether "Test connection" has been clicked since —
     obtaining the token already proves the account is linked."""
     provider = next(p for p in list_providers() if p.value == provider_id)
-    connection = oauth_connection_store.get(provider_id)
+    connection = await oauth_connection_store.get(provider_id)
     return _status_store_backed_status(
         provider_id, configured=is_provider_configured(provider), force_connected=connection.connected
     )
 
 
-def _github_live_status() -> dict:
-    return _oauth_live_status("github")
+async def _github_live_status() -> dict:
+    return await _oauth_live_status("github")
 
 
-def _slack_live_status() -> dict:
-    return _oauth_live_status("slack")
+async def _slack_live_status() -> dict:
+    return await _oauth_live_status("slack")
 
 
-def _notion_live_status() -> dict:
-    return _oauth_live_status("notion")
+async def _notion_live_status() -> dict:
+    return await _oauth_live_status("notion")
 
 
-def _gitlab_live_status() -> dict:
-    return _oauth_live_status("gitlab")
+async def _gitlab_live_status() -> dict:
+    return await _oauth_live_status("gitlab")
 
 
 _LIVE_STATUS_RESOLVERS = {
@@ -200,8 +200,12 @@ _LIVE_STATUS_RESOLVERS = {
 }
 
 
-def _resolve_entry(spec: CatalogSpec) -> ConnectorEntry:
-    live = _LIVE_STATUS_RESOLVERS.get(spec.id, dict)() if spec.implemented else {}
+async def _empty_status() -> dict:
+    return {}
+
+
+async def _resolve_entry(spec: CatalogSpec) -> ConnectorEntry:
+    live = await _LIVE_STATUS_RESOLVERS.get(spec.id, _empty_status)() if spec.implemented else {}
     return ConnectorEntry(
         id=spec.id,
         name=spec.name,
@@ -243,7 +247,7 @@ async def list_catalog_route() -> list[ConnectorEntry]:
     ever included here, only whether something is configured/connected, so
     the Integration Hub can render for any visitor regardless of whether an
     operator API key is set in this browser."""
-    return [_resolve_entry(spec) for spec in list_catalog()]
+    return [await _resolve_entry(spec) for spec in list_catalog()]
 
 
 @public_router.get("/mcp/servers", response_model=list[MCPServerPublic])
@@ -380,7 +384,7 @@ async def oauth_callback_route(
         return RedirectResponse(f"{frontend_target}?oauth=error&provider={quote(provider)}&message=unknown_provider")
 
     if error:
-        oauth_connection_store.record_failure(config.id, error=error)
+        await oauth_connection_store.record_failure(config.id, error=error)
         return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message={quote(error)}")
 
     if not state or oauth_state_store.consume(state) != config.id:
@@ -402,4 +406,4 @@ async def oauth_disconnect_route(provider: str) -> None:
     config = get_oauth_provider(provider)
     if config is None:
         raise HTTPException(status_code=404, detail=f"Unknown OAuth provider: {provider}")
-    oauth_connection_store.disconnect(config.id)
+    await oauth_connection_store.disconnect(config.id)

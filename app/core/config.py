@@ -102,6 +102,17 @@ class Settings(BaseSettings):
     workflow_definition_backend: str = Field(
         default="memory", validation_alias="AGENT_OS_WORKFLOW_DEFINITION_BACKEND"
     )
+    oauth_backend: str = Field(default="memory", validation_alias="AGENT_OS_OAUTH_BACKEND")
+    #: A Fernet key (`cryptography.fernet.Fernet.generate_key()`), required
+    #: only when oauth_backend="postgres". Not a "convenience" secret in an env
+    #: var — this IS the standard way to hand a service its own encryption
+    #: key; the thing CLAUDE.md's "never solve secret management by
+    #: hardcoding" rule forbids is putting a *credential* here in place of
+    #: this key. Access tokens are never stored anywhere in plaintext with
+    #: this backend, encrypted or not, without it configured.
+    credential_encryption_key: str = Field(
+        default="", validation_alias="AGENT_OS_CREDENTIAL_ENCRYPTION_KEY"
+    )
     embedding_backend: str = Field(
         default="deterministic", validation_alias="AGENT_OS_EMBEDDING_BACKEND"
     )
@@ -154,9 +165,8 @@ class Settings(BaseSettings):
         return self.app_env in {"production", "staging"}
 
     @property
-    def ephemeral_subsystems(self) -> list[str]:
-        """Subsystems currently backed by process memory, so lost on restart."""
-        backends = {
+    def _backend_map(self) -> dict[str, str]:
+        return {
             "memory": self.memory_backend,
             "task": self.task_backend,
             "workflow": self.workflow_backend,
@@ -164,21 +174,36 @@ class Settings(BaseSettings):
             "runtime": self.runtime_backend,
             "tool": self.tool_backend,
             "queue": self.queue_backend,
+            "oauth": self.oauth_backend,
         }
-        return sorted(name for name, backend in backends.items() if backend == "memory")
+
+    @property
+    def ephemeral_subsystems(self) -> list[str]:
+        """Subsystems currently backed by process memory, so lost on restart."""
+        return sorted(name for name, backend in self._backend_map.items() if backend == "memory")
 
     @property
     def persistence_mode(self) -> str:
+        # Compares against the live subsystem count rather than a literal,
+        # because a literal here already went stale once: adding the oauth
+        # backend would otherwise have made a fully-memory deployment report
+        # "partial" instead of "ephemeral" until someone noticed the count no
+        # longer matched every backend that exists.
         ephemeral = self.ephemeral_subsystems
         if not ephemeral:
             return "durable"
-        if len(ephemeral) == 7:
+        if len(ephemeral) == len(self._backend_map):
             return "ephemeral"
         return "partial"
 
     def persistence_warnings(self) -> list[str]:
         """Configuration problems that would otherwise degrade silently."""
         warnings: list[str] = []
+        if self.oauth_backend == "postgres" and not self.credential_encryption_key:
+            warnings.append(
+                "AGENT_OS_OAUTH_BACKEND=postgres but AGENT_OS_CREDENTIAL_ENCRYPTION_KEY "
+                "is not set — OAuth connections cannot be stored or read"
+            )
         ephemeral = self.ephemeral_subsystems
         if self.is_production_like and ephemeral:
             warnings.append(
@@ -193,14 +218,7 @@ class Settings(BaseSettings):
         if not self.database_url:
             needs_database = sorted(
                 name
-                for name, backend in {
-                    "memory": self.memory_backend,
-                    "task": self.task_backend,
-                    "workflow": self.workflow_backend,
-                    "workflow_definition": self.workflow_definition_backend,
-                    "runtime": self.runtime_backend,
-                    "tool": self.tool_backend,
-                }.items()
+                for name, backend in self._backend_map.items()
                 if backend in {"postgres", "postgres_pgvector"}
             )
             if needs_database:

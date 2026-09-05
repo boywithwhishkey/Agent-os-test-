@@ -37,7 +37,7 @@ async def oauth_get(
     returning a partial or misleading body. Adapters differ only in the URL and
     headers, exactly as they already do in `verify_oauth_identity`.
     """
-    record = connection_store.get(provider_id)
+    record = await connection_store.get(provider_id)
     if not record.access_token:
         raise OAuthNotConnected(f"No {provider_name} account connected")
 
@@ -75,7 +75,7 @@ async def verify_oauth_identity(
     call. Providers differ only in the identity endpoint, headers, and how
     a failure is reported (most use HTTP status; Slack always answers 200
     and reports failure in the JSON body — see `interpret`)."""
-    record = connection_store.get(provider_id)
+    record = await connection_store.get(provider_id)
     if not record.access_token:
         return False, None, f"Not connected yet — use Connect to link a {provider_name} account."
 

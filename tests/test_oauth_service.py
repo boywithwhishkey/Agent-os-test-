@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.integrations.oauth import service
 from app.integrations.oauth.config import OAUTH_PROVIDERS
 from app.integrations.oauth.service import OAuthExchangeError, OAuthNotConfigured
-from app.integrations.oauth.store import OAuthConnectionStore, OAuthStateStore
+from app.integrations.oauth.store import InMemoryOAuthConnectionStore, OAuthStateStore
 
 GITHUB = OAUTH_PROVIDERS["github"]
 SLACK = OAUTH_PROVIDERS["slack"]
@@ -51,11 +51,11 @@ async def test_exchange_code_success(monkeypatch):
         assert request.headers["Accept"] == "application/json"
         return httpx.Response(200, json={"access_token": "gho_abc", "token_type": "bearer", "scope": "repo"})
 
-    connection_store = OAuthConnectionStore()
+    connection_store = InMemoryOAuthConnectionStore()
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         await service.exchange_code(GITHUB, code="the-code", connection_store=connection_store, client=client)
 
-    record = connection_store.get("github")
+    record = await connection_store.get("github")
     assert record.connected is True
     assert record.access_token == "gho_abc"
 
@@ -64,7 +64,7 @@ async def test_exchange_code_success(monkeypatch):
 async def test_exchange_code_requires_client_secret(monkeypatch):
     monkeypatch.setattr(settings, "github_oauth_client_secret", None)
     with pytest.raises(OAuthNotConfigured):
-        await service.exchange_code(GITHUB, code="x", connection_store=OAuthConnectionStore())
+        await service.exchange_code(GITHUB, code="x", connection_store=InMemoryOAuthConnectionStore())
 
 
 @pytest.mark.asyncio
@@ -75,12 +75,12 @@ async def test_exchange_code_rejects_provider_error(monkeypatch):
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"error": "bad_verification_code", "error_description": "expired code"})
 
-    connection_store = OAuthConnectionStore()
+    connection_store = InMemoryOAuthConnectionStore()
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         with pytest.raises(OAuthExchangeError, match="expired code"):
             await service.exchange_code(GITHUB, code="stale", connection_store=connection_store, client=client)
 
-    assert connection_store.get("github").connected is False
+    assert (await connection_store.get("github")).connected is False
 
 
 @pytest.mark.asyncio
@@ -91,7 +91,7 @@ async def test_exchange_code_reports_network_error(monkeypatch):
     async def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("connection refused", request=request)
 
-    connection_store = OAuthConnectionStore()
+    connection_store = InMemoryOAuthConnectionStore()
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         with pytest.raises(OAuthExchangeError):
             await service.exchange_code(GITHUB, code="x", connection_store=connection_store, client=client)
@@ -108,7 +108,7 @@ async def test_slack_exchange_code_detects_ok_false_despite_http_200(monkeypatch
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"ok": False, "error": "invalid_code"})
 
-    connection_store = OAuthConnectionStore()
+    connection_store = InMemoryOAuthConnectionStore()
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         with pytest.raises(OAuthExchangeError, match="invalid_code"):
             await service.exchange_code(SLACK, code="stale", connection_store=connection_store, client=client)
@@ -143,11 +143,11 @@ async def test_notion_exchange_code_uses_basic_auth_and_json_body(monkeypatch):
         assert "client_secret" not in body  # must not leak into the JSON body when using Basic auth
         return httpx.Response(200, json={"access_token": "secret_notion", "token_type": "bearer"})
 
-    connection_store = OAuthConnectionStore()
+    connection_store = InMemoryOAuthConnectionStore()
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         await service.exchange_code(NOTION, code="the-code", connection_store=connection_store, client=client)
 
-    assert connection_store.get("notion").connected is True
+    assert (await connection_store.get("notion")).connected is True
 
 
 # --- GitLab: standard form/body auth, same as GitHub ---
@@ -161,8 +161,8 @@ async def test_gitlab_exchange_code_success(monkeypatch):
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"access_token": "glpat-abc", "token_type": "bearer", "scope": "read_api"})
 
-    connection_store = OAuthConnectionStore()
+    connection_store = InMemoryOAuthConnectionStore()
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         await service.exchange_code(GITLAB, code="the-code", connection_store=connection_store, client=client)
 
-    assert connection_store.get("gitlab").connected is True
+    assert (await connection_store.get("gitlab")).connected is True

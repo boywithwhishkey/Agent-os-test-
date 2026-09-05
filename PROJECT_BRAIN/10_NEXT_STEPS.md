@@ -23,12 +23,30 @@ CLOSED; do not re-litigate them.
 - ~~Environment rediscovery each session~~ — `scripts/bootstrap_claude_cloud.sh`
   + `scripts/project_doctor.sh`.
 
-## CONNECTOR PLATFORM — WHAT TO DO NEXT (updated 2026-09-04)
+## CONNECTOR PLATFORM — WHAT TO DO NEXT (updated 2026-09-05)
 
 The broker exists now, so wiring a provider operation is a small change
 against a governed path rather than an architectural one: implement
 `run_capability` on the adapter, and the risk, approval, routing and audit are
-already there. `app/integrations/openai.py` is the worked example.
+already there. `app/integrations/github.py` is the worked example (identity +
+repo-list); `app/integrations/openai.py` for a non-OAuth provider.
+
+**Ready to flip, not yet flipped**: `AGENT_OS_OAUTH_BACKEND=postgres` +
+`AGENT_OS_CREDENTIAL_ENCRYPTION_KEY` on production/staging would persist
+GitHub/GitLab/Slack/Notion connections across restarts — code and real-DB
+tests are done (see 02_CURRENT_STATE.md). Deliberately not applied to a live
+service without asking first: it's a new required secret and a real behavior
+change, not a pure engineering follow-on. If asked to do this: generate the
+key locally, set both env vars via the Render MCP (never print the key), then
+verify `/health`'s `backends.oauth` reports `postgres` on the real deployed
+service afterward.
+
+**Still true from last pass**: an OAuth app being registered
+(CLIENT_ID/SECRET set) and a user actually connecting an account are now
+correctly distinguished in the broker — but the four adapters still only
+implement identity-read plus GitHub/GitLab repo-list. `chat.message.list`
+(Slack) and `docs.page.read` (Notion) need a real caller to define an argument
+shape before they're worth wiring; don't invent one speculatively.
 
 
 

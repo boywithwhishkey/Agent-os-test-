@@ -63,7 +63,7 @@ class GitHubOAuthAdapter(IntegrationAdapter):
         return await super().run_capability(capability_id, arguments)
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:
-        record = self._connection_store.get("github")
+        record = await self._connection_store.get("github")
         if not record.access_token:
             return False, None, "Not authorized yet — use Authorize to connect a GitHub account."
 

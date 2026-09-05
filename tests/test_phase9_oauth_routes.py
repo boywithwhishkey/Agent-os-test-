@@ -64,11 +64,11 @@ def test_callback_surfaces_provider_denial():
     assert "error=access_denied" in response.headers["location"] or "message=access_denied" in response.headers["location"]
 
 
-def test_callback_exchanges_code_and_records_connection(monkeypatch):
+async def test_callback_exchanges_code_and_records_connection(monkeypatch):
     state = oauth_state_store.create("github")
 
     async def fake_exchange(config, *, code, connection_store, client=None):
-        connection_store.record_success(config.id, access_token="gho_test", token_type="bearer", scope="repo")
+        await connection_store.record_success(config.id, access_token="gho_test", token_type="bearer", scope="repo")
 
     monkeypatch.setattr(phase9, "exchange_code", fake_exchange)
 
@@ -78,7 +78,7 @@ def test_callback_exchanges_code_and_records_connection(monkeypatch):
 
     assert response.status_code in (302, 307)
     assert "oauth=connected" in response.headers["location"]
-    assert oauth_connection_store.get("github").connected is True
+    assert (await oauth_connection_store.get("github")).connected is True
 
 
 def test_callback_surfaces_exchange_failure(monkeypatch):
@@ -96,10 +96,10 @@ def test_callback_surfaces_exchange_failure(monkeypatch):
     assert "oauth=error" in response.headers["location"]
 
 
-def test_catalog_reflects_connected_github_after_oauth(monkeypatch):
+async def test_catalog_reflects_connected_github_after_oauth(monkeypatch):
     monkeypatch.setattr(settings, "github_oauth_client_id", "client-123")
     monkeypatch.setattr(settings, "github_oauth_client_secret", "secret-456")
-    oauth_connection_store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    await oauth_connection_store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
 
     listing = client.get("/api/v1/integrations").json()
     github = next(item for item in listing if item["id"] == "github")
@@ -108,17 +108,17 @@ def test_catalog_reflects_connected_github_after_oauth(monkeypatch):
     assert github["configured"] is True
 
 
-def test_disconnect_requires_auth_and_clears_connection(monkeypatch):
+async def test_disconnect_requires_auth_and_clears_connection(monkeypatch):
     monkeypatch.setattr(settings, "github_oauth_client_id", "client-123")
     monkeypatch.setattr(settings, "github_oauth_client_secret", "secret-456")
-    oauth_connection_store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    await oauth_connection_store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
 
     unauth = client.delete("/api/v1/integrations/oauth/github")
     assert unauth.status_code in (401, 503)
 
     response = client.delete("/api/v1/integrations/oauth/github", headers=AUTH)
     assert response.status_code == 204
-    assert oauth_connection_store.get("github").connected is False
+    assert (await oauth_connection_store.get("github")).connected is False
 
 
 @pytest.mark.parametrize(
@@ -129,7 +129,7 @@ def test_disconnect_requires_auth_and_clears_connection(monkeypatch):
         ("gitlab", "gitlab_oauth_client_id", "gitlab_oauth_client_secret", "https://gitlab.com/oauth/authorize?"),
     ],
 )
-def test_generic_oauth_routes_work_for_every_registered_provider(
+async def test_generic_oauth_routes_work_for_every_registered_provider(
     monkeypatch, provider_id, client_id_setting, client_secret_setting, authorize_prefix
 ):
     """The authorize/callback/disconnect routes are provider-agnostic — this
@@ -144,7 +144,7 @@ def test_generic_oauth_routes_work_for_every_registered_provider(
     state = oauth_state_store.create(provider_id)
 
     async def fake_exchange(config, *, code, connection_store, client=None):
-        connection_store.record_success(config.id, access_token="tok", token_type="bearer", scope=None)
+        await connection_store.record_success(config.id, access_token="tok", token_type="bearer", scope=None)
 
     monkeypatch.setattr(phase9, "exchange_code", fake_exchange)
     callback = client.get(
@@ -159,4 +159,4 @@ def test_generic_oauth_routes_work_for_every_registered_provider(
 
     disconnect = client.delete(f"/api/v1/integrations/oauth/{provider_id}", headers=AUTH)
     assert disconnect.status_code == 204
-    assert oauth_connection_store.get(provider_id).connected is False
+    assert (await oauth_connection_store.get(provider_id)).connected is False

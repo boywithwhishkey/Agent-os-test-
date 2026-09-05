@@ -108,22 +108,22 @@ async def exchange_code(
 
         if response.status_code >= 400 or "error" in body:
             message = body.get("error_description") or body.get("error") or f"HTTP {response.status_code}"
-            connection_store.record_failure(config.id, error=str(message))
+            await connection_store.record_failure(config.id, error=str(message))
             raise OAuthExchangeError(f"{config.name} rejected the authorization code: {message}")
 
         access_token = body.get("access_token")
         if not access_token:
-            connection_store.record_failure(config.id, error="No access_token in response")
+            await connection_store.record_failure(config.id, error="No access_token in response")
             raise OAuthExchangeError(f"{config.name} did not return an access token")
 
-        connection_store.record_success(
+        await connection_store.record_success(
             config.id,
             access_token=access_token,
             token_type=body.get("token_type"),
             scope=body.get("scope"),
         )
     except httpx.HTTPError as exc:
-        connection_store.record_failure(config.id, error=f"{type(exc).__name__}: {exc}")
+        await connection_store.record_failure(config.id, error=f"{type(exc).__name__}: {exc}")
         raise OAuthExchangeError(f"Could not reach {config.name}: {exc}") from exc
     finally:
         if own_client:

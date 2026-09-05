@@ -21,6 +21,7 @@ async def check_readiness() -> dict[str, str]:
         or settings.task_backend == "postgres"
         or settings.tool_backend == "postgres"
         or settings.workflow_definition_backend == "postgres"
+        or settings.oauth_backend == "postgres"
     )
     if uses_postgres:
         checks["database"] = await _check_database()

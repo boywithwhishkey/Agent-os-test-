@@ -38,8 +38,10 @@ Consequences, all of them current:
 | Runtime executions | `memory` | `postgres` | `AGENT_OS_RUNTIME_BACKEND` | No |
 | Tool approvals + audit | `memory` | `postgres` | `AGENT_OS_TOOL_BACKEND` | No |
 | Job queue | `memory` | `redis` | `AGENT_OS_QUEUE_BACKEND` | No |
+| OAuth connections (GitHub/GitLab/Slack/Notion) | `memory` | `postgres` | `AGENT_OS_OAUTH_BACKEND` | No |
 | PostgreSQL connection | — | required by all `postgres*` values | `DATABASE_URL` | — |
 | Redis connection | — | required by `redis` queue | `REDIS_URL` | — |
+| Credential encryption key | — | required when OAuth backend is `postgres` | `AGENT_OS_CREDENTIAL_ENCRYPTION_KEY` | — |
 
 Accepted values are exact: `memory` \| `postgres` for every store,
 `memory` \| `postgres` \| `postgres_pgvector` for memory, and
@@ -121,7 +123,13 @@ can take the service down if performed early.
    `AGENT_OS_APP_ENV` disagrees.
 4. **Switch the backends**: `AGENT_OS_MEMORY_BACKEND=postgres_pgvector`,
    `AGENT_OS_TASK_BACKEND`/`WORKFLOW`/`WORKFLOW_DEFINITION`/`RUNTIME`/`TOOL` =
-   `postgres`, `AGENT_OS_QUEUE_BACKEND=redis`.
+   `postgres`, `AGENT_OS_QUEUE_BACKEND=redis`. To also persist OAuth
+   connections (GitHub/GitLab/Slack/Notion) across restarts: generate a key
+   with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`,
+   set it as `AGENT_OS_CREDENTIAL_ENCRYPTION_KEY`, then set
+   `AGENT_OS_OAUTH_BACKEND=postgres`. Losing this key means every stored
+   connection becomes unreadable — there is no recovery path but
+   reconnecting each account.
 5. **Redeploy** and verify: `/live` 200; `/health` shows
    `persistence: durable` and no memory backends; `/ready` 200 with
    `status: ready` and `database: ok`, `queue: ok`.

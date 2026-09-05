@@ -11,15 +11,15 @@ import pytest
 from app.integrations.base import CapabilityNotWired
 from app.integrations.gitlab import GitLabOAuthAdapter
 from app.integrations.notion import NotionOAuthAdapter
-from app.integrations.oauth.store import OAuthConnectionStore
+from app.integrations.oauth.store import InMemoryOAuthConnectionStore
 from app.integrations.slack import SlackOAuthAdapter
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gitlab_lists_projects_with_only_the_safe_fields():
-    store = OAuthConnectionStore()
-    store.record_success("gitlab", access_token="glpat-test", token_type="bearer", scope="api")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("gitlab", access_token="glpat-test", token_type="bearer", scope="api")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == "https://gitlab.com/api/v4/projects?membership=true&per_page=100"
@@ -45,8 +45,8 @@ async def test_gitlab_lists_projects_with_only_the_safe_fields():
 
 
 async def test_gitlab_refuses_an_unwired_write_capability():
-    store = OAuthConnectionStore()
-    store.record_success("gitlab", access_token="glpat-test", token_type="bearer", scope="api")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("gitlab", access_token="glpat-test", token_type="bearer", scope="api")
     adapter = GitLabOAuthAdapter(connection_store=store)
 
     with pytest.raises(CapabilityNotWired):
@@ -54,8 +54,8 @@ async def test_gitlab_refuses_an_unwired_write_capability():
 
 
 async def test_slack_identity_read_is_wired():
-    store = OAuthConnectionStore()
-    store.record_success("slack", access_token="xoxb-test", token_type="bearer", scope="chat:write")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("slack", access_token="xoxb-test", token_type="bearer", scope="chat:write")
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == "https://slack.com/api/auth.test"
@@ -71,8 +71,8 @@ async def test_slack_identity_read_is_wired():
 async def test_slack_chat_message_list_stays_unwired():
     """Deliberate: no channel-selection argument shape exists yet — wiring it
     would mean inventing one ahead of any real caller."""
-    store = OAuthConnectionStore()
-    store.record_success("slack", access_token="xoxb-test", token_type="bearer", scope="channels:history")
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("slack", access_token="xoxb-test", token_type="bearer", scope="channels:history")
     adapter = SlackOAuthAdapter(connection_store=store)
 
     with pytest.raises(CapabilityNotWired):
@@ -80,8 +80,8 @@ async def test_slack_chat_message_list_stays_unwired():
 
 
 async def test_notion_identity_read_is_wired():
-    store = OAuthConnectionStore()
-    store.record_success("notion", access_token="secret_test", token_type="bearer", scope=None)
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("notion", access_token="secret_test", token_type="bearer", scope=None)
 
     async def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == "https://api.notion.com/v1/users/me"
@@ -96,8 +96,8 @@ async def test_notion_identity_read_is_wired():
 
 
 async def test_notion_docs_page_read_stays_unwired_without_a_page_id():
-    store = OAuthConnectionStore()
-    store.record_success("notion", access_token="secret_test", token_type="bearer", scope=None)
+    store = InMemoryOAuthConnectionStore()
+    await store.record_success("notion", access_token="secret_test", token_type="bearer", scope=None)
     adapter = NotionOAuthAdapter(connection_store=store)
 
     with pytest.raises(CapabilityNotWired):

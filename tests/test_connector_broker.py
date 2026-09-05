@@ -20,6 +20,14 @@ from app.tools.policy import ToolPolicy
 pytestmark = pytest.mark.asyncio
 
 
+async def _always_configured(_connector_id: str) -> bool:
+    return True
+
+
+async def _configured_openai_only(connector_id: str) -> bool:
+    return connector_id == "openai"
+
+
 class RecordingAudit:
     def __init__(self) -> None:
         self.rows: list[dict] = []
@@ -108,7 +116,7 @@ async def test_a_read_capability_needs_no_approval_and_reaches_the_provider(monk
 
     # ai.model.list is READ. Pretend the provider is configured so the routing
     # path is exercised rather than short-circuited by a missing key.
-    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    monkeypatch.setattr("app.integrations.broker._configured", _always_configured)
     broker, audit = _broker(perform)
     result = await broker.execute("ai.model.list", correlation_id="corr-1")
 
@@ -125,7 +133,7 @@ async def test_a_provider_exception_becomes_an_audited_failure_not_a_traceback(m
     async def perform(*_args):
         raise RuntimeError("provider exploded")
 
-    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    monkeypatch.setattr("app.integrations.broker._configured", _always_configured)
     broker, audit = _broker(perform)
     result = await broker.execute("ai.model.list")
 
@@ -137,7 +145,7 @@ async def test_a_provider_exception_becomes_an_audited_failure_not_a_traceback(m
 async def test_a_capability_with_no_wired_operation_is_honest_about_it(monkeypatch) -> None:
     # Every OAuth adapter today only verifies the connection. Routing must say
     # that, not pretend the call happened.
-    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    monkeypatch.setattr("app.integrations.broker._configured", _always_configured)
     broker, _ = _broker(perform=None)
     result = await broker.execute("ai.model.list")
 
@@ -155,7 +163,7 @@ async def test_routing_never_selects_thynacts_own_infrastructure() -> None:
     assert infra, "no infrastructure entries — this test would pass vacuously"
     for spec in list_catalog():
         for capability_id in spec.canonical_capabilities:
-            assert not (set(providers_for(capability_id)) & infra)
+            assert not (set(await providers_for(capability_id)) & infra)
 
 
 async def test_the_caller_cannot_choose_the_provider() -> None:
@@ -199,7 +207,7 @@ async def test_a_wired_capability_runs_end_to_end_through_the_governed_path(monk
         assert connector == "openai"
         return await adapter.run_capability(capability.id, arguments)
 
-    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: cid == "openai")
+    monkeypatch.setattr("app.integrations.broker._configured", _configured_openai_only)
     broker, audit = _broker(perform)
     result = await broker.execute("ai.model.list", correlation_id="corr-e2e")
     await stub.aclose()
@@ -233,7 +241,7 @@ async def test_an_adapter_without_the_operation_reports_not_built_not_an_outage(
     async def perform(connector, capability, arguments):
         return await adapter.run_capability(capability.id, arguments)
 
-    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    monkeypatch.setattr("app.integrations.broker._configured", _always_configured)
     broker, _ = _broker(perform)
     # OpenAI declares ai.completion.create in the catalog; no operation exists.
     result = await broker.execute("ai.completion.create", approval_id=None)
@@ -254,7 +262,11 @@ async def test_an_oauth_app_registered_but_no_account_connected_is_distinguished
     from app.integrations import broker as broker_module
 
     monkeypatch.setattr(broker_module, "is_provider_configured", lambda provider: True)
-    monkeypatch.setattr(broker_module, "_oauth_connected", lambda cid: False)
+
+    async def _not_connected(_cid: str) -> bool:
+        return False
+
+    monkeypatch.setattr(broker_module, "_oauth_connected", _not_connected)
 
     called = False
 
@@ -279,7 +291,11 @@ async def test_an_oauth_connector_with_an_account_connected_is_treated_as_config
     from app.integrations import broker as broker_module
 
     monkeypatch.setattr(broker_module, "is_provider_configured", lambda provider: True)
-    monkeypatch.setattr(broker_module, "_oauth_connected", lambda cid: True)
+
+    async def _connected(_cid: str) -> bool:
+        return True
+
+    monkeypatch.setattr(broker_module, "_oauth_connected", _connected)
 
     async def perform(connector, capability, arguments):
         return [{"full_name": "octocat/hello-world"}]

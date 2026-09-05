@@ -21,6 +21,11 @@ persistence = [
     "asyncpg>=0.29,<1",
     "redis>=5,<6",
     "pyyaml>=6,<7",
+    # Encrypts OAuth access tokens at rest when AGENT_OS_OAUTH_BACKEND=postgres
+    # — see app/integrations/credential_crypto.py. Was already present
+    # transitively (via httpx's dependency chain); pinned explicitly because
+    # this codebase now imports it directly rather than relying on that.
+    "cryptography>=42,<52",
 ]
 dev = [
     "pytest>=8,<9",
@@ -30,6 +35,7 @@ dev = [
     "asyncpg>=0.29,<1",
     "redis>=5,<6",
     "pyyaml>=6,<7",
+    "cryptography>=42,<52",
 ]
 
 [tool.pytest.ini_options]

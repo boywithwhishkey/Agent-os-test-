@@ -188,6 +188,7 @@ def health() -> dict:
             "runtime": settings.runtime_backend,
             "tool": settings.tool_backend,
             "queue": settings.queue_backend,
+            "oauth": settings.oauth_backend,
         },
         # Honest persistence summary: "ephemeral" means every task, workflow,
         # approval and audit record is lost on restart. This used to be
