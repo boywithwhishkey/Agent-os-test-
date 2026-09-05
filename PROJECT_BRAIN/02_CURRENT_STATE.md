@@ -203,6 +203,19 @@ contradicting note elsewhere.
 - **CREDENTIAL_REQUIRED:** a Snapchat Marketing API OAuth access token and
   platform allowlisting are still required; no live Snapchat request was made.
 
+## SESSION 2026-09-05 — GITHUB REPOSITORY READ CAPABILITIES
+
+- **IMPLEMENTED_TESTED:** GitHub now supports canonical identity, repository
+  metadata, and repository-content reads through fixed API routes with shared
+  OAuth refresh handling. Owner/repository/path arguments are validated and
+  cannot provide an arbitrary URL or parent-traversal path.
+- Issue creation and branch merge remain deliberately unwired and are no
+  longer advertised in the catalog until their separate write/high-risk
+  approval contracts are implemented.
+- **CREDENTIAL_REQUIRED:** no GitHub OAuth token was available for a live
+  repository request in this pass; mocked tests cover auth, fixed routing,
+  response handling, and path safety.
+
 ## SESSION 2026-09-05 — VERIFIED WEBHOOK INGRESS
 
 - **IMPLEMENTED_TESTED:** public Meta and Telegram webhook ingress routes now

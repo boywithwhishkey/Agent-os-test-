@@ -37,6 +37,50 @@ async def test_github_adapter_verifies_stored_token():
 
 
 @pytest.mark.asyncio
+async def test_github_adapter_reads_repository_metadata_and_content():
+    store = OAuthConnectionStore()
+    store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    seen: list[str] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        assert request.headers["Authorization"] == "Bearer gho_test"
+        assert request.headers["X-GitHub-Api-Version"] == "2022-11-28"
+        if request.url.path.endswith("/contents/docs/README.md"):
+            return httpx.Response(200, json={"name": "README.md", "content": "SGVsbG8="})
+        return httpx.Response(200, json={"full_name": "octocat/hello-world", "private": False})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        adapter = GitHubOAuthAdapter(connection_store=store, client=client)
+        metadata = await adapter.run_capability(
+            "repo.metadata.read", {"owner": "octocat", "repo": "hello-world"}
+        )
+        content = await adapter.run_capability(
+            "repo.content.read",
+            {"owner": "octocat", "repo": "hello-world", "path": "docs/README.md"},
+        )
+
+    assert metadata["full_name"] == "octocat/hello-world"
+    assert content["name"] == "README.md"
+    assert seen == [
+        "https://api.github.com/repos/octocat/hello-world",
+        "https://api.github.com/repos/octocat/hello-world/contents/docs/README.md",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_github_adapter_rejects_parent_traversal_in_content_path():
+    store = OAuthConnectionStore()
+    store.record_success("github", access_token="gho_test", token_type="bearer", scope="repo")
+    adapter = GitHubOAuthAdapter(connection_store=store)
+
+    with pytest.raises(ValueError, match="safe repository-relative path"):
+        await adapter.run_capability(
+            "repo.content.read", {"owner": "octocat", "repo": "hello-world", "path": "../secrets"}
+        )
+
+
+@pytest.mark.asyncio
 async def test_github_adapter_reports_revoked_token():
     store = OAuthConnectionStore()
     store.record_success("github", access_token="gho_revoked", token_type="bearer", scope="repo")
