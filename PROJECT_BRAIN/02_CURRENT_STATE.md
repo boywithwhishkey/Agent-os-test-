@@ -5,11 +5,22 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
-## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID
+## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only
 threaded the id through direct tool calls. Workflow-run tool steps previously
 had no correlation id at all.
+
+Runtime executions already carry the correlation id, contrary to what an
+earlier draft of this section claimed: `RuntimeRequest`/`RuntimeExecution`
+(`app/runtime/models.py`) both declare `correlation_id: str | None = None`,
+`RuntimeService.execute` (`app/runtime/service.py:40`) binds one via
+`get_or_create_correlation_id(request.correlation_id)` and stamps it onto the
+new `RuntimeExecution`, and the same value is forwarded into the
+`IntegrationRequest` passed to the adapter (`app/runtime/service.py:75`). With
+the runtime path, the direct tool-call path (2026-08-31) and the workflow-run
+path (this session) all threading the id through, **correlation-id propagation
+across the codebase is complete.**
 
 - **IMPLEMENTED_TESTED:** `WorkflowRun` (`app/workflows/models.py`) gained an
   optional `correlation_id: str | None = None` field.
