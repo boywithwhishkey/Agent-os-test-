@@ -84,6 +84,12 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 {"message": {"raw": self._draft_raw(arguments)}},
             )
 
+        if self.provider is IntegrationProvider.GMAIL and capability_id == "mail.message.send":
+            return await self._post(
+                "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+                {"raw": self._draft_raw(arguments, operation="mail.message.send")},
+            )
+
         if (
             self.provider is IntegrationProvider.GOOGLE_CALENDAR
             and capability_id == "calendar.event.list"
@@ -164,18 +170,22 @@ class GoogleOAuthAdapter(IntegrationAdapter):
         return params
 
     @staticmethod
-    def _draft_raw(arguments: dict[str, Any]) -> str:
-        recipients = GoogleOAuthAdapter._recipients(arguments.get("to"), "to")
-        cc = GoogleOAuthAdapter._recipients(arguments.get("cc"), "cc", required=False)
-        bcc = GoogleOAuthAdapter._recipients(arguments.get("bcc"), "bcc", required=False)
+    def _draft_raw(arguments: dict[str, Any], *, operation: str = "mail.draft.create") -> str:
+        recipients = GoogleOAuthAdapter._recipients(arguments.get("to"), "to", operation=operation)
+        cc = GoogleOAuthAdapter._recipients(
+            arguments.get("cc"), "cc", required=False, operation=operation
+        )
+        bcc = GoogleOAuthAdapter._recipients(
+            arguments.get("bcc"), "bcc", required=False, operation=operation
+        )
         subject = arguments.get("subject")
         body = arguments.get("body")
         if not isinstance(subject, str) or not 1 <= len(subject.strip()) <= 998:
-            raise ValueError("mail.draft.create requires a subject of 998 characters or fewer")
+            raise ValueError(f"{operation} requires a subject of 998 characters or fewer")
         if not isinstance(body, str) or not 1 <= len(body) <= 200_000:
-            raise ValueError("mail.draft.create requires a body between 1 and 200000 characters")
+            raise ValueError(f"{operation} requires a body between 1 and 200000 characters")
         if any("\r" in value or "\n" in value for value in [subject, body]):
-            raise ValueError("mail.draft.create subject and body must not contain raw line breaks")
+            raise ValueError(f"{operation} subject and body must not contain raw line breaks")
 
         message = EmailMessage()
         message["To"] = ", ".join(recipients)
@@ -188,19 +198,25 @@ class GoogleOAuthAdapter(IntegrationAdapter):
         return base64.urlsafe_b64encode(message.as_bytes()).decode("ascii").rstrip("=")
 
     @staticmethod
-    def _recipients(value: Any, field: str, *, required: bool = True) -> list[str]:
+    def _recipients(
+        value: Any,
+        field: str,
+        *,
+        required: bool = True,
+        operation: str = "mail.draft.create",
+    ) -> list[str]:
         if value is None and not required:
             return []
         values = [value] if isinstance(value, str) else value
         if not isinstance(values, list) or not values or len(values) > 20:
-            raise ValueError(f"mail.draft.create requires 1-20 {field} recipients")
+            raise ValueError(f"{operation} requires 1-20 {field} recipients")
         output: list[str] = []
         for candidate in values:
             if not isinstance(candidate, str) or "\r" in candidate or "\n" in candidate:
-                raise ValueError(f"mail.draft.create {field} recipients must be valid email addresses")
+                raise ValueError(f"{operation} {field} recipients must be valid email addresses")
             address = parseaddr(candidate.strip())[1]
             if not address or "@" not in address or " " in address:
-                raise ValueError(f"mail.draft.create {field} recipients must be valid email addresses")
+                raise ValueError(f"{operation} {field} recipients must be valid email addresses")
             output.append(candidate.strip())
         return output
 

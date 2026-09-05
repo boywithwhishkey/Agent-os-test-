@@ -417,6 +417,18 @@ contradicting note elsewhere.
   capability remains WRITE and therefore cannot bypass broker approval/audit.
   No live Gmail request was made.
 
+## SESSION 2026-09-05 — GMAIL GOVERNED MESSAGE SEND
+
+- **IMPLEMENTED_TESTED:** Gmail now supports the canonical
+  `mail.message.send` capability through the shared OAuth adapter. It reuses
+  the bounded MIME builder and posts only to Gmail's fixed
+  `/users/me/messages/send` endpoint; the result is returned only after a
+  successful provider response.
+- Sending remains HIGH_RISK and therefore requires the canonical broker's
+  approval and audit path. The OAuth scope includes Gmail Compose access, and
+  existing connections must authorize again if their grant predates that
+  scope. No live Gmail request was made.
+
 ## SESSION 2026-09-05 — GOOGLE DRIVE GOVERNED FILE CREATION
 
 - **IMPLEMENTED_TESTED:** Google Drive now supports the canonical

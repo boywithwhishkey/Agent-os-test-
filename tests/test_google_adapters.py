@@ -265,6 +265,46 @@ async def test_gmail_draft_create_posts_gmail_mime_payload() -> None:
     assert "Let's meet tomorrow." in seen["mime"]
 
 
+@pytest.mark.anyio
+async def test_gmail_message_send_posts_gmail_mime_payload() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        payload = json.loads(request.content)
+        raw = payload["raw"]
+        seen["mime"] = base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)).decode()
+        return httpx.Response(200, json={"id": "msg_1", "threadId": "thread_1", "labelIds": ["SENT"]})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GMAIL,
+            connection_store=_connected_store(IntegrationProvider.GMAIL),
+            client=client,
+        )
+        result = await adapter.run_capability(
+            "mail.message.send",
+            {
+                "to": "person@example.com",
+                "subject": "Planning",
+                "body": "Let's meet tomorrow.",
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert result == {"id": "msg_1", "threadId": "thread_1", "labelIds": ["SENT"]}
+    assert seen["method"] == "POST"
+    assert seen["path"] == "/gmail/v1/users/me/messages/send"
+    assert seen["auth"] == "Bearer google-access-token"
+    assert "To: person@example.com" in seen["mime"]
+    assert "Subject: Planning" in seen["mime"]
+    assert "Let's meet tomorrow." in seen["mime"]
+
+
 @pytest.mark.parametrize(
     ("arguments", "message"),
     [
