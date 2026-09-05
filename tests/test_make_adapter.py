@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 
@@ -18,6 +20,21 @@ async def test_make_adapter_execute_posts_workflow_label_and_payload():
 
     assert result.success is True
     assert result.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_make_trigger_capability_returns_structured_result():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert json.loads(request.content) == {"_workflow": "notify", "value": 7}
+        return httpx.Response(200, json={"ok": True})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        adapter = MakeWebhookAdapter(webhook_url="https://hook.make.com/abc123", client=client)
+        result = await adapter.run_capability(
+            "automation.workflow.trigger", {"workflow": "notify", "payload": {"value": 7}}
+        )
+
+    assert result == {"provider": "make", "status_code": 200, "data": {"ok": True}}
 
 
 @pytest.mark.asyncio

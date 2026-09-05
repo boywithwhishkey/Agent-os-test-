@@ -88,6 +88,25 @@ async def test_zapier_webhook_preserves_workflow_and_correlation_id() -> None:
 
 
 @pytest.mark.anyio
+async def test_zapier_trigger_capability_uses_fixed_webhook():
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        assert json.loads(request.content) == {"_workflow": "notify", "value": 7}
+        return httpx.Response(200, json={"status": "success"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await ZapierWebhookAdapter(
+            webhook_url="https://hooks.zapier.com/hooks/catch/123/abc", client=client
+        ).run_capability(
+            "automation.workflow.trigger", {"workflow": "notify", "payload": {"value": 7}}
+        )
+    finally:
+        await client.aclose()
+    assert result == {"provider": "zapier", "status_code": 200, "data": {"status": "success"}}
+
+
+@pytest.mark.anyio
 async def test_zapier_connection_probe_does_not_trigger_post() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.method == "GET"

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import json
+import re
 import time
 from urllib.parse import urlsplit
 
 import httpx
 
 from app.core.config import settings
-from app.integrations.base import IntegrationAdapter
+from app.integrations.base import CapabilityNotWired, IntegrationAdapter
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
 
 
@@ -86,6 +88,40 @@ class ZapierWebhookAdapter(IntegrationAdapter):
         finally:
             if own_client:
                 await client.aclose()
+
+    async def run_capability(self, capability_id: str, arguments: dict) -> object:
+        if capability_id != "automation.workflow.trigger":
+            raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
+        result = await self.execute(self._canonical_request(arguments))
+        if not result.success:
+            raise RuntimeError(result.error or "Zapier trigger failed")
+        return {
+            "provider": IntegrationProvider.ZAPIER.value,
+            "status_code": result.status_code,
+            "data": result.data,
+        }
+
+    @staticmethod
+    def _canonical_request(arguments: dict) -> IntegrationRequest:
+        workflow = arguments.get("workflow")
+        if (
+            not isinstance(workflow, str)
+            or not 1 <= len(workflow.strip()) <= 200
+            or not re.fullmatch(r"[A-Za-z0-9._/-]+", workflow.strip())
+        ):
+            raise ValueError("automation.workflow.trigger requires a safe workflow label")
+        payload = arguments.get("payload", {})
+        if not isinstance(payload, dict) or len(payload) > 50:
+            raise ValueError("automation.workflow.trigger payload must be an object with at most 50 fields")
+        try:
+            if len(json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")) > 100_000:
+                raise ValueError("automation.workflow.trigger payload must be 100000 UTF-8 bytes or fewer")
+        except (TypeError, ValueError) as exc:
+            raise ValueError("automation.workflow.trigger payload must be JSON serializable") from exc
+        timeout = arguments.get("timeout_seconds", 30.0)
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not 1 <= timeout <= 120:
+            raise ValueError("timeout_seconds must be between 1 and 120")
+        return IntegrationRequest(workflow=workflow.strip(), payload=payload, timeout_seconds=float(timeout))
 
     async def test_connection(self) -> tuple[bool, float | None, str | None]:
         own_client = self._client is None

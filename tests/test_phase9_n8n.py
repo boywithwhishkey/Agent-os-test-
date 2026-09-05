@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 
@@ -30,6 +32,32 @@ async def test_n8n_webhook_adapter_success():
     assert result.success is True
     assert result.status_code == 200
     assert result.data == {"ok": True}
+
+
+@pytest.mark.asyncio
+async def test_n8n_trigger_capability_routes_through_fixed_webhook():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://n8n.example/webhook/send-email"
+        assert json.loads(request.content) == {"to": "user@example.com"}
+        return httpx.Response(200, json={"execution": "done"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        adapter = N8NWebhookAdapter(base_url="https://n8n.example", client=client)
+        result = await adapter.run_capability(
+            "automation.workflow.trigger",
+            {"workflow": "send-email", "payload": {"to": "user@example.com"}},
+        )
+
+    assert result == {
+        "provider": "n8n",
+        "status_code": 200,
+        "data": {"execution": "done"},
+    }
+
+
+def test_n8n_trigger_capability_rejects_path_traversal():
+    with pytest.raises(ValueError, match="safe workflow"):
+        N8NWebhookAdapter._canonical_request({"workflow": "../admin"})
 
 
 @pytest.mark.asyncio
