@@ -99,9 +99,12 @@ keep the `ambient-*` tokens (decorative) and `--color-accent-red`
   Make webhook adapter exists too.** Earlier versions of this file described
   Slack/Notion as speculative future work; that was stale. They are
   implemented-but-unconfigured (AUTH_REQUIRED / CREDENTIAL_REQUIRED), not
-  missing. Live catalog as of 2026-08-31: 28 entries, 13 implemented, 2
-  LIVE_VALIDATED (postgresql, redis).
-  The remaining OAuth catalog entries (Gmail, Google Calendar, Google Drive,
+  missing. The 2026-08-31 baseline was 28 entries, 13 implemented, 2
+  LIVE_VALIDATED (postgresql, redis); Discord is now implemented and remains
+  credential-gated.
+  Discord now has a tested send-only webhook adapter and is credential-gated
+  by `DISCORD_WEBHOOK_URL`; it has not been live-validated here. The remaining
+  OAuth catalog entries (Gmail, Google Calendar, Google Drive,
   Jira, HubSpot, Salesforce, Dropbox, OneDrive) follow the same pattern —
   **still don't add these speculatively**; do the next one only when there is a
   concrete product need or the operator actually wants that account connected.

@@ -57,6 +57,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Make",
         "requires": ["MAKE_WEBHOOK_URL"],
     },
+    IntegrationProvider.DISCORD: {
+        "name": "Discord",
+        "requires": ["DISCORD_WEBHOOK_URL"],
+    },
 }
 
 
@@ -119,6 +123,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.make import MakeWebhookAdapter
 
         return MakeWebhookAdapter()
+    if normalized == "discord":
+        from app.integrations.discord import DiscordWebhookAdapter
+
+        return DiscordWebhookAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -162,4 +170,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.gitlab_oauth_client_id) and bool(settings.gitlab_oauth_client_secret)
     if provider == IntegrationProvider.MAKE:
         return bool(settings.make_webhook_url)
+    if provider == IntegrationProvider.DISCORD:
+        return bool(settings.discord_webhook_url)
     return False

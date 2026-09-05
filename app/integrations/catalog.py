@@ -39,9 +39,9 @@ class CatalogSpec:
     kind: ConnectorKind = ConnectorKind.USER_CONNECTOR
 
 
-# Only n8n has a real adapter behind it (app/integrations/n8n.py). Every other
-# entry here is catalog metadata only — `implemented=False` — and must never
-# be presented as connected/configured. See ConnectorEntry's docstring.
+# Entries marked `implemented=True` have a real adapter and focused tests.
+# Credentials and an explicit connection test are still required before a
+# connector is shown as live; catalog metadata alone never implies that.
 CATALOG: list[CatalogSpec] = [
     # --- Automation ---
     CatalogSpec(
@@ -274,6 +274,8 @@ CATALOG: list[CatalogSpec] = [
             "chat.message.send",
         ],
         documentation_url="https://discord.com",
+        implemented=True,
+        requires=["DISCORD_WEBHOOK_URL"],
     ),
     CatalogSpec(
         id="notion",

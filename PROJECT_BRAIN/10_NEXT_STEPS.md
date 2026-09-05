@@ -85,8 +85,9 @@ The capability layer, risk classification and SSRF guard are in
    operations. Today each adapter only verifies identity; `repo.issue.create`
    and `chat.message.send` are declared but not wired.
 5. **Then** expand to new providers, highest-value first (Gmail, Google
-   Calendar, Google Drive, Telegram, Discord, Stripe). Each needs the full
-   loop, not a card: transport, capability mapping, credential, risk, approval,
+   Calendar, Google Drive, Telegram, Stripe). Discord now has a tested
+   send-only adapter but still needs a real webhook URL for live validation.
+   Each new provider needs the full loop, not a card: transport, capability mapping, credential, risk, approval,
    audit, test, real call. One finished connector beats ten declared ones.
 
 Do **not** add catalog entries for providers without adapters. Fifteen already

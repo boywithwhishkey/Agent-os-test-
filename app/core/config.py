@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     make_webhook_auth_value: str | None = Field(
         default=None, validation_alias="MAKE_WEBHOOK_AUTH_VALUE"
     )
+    discord_webhook_url: str | None = Field(default=None, validation_alias="DISCORD_WEBHOOK_URL")
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

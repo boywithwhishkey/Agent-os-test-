@@ -155,6 +155,11 @@ def _make_live_status() -> dict:
     return _status_store_backed_status("make", configured=is_provider_configured(provider))
 
 
+def _discord_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "discord")
+    return _status_store_backed_status("discord", configured=is_provider_configured(provider))
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -197,6 +202,7 @@ _LIVE_STATUS_RESOLVERS = {
     "notion": _notion_live_status,
     "gitlab": _gitlab_live_status,
     "make": _make_live_status,
+    "discord": _discord_live_status,
 }
 
 

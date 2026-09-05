@@ -5,6 +5,17 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at
+  `app/integrations/discord.py`, registered in the factory, catalog, and live
+  status resolver.
+- It implements only governed `chat.message.send`, validates message content,
+  refuses arbitrary endpoints and unsupported operations, and keeps the webhook
+  URL and response bodies out of errors.
+- It remains **CREDENTIAL_REQUIRED** until `DISCORD_WEBHOOK_URL` is supplied
+  and a real connection test succeeds; this pass made no live Discord call.
+
 ## SESSION 2026-09-05 — WORKFLOW RUNS CARRY THE AUDIT CORRELATION ID; PROPAGATION NOW COMPLETE
 
 Natural follow-on to the 2026-08-31 audit correlation-id work, which only
@@ -157,8 +168,9 @@ plus two scripts, so future sessions no longer need a giant pasted prompt.
 - **Slack, Notion, GitLab and Make already exist in code** (adapters, OAuth
   config entries, Settings fields and tests) while `07_DEFERRED_GOALS.md` still
   described Slack/Notion as speculative. Corrected there.
-- Live catalog truth: **28 catalog entries, 13 `implemented`, 2 LIVE_VALIDATED**
-  (postgresql, redis). The other 11 implemented connectors are
+- Live catalog truth before this pass was **28 catalog entries, 13 `implemented`, 2 LIVE_VALIDATED**
+  (postgresql, redis). Discord is now the fourteenth implemented connector;
+  the other 12 remain
   CREDENTIAL_REQUIRED or AUTH_REQUIRED, none faked.
 - The uploaded Master Guide describes GitHub MCP as `MCP_LIVE_VALIDATED`,
   plus browser/filesystem MCP validation, OIDC sign-in and tenant isolation.

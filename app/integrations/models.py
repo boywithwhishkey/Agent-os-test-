@@ -20,6 +20,7 @@ class IntegrationProvider(StrEnum):
     NOTION = "notion"
     GITLAB = "gitlab"
     MAKE = "make"
+    DISCORD = "discord"
 
 
 class IntegrationRequest(BaseModel):
