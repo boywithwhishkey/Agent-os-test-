@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import time
 from typing import Any
@@ -15,7 +16,7 @@ _TABLE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,62}$")
 
 
 class SupabaseAdapter(IntegrationAdapter):
-    """Read-only Supabase REST access to one server-configured table."""
+    """Governed Supabase REST access to one server-configured table."""
 
     def __init__(
         self,
@@ -48,16 +49,36 @@ class SupabaseAdapter(IntegrationAdapter):
         return unsupported_execute_result(
             IntegrationProvider.SUPABASE,
             request,
-            reason="Supabase writes/auth/storage mutations are not enabled; use governed read capabilities.",
+            reason="Supabase actions must use governed canonical capabilities.",
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
-        if capability_id != "data.record.read":
-            raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
-        value = arguments.get("limit", 100)
-        if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 1000:
-            raise ValueError("limit must be an integer between 1 and 1000")
-        return await self._get({"select": "*", "limit": str(value)})
+        if capability_id == "data.record.read":
+            value = arguments.get("limit", 100)
+            if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 1000:
+                raise ValueError("limit must be an integer between 1 and 1000")
+            return await self._get({"select": "*", "limit": str(value)})
+        if capability_id == "data.record.write":
+            return await self._insert(self._record(arguments))
+        raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
+
+    @staticmethod
+    def _record(arguments: dict[str, Any]) -> dict[str, Any]:
+        value = arguments.get("record")
+        if not isinstance(value, dict) or not 1 <= len(value) <= 50:
+            raise ValueError("data.record.write requires an object with 1-50 fields")
+        if any(
+            not isinstance(key, str) or not _TABLE_RE.fullmatch(key)
+            for key in value
+        ):
+            raise ValueError("data.record.write field names must be simple identifiers")
+        try:
+            encoded = json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("data.record.write record must contain JSON values") from exc
+        if len(encoded.encode("utf-8")) > 100_000:
+            raise ValueError("data.record.write record must be 100000 bytes or fewer")
+        return value
 
     async def _get(self, params: dict[str, str]) -> list[dict[str, Any]]:
         own_client = self._client is None
@@ -77,6 +98,40 @@ class SupabaseAdapter(IntegrationAdapter):
                 raise RuntimeError("Supabase returned a non-JSON response") from exc
             if not isinstance(body, list):
                 raise TypeError("Supabase returned an invalid table response")
+            return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("Supabase request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"Supabase request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _insert(self, record: dict[str, Any]) -> object:
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await client.post(
+                f"{self.url}/rest/v1/{self.read_table}",
+                json=record,
+                headers={
+                    "apikey": self.anon_key,
+                    "Authorization": f"Bearer {self.anon_key}",
+                    "Prefer": "return=representation",
+                    "Content-Type": "application/json",
+                },
+                timeout=10.0,
+            )
+            if response.status_code >= 400:
+                raise RuntimeError(f"Supabase returned HTTP {response.status_code}")
+            if not response.content:
+                return {"inserted": True}
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise RuntimeError("Supabase returned a non-JSON insert response") from exc
+            if not isinstance(body, (list, dict)):
+                raise TypeError("Supabase returned an invalid insert response")
             return body
         except httpx.TimeoutException as exc:
             raise RuntimeError("Supabase request timed out") from exc

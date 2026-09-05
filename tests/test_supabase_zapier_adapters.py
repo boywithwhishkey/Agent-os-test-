@@ -32,6 +32,39 @@ async def test_supabase_reads_only_configured_table() -> None:
 
 
 @pytest.mark.anyio
+async def test_supabase_record_write_uses_configured_table_and_return_representation() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        assert request.url == "https://demo.supabase.co/rest/v1/events"
+        assert request.headers["prefer"] == "return=representation"
+        assert json.loads(request.content) == {"name": "launch", "count": 1}
+        return httpx.Response(201, json=[{"id": 7, "name": "launch", "count": 1}])
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await SupabaseAdapter(
+            url="https://demo.supabase.co",
+            anon_key="anon-key",
+            read_table="events",
+            client=client,
+        ).run_capability(
+            "data.record.write", {"record": {"name": "launch", "count": 1}}
+        )
+    finally:
+        await client.aclose()
+    assert result == [{"id": 7, "name": "launch", "count": 1}]
+
+
+def test_supabase_record_write_is_bounded_and_json_only() -> None:
+    with pytest.raises(ValueError, match="1-50 fields"):
+        SupabaseAdapter._record({"record": {}})
+    with pytest.raises(ValueError, match="simple identifiers"):
+        SupabaseAdapter._record({"record": {"bad.field": 1}})
+    with pytest.raises(ValueError, match="JSON values"):
+        SupabaseAdapter._record({"record": {"value": object()}})
+
+
+@pytest.mark.anyio
 async def test_zapier_webhook_preserves_workflow_and_correlation_id() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.url == "https://hooks.zapier.com/hooks/catch/123/abc"
