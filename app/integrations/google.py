@@ -151,6 +151,13 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 },
             )
 
+        if self.provider is IntegrationProvider.GOOGLE_DRIVE and capability_id == "files.file.delete":
+            file_id = self._file_identifier(arguments)
+            await self._delete(
+                f"https://www.googleapis.com/drive/v3/files/{quote(file_id, safe='')}"
+            )
+            return {"provider": self.provider.value, "file_id": file_id, "deleted": True}
+
         if self.provider is IntegrationProvider.GOOGLE_DRIVE and capability_id == "files.file.write":
             metadata, content, mime_type = self._file_payload(arguments)
             return await self._post_multipart(
@@ -188,6 +195,19 @@ class GoogleOAuthAdapter(IntegrationAdapter):
         ):
             raise ValueError("mail.message.read requires a valid message_id")
         return message_id.strip()
+
+    @staticmethod
+    def _file_identifier(arguments: dict[str, Any]) -> str:
+        file_id = arguments.get("file_id")
+        if (
+            not isinstance(file_id, str)
+            or not 1 <= len(file_id.strip()) <= 255
+            or "/" in file_id
+            or "\\" in file_id
+            or any(ord(char) < 0x20 for char in file_id)
+        ):
+            raise ValueError("files.file.delete requires a valid file_id")
+        return file_id.strip()
 
     @staticmethod
     def _draft_raw(arguments: dict[str, Any], *, operation: str = "mail.draft.create") -> str:

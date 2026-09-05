@@ -460,6 +460,16 @@ contradicting note elsewhere.
   run. The capability remains WRITE and requires broker approval/audit. No
   live Drive request was made.
 
+## SESSION 2026-09-05 — GOOGLE DRIVE GOVERNED FILE DELETE
+
+- **IMPLEMENTED_TESTED:** Google Drive now supports canonical
+  `files.file.delete` through the fixed `files/{fileId}` delete endpoint. The
+  adapter validates one safe file identifier and returns a normalized result
+  only after the provider confirms deletion.
+- This is HIGH_RISK and therefore remains behind broker approval and audit.
+  The existing `drive.file` grant limits the operation to files the app is
+  allowed to manage. No live Google Drive request was made.
+
 ## SESSION 2026-09-05 — SHOPIFY GOVERNED PRODUCT CREATION
 
 - **IMPLEMENTED_TESTED:** Shopify now supports the canonical

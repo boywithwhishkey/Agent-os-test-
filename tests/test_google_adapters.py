@@ -254,6 +254,41 @@ async def test_google_calendar_event_update_and_delete_use_fixed_endpoints() -> 
     assert seen[1][0:2] == ("DELETE", "/calendar/v3/calendars/primary/events/event_1")
 
 
+@pytest.mark.anyio
+async def test_google_drive_file_delete_uses_fixed_endpoint() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        return httpx.Response(204)
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GOOGLE_DRIVE,
+            connection_store=_connected_store(IntegrationProvider.GOOGLE_DRIVE),
+            client=client,
+        )
+        result = await adapter.run_capability("files.file.delete", {"file_id": "file_1"})
+    finally:
+        await client.aclose()
+
+    assert result == {"provider": "google_drive", "file_id": "file_1", "deleted": True}
+    assert seen == {
+        "method": "DELETE",
+        "path": "/drive/v3/files/file_1",
+        "auth": "Bearer google-access-token",
+    }
+
+
+@pytest.mark.parametrize("file_id", ["", "bad/id", "bad\\id", "bad\nheader"])
+def test_google_drive_file_identifier_is_validated(file_id: str) -> None:
+    with pytest.raises(ValueError, match="file_id"):
+        GoogleOAuthAdapter._file_identifier({"file_id": file_id})
+
+
 def test_google_calendar_event_identifier_is_validated() -> None:
     with pytest.raises(ValueError, match="event_id"):
         GoogleOAuthAdapter._event_identifier({"event_id": "bad/id"})
