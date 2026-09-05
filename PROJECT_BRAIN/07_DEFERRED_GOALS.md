@@ -108,8 +108,10 @@ keep the `ambient-*` tokens (decorative) and `--color-accent-red`
   tested read-only identity/list adapters. Jira now has the same OAuth read-only
   identity/search foundation with a server-configured cloud id. Dropbox and
   OneDrive now have scoped OAuth identity/file-list foundations. The remaining
-  catalog-only entries (Supabase and Zapier) should
-  be implemented only with the same adapter/capability/test contract.
+  Supabase now has a server-configured table-read foundation and Zapier has a
+  fixed HTTPS webhook trigger. There are no catalog-only entries left; future
+  work should deepen capabilities only through the same adapter/capability/
+  approval/test contract.
 - `execute()` is intentionally "not supported" on every non-webhook
   adapter added this session (OpenAI, Anthropic, Cloudflare, Render,
   GitHub, Gemini, Postgres, Redis) — they only verify identity/

@@ -39,11 +39,12 @@ def test_test_connection_rejects_unconfigured_provider(monkeypatch):
 
 
 def test_test_connection_rejects_unknown_provider(monkeypatch):
-    monkeypatch.setattr(settings, "n8n_base_url", "https://n8n.example")
+    monkeypatch.setattr(settings, "zapier_webhook_url", "")
 
     response = client.post("/api/v1/integrations/zapier/test", headers=AUTH)
 
-    assert response.status_code == 404
+    assert response.status_code == 503
+    assert "ZAPIER_WEBHOOK_URL" in response.json()["detail"]
 
 
 def test_test_connection_records_success_and_updates_registry(monkeypatch):

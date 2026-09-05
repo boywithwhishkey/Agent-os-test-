@@ -86,6 +86,23 @@ contradicting note elsewhere.
   catalog-only**. PostgreSQL and Redis remain the only live-validated
   providers in the local development environment.
 
+## SESSION 2026-09-05 — SUPABASE READ AND ZAPIER WEBHOOK CONNECTORS
+
+- **IMPLEMENTED_TESTED:** Supabase now reads rows from one server-configured,
+  identifier-validated table using the REST API and anon key. Zapier now
+  triggers one fixed HTTPS webhook with workflow/correlation metadata; its
+  connection probe uses GET and never fires the Zap.
+- Both adapters reject arbitrary endpoints and keep credentials out of errors.
+  Supabase writes/auth/storage mutations and Zapier trigger execution beyond
+  the configured webhook remain governed by the existing broker/approval path.
+- **CREDENTIAL_REQUIRED:** no Supabase project key/table or Zapier hook was
+  available here, so no live request was made. Focused tests cover fixed
+  routing, bounded reads, HTTPS/table validation, webhook payloads, and safe
+  connection probes.
+- Catalog truth after this session: **35 entries, 35 implemented/tested, 0
+  catalog-only**. PostgreSQL and Redis remain the only live-validated
+  providers in the local development environment.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

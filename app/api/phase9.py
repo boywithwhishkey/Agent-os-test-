@@ -247,6 +247,16 @@ def _salesforce_live_status() -> dict:
     return _oauth_live_status("salesforce")
 
 
+def _zapier_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "zapier")
+    return _status_store_backed_status("zapier", configured=is_provider_configured(provider))
+
+
+def _supabase_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "supabase")
+    return _status_store_backed_status("supabase", configured=is_provider_configured(provider))
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -309,6 +319,8 @@ _LIVE_STATUS_RESOLVERS = {
     "onedrive": _onedrive_live_status,
     "hubspot": _hubspot_live_status,
     "salesforce": _salesforce_live_status,
+    "zapier": _zapier_live_status,
+    "supabase": _supabase_live_status,
 }
 
 

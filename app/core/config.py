@@ -141,6 +141,18 @@ class Settings(BaseSettings):
         default=None, validation_alias="SALESFORCE_INSTANCE_URL"
     )
     salesforce_api_version: str = Field(default="v61.0", validation_alias="SALESFORCE_API_VERSION")
+    zapier_webhook_url: str | None = Field(default=None, validation_alias="ZAPIER_WEBHOOK_URL")
+    zapier_webhook_auth_header: str | None = Field(
+        default=None, validation_alias="ZAPIER_WEBHOOK_AUTH_HEADER"
+    )
+    zapier_webhook_auth_value: str | None = Field(
+        default=None, validation_alias="ZAPIER_WEBHOOK_AUTH_VALUE"
+    )
+    supabase_url: str | None = Field(default=None, validation_alias="SUPABASE_URL")
+    supabase_anon_key: str | None = Field(default=None, validation_alias="SUPABASE_ANON_KEY")
+    supabase_read_table: str | None = Field(
+        default=None, validation_alias="SUPABASE_READ_TABLE"
+    )
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

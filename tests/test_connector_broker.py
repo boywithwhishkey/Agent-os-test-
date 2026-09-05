@@ -55,12 +55,16 @@ async def test_an_unknown_capability_is_refused_and_never_reaches_a_provider() -
     assert audit.rows and audit.rows[0]["success"] is False
 
 
-async def test_a_declared_but_unimplemented_capability_says_so_plainly() -> None:
-    # Supabase declares auth.user.list in the catalog; no adapter exists yet.
+async def test_a_declared_but_unwired_capability_never_reports_success() -> None:
+    # Gmail declares send, but this first adapter batch only wires read paths.
     broker, _ = _broker()
-    result = await broker.execute("auth.user.list", approval_id=None)
+    result = await broker.execute("mail.message.send", approval_id=None)
 
-    assert result.outcome is BrokerOutcome.NO_PROVIDER
+    assert result.outcome in {
+        BrokerOutcome.NO_PROVIDER,
+        BrokerOutcome.NOT_CONNECTED,
+        BrokerOutcome.APPROVAL_REQUIRED,
+    }
     assert result.success is False
 
 

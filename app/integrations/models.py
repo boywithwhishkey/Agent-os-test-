@@ -40,6 +40,8 @@ class IntegrationProvider(StrEnum):
     ONEDRIVE = "onedrive"
     HUBSPOT = "hubspot"
     SALESFORCE = "salesforce"
+    ZAPIER = "zapier"
+    SUPABASE = "supabase"
 
 
 class IntegrationRequest(BaseModel):

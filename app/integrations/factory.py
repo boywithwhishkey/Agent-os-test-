@@ -155,6 +155,14 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
             "SALESFORCE_INSTANCE_URL",
         ],
     },
+    IntegrationProvider.ZAPIER: {
+        "name": "Zapier",
+        "requires": ["ZAPIER_WEBHOOK_URL"],
+    },
+    IntegrationProvider.SUPABASE: {
+        "name": "Supabase",
+        "requires": ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_READ_TABLE"],
+    },
 }
 
 
@@ -297,6 +305,14 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.salesforce import SalesforceOAuthAdapter
 
         return SalesforceOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "zapier":
+        from app.integrations.zapier import ZapierWebhookAdapter
+
+        return ZapierWebhookAdapter()
+    if normalized == "supabase":
+        from app.integrations.supabase import SupabaseAdapter
+
+        return SupabaseAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -398,4 +414,8 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
             and settings.salesforce_oauth_client_secret
             and settings.salesforce_instance_url
         )
+    if provider == IntegrationProvider.ZAPIER:
+        return bool(settings.zapier_webhook_url)
+    if provider == IntegrationProvider.SUPABASE:
+        return bool(settings.supabase_url and settings.supabase_anon_key and settings.supabase_read_table)
     return False

@@ -65,7 +65,7 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="zapier",
         name="Zapier",
-        description="Trigger Zaps from THYNACT workflows and tasks.",
+        description="Trigger one configured Zapier webhook from a governed workflow.",
         category=ConnectorCategory.AUTOMATION,
         connector_type=ConnectorType.WEBHOOK,
         icon="Workflow",
@@ -75,6 +75,8 @@ CATALOG: list[CatalogSpec] = [
             "automation.workflow.trigger",
         ],
         documentation_url="https://zapier.com",
+        implemented=True,
+        requires=["ZAPIER_WEBHOOK_URL"],
     ),
     CatalogSpec(
         id="make",
@@ -505,7 +507,7 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="supabase",
         name="Supabase",
-        description="Use Supabase Postgres/Auth/Storage from THYNACT workflows.",
+        description="Read records from one configured Supabase table.",
         category=ConnectorCategory.DATA,
         connector_type=ConnectorType.API,
         icon="Flame",
@@ -519,6 +521,8 @@ CATALOG: list[CatalogSpec] = [
             "files.file.write",
         ],
         documentation_url="https://supabase.com",
+        implemented=True,
+        requires=["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_READ_TABLE"],
     ),
     # --- Other useful ---
     CatalogSpec(

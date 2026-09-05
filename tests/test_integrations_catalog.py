@@ -20,15 +20,16 @@ def test_catalog_is_public_no_api_key_required(monkeypatch):
     assert "postgresql" in ids
 
 
-def test_catalog_only_entries_are_always_available_and_unimplemented():
+def test_new_webhook_connector_reports_neutral_setup_state():
     response = client.get("/api/v1/integrations")
 
     body = response.json()
     zapier = next(item for item in body if item["id"] == "zapier")
-    assert zapier["implemented"] is False
-    assert zapier["status"] == "available"
+    assert zapier["implemented"] is True
+    assert zapier["status"] == "needs_setup"
     assert zapier["configured"] is False
     assert zapier["connected"] is None
+    assert zapier["requires"] == ["ZAPIER_WEBHOOK_URL"]
 
 
 def test_n8n_reflects_real_configuration_state(monkeypatch):

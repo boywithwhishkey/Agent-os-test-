@@ -87,18 +87,17 @@ async def test_requires_approval_matches_what_the_policy_actually_enforces() -> 
         assert decision.approval_required == requires_approval(capability), capability.id
 
 
-def test_declared_capabilities_are_not_a_claim_of_implementation() -> None:
-    """A catalog-only connector still declares what connecting would authorise.
+def test_every_catalog_capability_is_backed_by_an_adapter_foundation() -> None:
+    """The connector catalog has no metadata-only entries at this checkpoint.
 
-    That is deliberate — it is what tells someone what they would be handing
-    over — but it must never be readable as "this works". `implemented` stays
-    the only source of truth, and there are entries on both sides of it that
-    declare capabilities.
+    Implemented means a real adapter foundation and focused tests exist; it
+    does not mean every declared mutation is enabled or live-credentialed.
     """
     catalog = list_catalog()
     declared_and_built = [s for s in catalog if s.canonical_capabilities and s.implemented]
     declared_not_built = [s for s in catalog if s.canonical_capabilities and not s.implemented]
-    assert declared_and_built and declared_not_built
+    assert declared_and_built
+    assert declared_not_built == []
 
 
 def test_thynacts_own_infrastructure_is_not_presented_as_a_user_connector() -> None:
