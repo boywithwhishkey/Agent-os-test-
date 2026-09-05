@@ -151,6 +151,13 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 },
             )
 
+        if self.provider is IntegrationProvider.GOOGLE_DRIVE and capability_id == "files.file.read":
+            file_id = self._file_identifier(arguments, operation="files.file.read")
+            return await self._get_content(
+                f"https://www.googleapis.com/drive/v3/files/{quote(file_id, safe='')}?alt=media",
+                file_id=file_id,
+            )
+
         if self.provider is IntegrationProvider.GOOGLE_DRIVE and capability_id == "files.file.delete":
             file_id = self._file_identifier(arguments)
             await self._delete(
@@ -197,7 +204,9 @@ class GoogleOAuthAdapter(IntegrationAdapter):
         return message_id.strip()
 
     @staticmethod
-    def _file_identifier(arguments: dict[str, Any]) -> str:
+    def _file_identifier(
+        arguments: dict[str, Any], *, operation: str = "files.file.delete"
+    ) -> str:
         file_id = arguments.get("file_id")
         if (
             not isinstance(file_id, str)
@@ -206,7 +215,7 @@ class GoogleOAuthAdapter(IntegrationAdapter):
             or "\\" in file_id
             or any(ord(char) < 0x20 for char in file_id)
         ):
-            raise ValueError("files.file.delete requires a valid file_id")
+            raise ValueError(f"{operation} requires a valid file_id")
         return file_id.strip()
 
     @staticmethod
@@ -396,6 +405,53 @@ class GoogleOAuthAdapter(IntegrationAdapter):
             if not isinstance(body, dict):
                 raise TypeError(f"{self.provider_name} returned an invalid response")
             return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(f"{self.provider_name} request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"{self.provider_name} request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _get_content(self, url: str, *, file_id: str) -> dict[str, Any]:
+        record = self._connection_store.get(self.provider.value)
+        if not record.access_token:
+            raise RuntimeError(
+                f"Not authorized yet — use Authorize to connect a {self.provider_name} account."
+            )
+
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS[self.provider.value],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.get(
+                    url,
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=30.0,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError(
+                        f"{self.provider_name} rejected the stored token (HTTP 401) — authorize again"
+                    )
+                raise RuntimeError(f"{self.provider_name} returned HTTP {response.status_code}")
+            content_length = response.headers.get("content-length")
+            if content_length and content_length.isdigit() and int(content_length) > 5_000_000:
+                raise RuntimeError(f"{self.provider_name} file exceeds the 5000000 byte read limit")
+            content = response.content
+            if len(content) > 5_000_000:
+                raise RuntimeError(f"{self.provider_name} file exceeds the 5000000 byte read limit")
+            return {
+                "provider": self.provider.value,
+                "file_id": file_id,
+                "content_base64": base64.b64encode(content).decode("ascii"),
+                "content_type": response.headers.get("content-type"),
+                "size": len(content),
+            }
         except httpx.TimeoutException as exc:
             raise RuntimeError(f"{self.provider_name} request timed out") from exc
         except httpx.HTTPError as exc:

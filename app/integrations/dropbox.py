@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import time
 from typing import Any
@@ -43,6 +44,9 @@ class DropboxOAuthAdapter(IntegrationAdapter):
                 "https://api.dropboxapi.com/2/files/list_folder",
                 {"path": "", "recursive": False, "include_deleted": False, "limit": value},
             )
+        if capability_id == "files.file.read":
+            path = self._path_argument(arguments, operation="files.file.read")
+            return await self._download(path)
         if capability_id == "files.file.delete":
             path = self._path_argument(arguments, operation="files.file.delete")
             body = await self._post(
@@ -157,6 +161,62 @@ class DropboxOAuthAdapter(IntegrationAdapter):
             if not isinstance(body, dict):
                 raise TypeError("Dropbox returned an invalid response")
             return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("Dropbox request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"Dropbox request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _download(self, path: str) -> dict[str, Any]:
+        record = self._connection_store.get("dropbox")
+        if not record.access_token:
+            raise RuntimeError("Not authorized yet — use Authorize to connect a Dropbox account.")
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["dropbox"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.post(
+                    "https://content.dropboxapi.com/2/files/download",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Dropbox-API-Arg": json.dumps({"path": path}, separators=(",", ":")),
+                        "Content-Type": "application/octet-stream",
+                    },
+                    timeout=30.0,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError("Dropbox rejected the stored token (HTTP 401) — authorize again")
+                raise RuntimeError(f"Dropbox returned HTTP {response.status_code}")
+            content_length = response.headers.get("content-length")
+            if content_length and content_length.isdigit() and int(content_length) > 5_000_000:
+                raise RuntimeError("Dropbox file exceeds the 5000000 byte read limit")
+            content = response.content
+            if len(content) > 5_000_000:
+                raise RuntimeError("Dropbox file exceeds the 5000000 byte read limit")
+            metadata: dict[str, Any] | None = None
+            raw_metadata = response.headers.get("dropbox-api-result")
+            if raw_metadata:
+                try:
+                    parsed = json.loads(raw_metadata)
+                    if isinstance(parsed, dict):
+                        metadata = parsed
+                except ValueError:
+                    metadata = None
+            return {
+                "provider": IntegrationProvider.DROPBOX.value,
+                "path": path,
+                "content_base64": base64.b64encode(content).decode("ascii"),
+                "content_type": response.headers.get("content-type"),
+                "size": len(content),
+                "metadata": metadata,
+            }
         except httpx.TimeoutException as exc:
             raise RuntimeError("Dropbox request timed out") from exc
         except httpx.HTTPError as exc:

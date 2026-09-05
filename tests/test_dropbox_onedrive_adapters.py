@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 
 import httpx
@@ -103,6 +104,40 @@ async def test_dropbox_file_write_uses_content_upload_endpoint() -> None:
 
 
 @pytest.mark.anyio
+async def test_dropbox_file_read_uses_download_endpoint_and_bounded_content() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        seen["arg"] = json.loads(request.headers["dropbox-api-arg"])
+        return httpx.Response(
+            200,
+            headers={
+                "content-type": "text/plain",
+                "dropbox-api-result": json.dumps({"name": "notes.txt"}),
+            },
+            content=b"hello dropbox",
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await DropboxOAuthAdapter(
+            connection_store=_store("dropbox"), client=client
+        ).run_capability("files.file.read", {"path": "/notes.txt"})
+    finally:
+        await client.aclose()
+
+    assert result["content_base64"] == base64.b64encode(b"hello dropbox").decode("ascii")
+    assert result["metadata"] == {"name": "notes.txt"}
+    assert seen == {
+        "path": "/2/files/download",
+        "auth": "Bearer dropbox-access-token",
+        "arg": {"path": "/notes.txt"},
+    }
+
+
+@pytest.mark.anyio
 async def test_dropbox_file_delete_uses_governed_rpc_endpoint() -> None:
     seen: dict[str, object] = {}
 
@@ -182,6 +217,33 @@ async def test_onedrive_file_write_uses_graph_content_endpoint() -> None:
         "auth": "Bearer onedrive-access-token",
         "content_type": "text/plain",
         "body": b"hello onedrive",
+    }
+
+
+@pytest.mark.anyio
+async def test_onedrive_file_read_uses_graph_content_endpoint() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["auth"] = request.headers["authorization"]
+        return httpx.Response(200, headers={"content-type": "text/plain"}, content=b"hello onedrive")
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await OneDriveOAuthAdapter(
+            connection_store=_store("onedrive"), client=client
+        ).run_capability("files.file.read", {"path": "/Documents/notes.txt"})
+    finally:
+        await client.aclose()
+
+    assert result["content_base64"] == base64.b64encode(b"hello onedrive").decode("ascii")
+    assert result["size"] == 14
+    assert seen == {
+        "method": "GET",
+        "path": "/v1.0/me/drive/root:/Documents/notes.txt:/content",
+        "auth": "Bearer onedrive-access-token",
     }
 
 

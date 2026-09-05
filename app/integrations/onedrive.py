@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import re
 import time
 from typing import Any
@@ -46,6 +47,9 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
                 "/me/drive/root/children",
                 params={"$top": str(value), "$select": "id,name,size,file,folder,lastModifiedDateTime"},
             )
+        if capability_id == "files.file.read":
+            path = self._path_argument(arguments, operation="files.file.read")
+            return await self._get_content(path)
         if capability_id == "files.file.delete":
             path = self._path_argument(arguments, operation="files.file.delete")
             await self._delete_content(path)
@@ -149,6 +153,50 @@ class OneDriveOAuthAdapter(IntegrationAdapter):
             if not isinstance(body, dict):
                 raise TypeError("OneDrive returned an invalid response")
             return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("OneDrive request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"OneDrive request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _get_content(self, path: str) -> dict[str, Any]:
+        record = self._connection_store.get("onedrive")
+        if not record.access_token:
+            raise RuntimeError("Not authorized yet — use Authorize to connect a OneDrive account.")
+        encoded_path = quote(path, safe="/-_.~")
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["onedrive"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.get(
+                    f"{self._BASE_URL}/me/drive/root:{encoded_path}:/content",
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=30.0,
+                    follow_redirects=True,
+                ),
+            )
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    raise RuntimeError("OneDrive rejected the stored token (HTTP 401) — authorize again")
+                raise RuntimeError(f"OneDrive returned HTTP {response.status_code}")
+            content_length = response.headers.get("content-length")
+            if content_length and content_length.isdigit() and int(content_length) > 5_000_000:
+                raise RuntimeError("OneDrive file exceeds the 5000000 byte read limit")
+            content = response.content
+            if len(content) > 5_000_000:
+                raise RuntimeError("OneDrive file exceeds the 5000000 byte read limit")
+            return {
+                "provider": IntegrationProvider.ONEDRIVE.value,
+                "path": path,
+                "content_base64": base64.b64encode(content).decode("ascii"),
+                "content_type": response.headers.get("content-type"),
+                "size": len(content),
+            }
         except httpx.TimeoutException as exc:
             raise RuntimeError("OneDrive request timed out") from exc
         except httpx.HTTPError as exc:

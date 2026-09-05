@@ -283,6 +283,38 @@ async def test_google_drive_file_delete_uses_fixed_endpoint() -> None:
     }
 
 
+@pytest.mark.anyio
+async def test_google_drive_file_read_returns_bounded_base64_content() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        seen["query"] = request.url.query.decode()
+        seen["auth"] = request.headers["authorization"]
+        return httpx.Response(200, headers={"content-type": "text/plain"}, content=b"hello drive")
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GOOGLE_DRIVE,
+            connection_store=_connected_store(IntegrationProvider.GOOGLE_DRIVE),
+            client=client,
+        )
+        result = await adapter.run_capability("files.file.read", {"file_id": "file_1"})
+    finally:
+        await client.aclose()
+
+    assert result["content_base64"] == base64.b64encode(b"hello drive").decode("ascii")
+    assert result["size"] == 11
+    assert seen == {
+        "method": "GET",
+        "path": "/drive/v3/files/file_1",
+        "query": "alt=media",
+        "auth": "Bearer google-access-token",
+    }
+
+
 @pytest.mark.parametrize("file_id", ["", "bad/id", "bad\\id", "bad\nheader"])
 def test_google_drive_file_identifier_is_validated(file_id: str) -> None:
     with pytest.raises(ValueError, match="file_id"):
