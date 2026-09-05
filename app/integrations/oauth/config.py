@@ -107,6 +107,15 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="MICROSOFT_OAUTH_CLIENT_ID",
         client_secret_env="MICROSOFT_OAUTH_CLIENT_SECRET",
     ),
+    "hubspot": OAuthProviderConfig(
+        id="hubspot",
+        name="HubSpot",
+        authorize_url="https://app.hubspot.com/oauth/authorize",
+        token_url="https://api.hubapi.com/oauth/v3/token",
+        scope="oauth account-info.basic.read crm.objects.contacts.read",
+        client_id_env="HUBSPOT_OAUTH_CLIENT_ID",
+        client_secret_env="HUBSPOT_OAUTH_CLIENT_SECRET",
+    ),
 }
 
 

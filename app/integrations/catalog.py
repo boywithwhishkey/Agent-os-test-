@@ -562,7 +562,7 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="hubspot",
         name="HubSpot",
-        description="Read and update CRM contacts, deals, and tickets.",
+        description="Read HubSpot account details and list CRM contacts.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="Magnet",
@@ -575,6 +575,8 @@ CATALOG: list[CatalogSpec] = [
             "crm.ticket.list",
         ],
         documentation_url="https://www.hubspot.com",
+        implemented=True,
+        requires=["HUBSPOT_OAUTH_CLIENT_ID", "HUBSPOT_OAUTH_CLIENT_SECRET"],
     ),
     CatalogSpec(
         id="salesforce",

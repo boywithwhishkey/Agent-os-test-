@@ -87,16 +87,18 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 35 catalog entries. Thirty-one have adapters and tests; PostgreSQL
+THYNACT now has 35 catalog entries. Thirty-two have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
-providers are credential/auth gated. Four catalog entries still need real
-adapters: Zapier, Supabase, HubSpot, and Salesforce.
+providers are credential/auth gated. Three catalog entries still need real
+adapters: Zapier, Supabase, and Salesforce.
 Google Gmail/Calendar/Drive now share one OAuth client configuration and have
 read-only identity/list adapters; write capabilities remain separately gated.
 Jira now has the same read-only OAuth foundation with a server-configured cloud
 id; issue mutations remain a separate approval-gated capability.
 Dropbox and OneDrive now have scoped OAuth identity/file-list foundations;
 file mutations remain separately gated.
+HubSpot now has an OAuth identity/contact-list foundation; CRM mutations remain
+separately gated.
 
 ## Operator prerequisites
 

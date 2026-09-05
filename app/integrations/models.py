@@ -38,6 +38,7 @@ class IntegrationProvider(StrEnum):
     JIRA = "jira"
     DROPBOX = "dropbox"
     ONEDRIVE = "onedrive"
+    HUBSPOT = "hubspot"
 
 
 class IntegrationRequest(BaseModel):

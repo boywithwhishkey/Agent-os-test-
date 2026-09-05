@@ -59,6 +59,19 @@ contradicting note elsewhere.
   catalog-only**. PostgreSQL and Redis remain the only live-validated
   providers in the local development environment.
 
+## SESSION 2026-09-05 — HUBSPOT OAUTH READ CONNECTOR
+
+- **IMPLEMENTED_TESTED:** HubSpot now uses its OAuth authorization-code flow
+  with fixed account-details and CRM contacts endpoints. The adapter exposes
+  `identity.account.read` and bounded `crm.contact.list`; CRM writes, deals,
+  and tickets remain separate capability work.
+- **CREDENTIAL_REQUIRED:** no HubSpot app or user token was available here, so
+  no live request was made. Focused tests cover fixed routing, scoped bearer
+  auth, bounded contact limits, missing connection handling, and safe errors.
+- Catalog truth after this session: **35 entries, 32 implemented/tested, 3
+  catalog-only**. PostgreSQL and Redis remain the only live-validated
+  providers in the local development environment.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

@@ -125,6 +125,12 @@ class Settings(BaseSettings):
     microsoft_oauth_client_secret: str | None = Field(
         default=None, validation_alias="MICROSOFT_OAUTH_CLIENT_SECRET"
     )
+    hubspot_oauth_client_id: str | None = Field(
+        default=None, validation_alias="HUBSPOT_OAUTH_CLIENT_ID"
+    )
+    hubspot_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="HUBSPOT_OAUTH_CLIENT_SECRET"
+    )
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

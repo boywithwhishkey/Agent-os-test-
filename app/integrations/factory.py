@@ -143,6 +143,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "OneDrive",
         "requires": ["MICROSOFT_OAUTH_CLIENT_ID", "MICROSOFT_OAUTH_CLIENT_SECRET"],
     },
+    IntegrationProvider.HUBSPOT: {
+        "name": "HubSpot",
+        "requires": ["HUBSPOT_OAUTH_CLIENT_ID", "HUBSPOT_OAUTH_CLIENT_SECRET"],
+    },
 }
 
 
@@ -275,6 +279,11 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.onedrive import OneDriveOAuthAdapter
 
         return OneDriveOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "hubspot":
+        from app.integrations.hubspot import HubSpotOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return HubSpotOAuthAdapter(connection_store=oauth_connection_store)
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -368,4 +377,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.dropbox_oauth_client_id and settings.dropbox_oauth_client_secret)
     if provider == IntegrationProvider.ONEDRIVE:
         return bool(settings.microsoft_oauth_client_id and settings.microsoft_oauth_client_secret)
+    if provider == IntegrationProvider.HUBSPOT:
+        return bool(settings.hubspot_oauth_client_id and settings.hubspot_oauth_client_secret)
     return False

@@ -56,10 +56,9 @@ async def test_an_unknown_capability_is_refused_and_never_reaches_a_provider() -
 
 
 async def test_a_declared_but_unimplemented_capability_says_so_plainly() -> None:
-    # HubSpot and Salesforce declare crm.contact.list in the catalog; neither
-    # has an adapter yet.
+    # Supabase declares auth.user.list in the catalog; no adapter exists yet.
     broker, _ = _broker()
-    result = await broker.execute("crm.contact.list", approval_id=None)
+    result = await broker.execute("auth.user.list", approval_id=None)
 
     assert result.outcome is BrokerOutcome.NO_PROVIDER
     assert result.success is False
