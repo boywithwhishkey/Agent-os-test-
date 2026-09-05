@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     meta_webhook_verify_token: str | None = Field(
         default=None, validation_alias="META_WEBHOOK_VERIFY_TOKEN"
     )
+    webhook_max_body_bytes: int = Field(
+        default=262_144, ge=1_024, le=5_242_880, validation_alias="AGENT_OS_WEBHOOK_MAX_BODY_BYTES"
+    )
     meta_access_token: str | None = Field(default=None, validation_alias="META_ACCESS_TOKEN")
     meta_graph_api_version: str = Field(default="v23.0", validation_alias="META_GRAPH_API_VERSION")
     whatsapp_phone_number_id: str | None = Field(

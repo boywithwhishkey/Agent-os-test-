@@ -56,6 +56,13 @@ class RedisJobQueue(JobQueue):
         _, payload = result
         return QueueJob.model_validate_json(payload)
 
+    async def claim_once(self, key: str, ttl_seconds: int = 86_400) -> bool:
+        client = await self._get_client()
+        result = await client.set(
+            f"{self.prefix}:webhook-claim:{key}", "1", nx=True, ex=ttl_seconds
+        )
+        return bool(result)
+
     async def close(self) -> None:
         if self._client is not None:
             await self._client.aclose()

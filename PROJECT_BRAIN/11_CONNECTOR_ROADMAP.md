@@ -92,11 +92,11 @@ creating one-off integrations.
 THYNACT now has 35 catalog entries. All thirty-five have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. There are no catalog-only entries left;
-the next work is capability depth, multi-user tenant isolation, durable
-webhook queueing/replay protection, sandbox validation, and live credential
-checks. OAuth refresh-on-401, encrypted expiry metadata, and verified Meta /
-Telegram webhook ingress are now implemented and tested; live provider
-refresh/webhook delivery is still credential-gated.
+the next work is capability depth, multi-user tenant isolation, webhook event
+consumers, sandbox validation, and live credential checks. OAuth refresh-on-401,
+encrypted expiry metadata, and verified Meta / Telegram webhook ingress with
+queue handoff and replay suppression are now implemented and tested; live
+provider refresh/webhook delivery is still credential-gated.
 Google Gmail/Calendar/Drive now share one OAuth client configuration and have
 read-only identity/list adapters; write capabilities remain separately gated.
 Jira now has the same read-only OAuth foundation with a server-configured cloud

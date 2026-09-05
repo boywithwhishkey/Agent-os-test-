@@ -147,10 +147,12 @@ contradicting note elsewhere.
   require provider-specific verification material. Meta supports the
   subscribe/challenge handshake plus `X-Hub-Signature-256`; Telegram requires
   `X-Telegram-Bot-Api-Secret-Token`.
-- Accepted requests return a deterministic, non-sensitive delivery id. The
-  routes intentionally do not claim durable queueing or replay deduplication;
-  those require a configured Redis/PostgreSQL event sink and are the next
-  webhook slice. Invalid or unconfigured verification fails closed.
+- Accepted requests return a deterministic, non-sensitive delivery id and are
+  handed to the `webhooks` job queue. Duplicate delivery ids are suppressed;
+  Redis uses an atomic TTL claim while development memory uses the same
+  semantics process-locally. Invalid, oversized, or unconfigured verification
+  fails closed. A consumer that maps queued provider events to workflows is
+  still a separate follow-on.
 
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 

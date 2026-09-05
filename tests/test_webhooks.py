@@ -5,8 +5,10 @@ import hmac
 
 from fastapi.testclient import TestClient
 
+import app.api.webhooks as webhook_routes
 from app.core.config import settings
 from app.main import app
+from app.queue.base import InMemoryJobQueue
 
 
 def test_meta_verification_requires_secret_and_returns_challenge(monkeypatch):
@@ -22,6 +24,7 @@ def test_meta_verification_requires_secret_and_returns_challenge(monkeypatch):
 
 def test_meta_webhook_accepts_only_valid_hmac(monkeypatch):
     monkeypatch.setattr(settings, "meta_app_secret", "app-secret")
+    monkeypatch.setattr(webhook_routes, "_delivery_queue", InMemoryJobQueue())
     body = b'{"object":"whatsapp_business_account"}'
     signature = hmac.new(b"app-secret", body, hashlib.sha256).hexdigest()
     with TestClient(app) as client:
@@ -34,6 +37,22 @@ def test_meta_webhook_accepts_only_valid_hmac(monkeypatch):
     assert accepted.status_code == 200
     assert accepted.json()["accepted"] is True
     assert rejected.status_code == 403
+
+
+def test_valid_webhook_is_queued_and_duplicate_is_suppressed(monkeypatch):
+    monkeypatch.setattr(settings, "meta_app_secret", "app-secret")
+    queue = InMemoryJobQueue()
+    monkeypatch.setattr(webhook_routes, "_delivery_queue", queue)
+    body = b'{"object":"whatsapp_business_account"}'
+    signature = hmac.new(b"app-secret", body, hashlib.sha256).hexdigest()
+    headers = {"X-Hub-Signature-256": f"sha256={signature}"}
+
+    with TestClient(app) as client:
+        first = client.post("/api/v1/webhooks/meta", content=body, headers=headers)
+        second = client.post("/api/v1/webhooks/meta", content=body, headers=headers)
+
+    assert first.json()["duplicate"] is False
+    assert second.json()["duplicate"] is True
 
 
 def test_telegram_webhook_requires_secret_header(monkeypatch):
