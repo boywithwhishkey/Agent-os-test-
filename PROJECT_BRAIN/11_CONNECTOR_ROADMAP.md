@@ -122,6 +122,8 @@ Render now has fixed service listing and governed deploy-trigger operations;
 live use requires a staging-safe service id and API key.
 Cloudflare now has fixed account and DNS-record reads; live use requires a
 token with the corresponding Zone/DNS read permissions.
+Vercel now has an approval-gated deploy-hook trigger; live use requires a
+staging-safe, host-validated `VERCEL_DEPLOY_HOOK_URL`.
 Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a

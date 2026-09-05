@@ -2657,6 +2657,9 @@ build all clean.
 - Cloudflare now implements fixed `identity.account.read` and
   `cloud.dns.read` operations. DNS reads resolve one validated zone name before
   listing bounded records; no live Cloudflare token was available.
+- Vercel now implements `cloud.deploy.trigger` through a configured,
+  host-validated Deploy Hook URL. The hook is never accepted from workflow
+  input and no live Vercel deployment was triggered.
 - Code and tests are pushed to the isolated branch
-  `claude/thynact-postgres-correctness` at commit `4c3c56a`. Ride&Glide and
+  `claude/thynact-postgres-correctness` at commit `f8be594`. Ride&Glide and
   production remain untouched.

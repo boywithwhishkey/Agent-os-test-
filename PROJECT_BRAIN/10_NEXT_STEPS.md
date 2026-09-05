@@ -70,6 +70,8 @@ Render now has fixed service listing and governed deploy-trigger operations;
 real deployment.
 Cloudflare now has fixed account and DNS-record reads; a token with Zone/DNS
 read permissions is required for live validation.
+Vercel now has an approval-gated deploy-hook trigger; configure a staging-safe
+`VERCEL_DEPLOY_HOOK_URL` for live use.
 Phase 1 continues with Meta inbound/webhook capabilities; Stripe now has a
 read-only foundation, Google Gmail/Calendar/Drive and Jira now have shared
 OAuth read-only adapters, followed by Amazon SP-API sandbox/order capabilities.
@@ -287,7 +289,7 @@ In rough priority order:
   never allowed to block correctness work.
 
 ## 3. Standing verification commands
-- Backend: `uv run pytest tests/ -q` (535 passing, 13 skipped, verified
+- Backend: `uv run pytest tests/ -q` (537 passing, 13 skipped, verified
   2026-09-05).
 - Frontend from `frontend/`: `pnpm typecheck && pnpm lint && pnpm test &&
   pnpm build` (109 passing, typecheck/build clean, 9 pre-existing lint
