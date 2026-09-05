@@ -106,9 +106,9 @@ keep the `ambient-*` tokens (decorative) and `--color-accent-red`
   by `DISCORD_WEBHOOK_URL`; it has not been live-validated here. Gmail, Google
   Calendar, and Google Drive now share one OAuth app configuration and have
   tested read-only identity/list adapters. Jira now has the same OAuth read-only
-  identity/search foundation with a server-configured cloud id. The remaining
-  catalog-only entries (HubSpot, Salesforce, Dropbox, OneDrive, Supabase, and
-  Zapier) should
+  identity/search foundation with a server-configured cloud id. Dropbox and
+  OneDrive now have scoped OAuth identity/file-list foundations. The remaining
+  catalog-only entries (HubSpot, Salesforce, Supabase, and Zapier) should
   be implemented only with the same adapter/capability/test contract.
 - `execute()` is intentionally "not supported" on every non-webhook
   adapter added this session (OpenAI, Anthropic, Cloudflare, Render,

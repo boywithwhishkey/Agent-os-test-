@@ -524,7 +524,7 @@ CATALOG: list[CatalogSpec] = [
     CatalogSpec(
         id="dropbox",
         name="Dropbox",
-        description="Read and write files in Dropbox.",
+        description="Read Dropbox account details and list file metadata.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="Box",
@@ -537,11 +537,13 @@ CATALOG: list[CatalogSpec] = [
             "files.file.delete",
         ],
         documentation_url="https://www.dropbox.com",
+        implemented=True,
+        requires=["DROPBOX_OAUTH_CLIENT_ID", "DROPBOX_OAUTH_CLIENT_SECRET"],
     ),
     CatalogSpec(
         id="onedrive",
         name="OneDrive",
-        description="Read and write files in Microsoft OneDrive.",
+        description="Read Microsoft account details and list OneDrive files.",
         category=ConnectorCategory.OTHER,
         connector_type=ConnectorType.OAUTH,
         icon="CloudCog",
@@ -554,6 +556,8 @@ CATALOG: list[CatalogSpec] = [
             "files.file.delete",
         ],
         documentation_url="https://onedrive.live.com",
+        implemented=True,
+        requires=["MICROSOFT_OAUTH_CLIENT_ID", "MICROSOFT_OAUTH_CLIENT_SECRET"],
     ),
     CatalogSpec(
         id="hubspot",

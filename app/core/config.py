@@ -113,6 +113,18 @@ class Settings(BaseSettings):
         default=None, validation_alias="JIRA_OAUTH_CLIENT_SECRET"
     )
     jira_cloud_id: str | None = Field(default=None, validation_alias="JIRA_CLOUD_ID")
+    dropbox_oauth_client_id: str | None = Field(
+        default=None, validation_alias="DROPBOX_OAUTH_CLIENT_ID"
+    )
+    dropbox_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="DROPBOX_OAUTH_CLIENT_SECRET"
+    )
+    microsoft_oauth_client_id: str | None = Field(
+        default=None, validation_alias="MICROSOFT_OAUTH_CLIENT_ID"
+    )
+    microsoft_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="MICROSOFT_OAUTH_CLIENT_SECRET"
+    )
     oauth_redirect_base_url: str = Field(
         default="https://api.thynact.com", validation_alias="AGENT_OS_OAUTH_REDIRECT_BASE_URL"
     )

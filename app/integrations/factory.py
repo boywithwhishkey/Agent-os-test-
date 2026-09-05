@@ -135,6 +135,14 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
             "JIRA_CLOUD_ID",
         ],
     },
+    IntegrationProvider.DROPBOX: {
+        "name": "Dropbox",
+        "requires": ["DROPBOX_OAUTH_CLIENT_ID", "DROPBOX_OAUTH_CLIENT_SECRET"],
+    },
+    IntegrationProvider.ONEDRIVE: {
+        "name": "OneDrive",
+        "requires": ["MICROSOFT_OAUTH_CLIENT_ID", "MICROSOFT_OAUTH_CLIENT_SECRET"],
+    },
 }
 
 
@@ -257,6 +265,16 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.oauth.registry import oauth_connection_store
 
         return JiraOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "dropbox":
+        from app.integrations.dropbox import DropboxOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return DropboxOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "onedrive":
+        from app.integrations.oauth.registry import oauth_connection_store
+        from app.integrations.onedrive import OneDriveOAuthAdapter
+
+        return OneDriveOAuthAdapter(connection_store=oauth_connection_store)
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -346,4 +364,8 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
             and settings.jira_oauth_client_secret
             and settings.jira_cloud_id
         )
+    if provider == IntegrationProvider.DROPBOX:
+        return bool(settings.dropbox_oauth_client_id and settings.dropbox_oauth_client_secret)
+    if provider == IntegrationProvider.ONEDRIVE:
+        return bool(settings.microsoft_oauth_client_id and settings.microsoft_oauth_client_secret)
     return False

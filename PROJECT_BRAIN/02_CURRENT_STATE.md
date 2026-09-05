@@ -42,6 +42,23 @@ contradicting note elsewhere.
   catalog-only**. PostgreSQL and Redis remain the only live-validated
   providers in the local development environment.
 
+## SESSION 2026-09-05 — DROPBOX AND ONEDRIVE OAUTH READ CONNECTORS
+
+- **IMPLEMENTED_TESTED:** Dropbox now uses scoped OAuth for account identity
+  and bounded root-file metadata listing. OneDrive now uses Microsoft OAuth
+  and fixed Microsoft Graph calls for account identity and root-drive listing.
+- Both adapters accept canonical read capabilities only, use server-side
+  bearer tokens, refuse arbitrary URLs/paths, and keep provider response
+  bodies and credentials out of errors. File writes/deletes remain disabled
+  until their own capability and approval contracts exist.
+- **CREDENTIAL_REQUIRED:** no Dropbox or Microsoft OAuth app/token was
+  available here, so no live request was made. Mocked tests cover fixed
+  endpoints, auth headers, bounded limits, missing connections, and safe
+  responses.
+- Catalog truth after this session: **35 entries, 31 implemented/tested, 4
+  catalog-only**. PostgreSQL and Redis remain the only live-validated
+  providers in the local development environment.
+
 ## SESSION 2026-09-05 — DISCORD WEBHOOK CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Discord has a server-configured webhook adapter at

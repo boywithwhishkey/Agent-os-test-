@@ -231,6 +231,14 @@ def _jira_live_status() -> dict:
     return _oauth_live_status("jira")
 
 
+def _dropbox_live_status() -> dict:
+    return _oauth_live_status("dropbox")
+
+
+def _onedrive_live_status() -> dict:
+    return _oauth_live_status("onedrive")
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -289,6 +297,8 @@ _LIVE_STATUS_RESOLVERS = {
     "google_calendar": _google_calendar_live_status,
     "google_drive": _google_drive_live_status,
     "jira": _jira_live_status,
+    "dropbox": _dropbox_live_status,
+    "onedrive": _onedrive_live_status,
 }
 
 

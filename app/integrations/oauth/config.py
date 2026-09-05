@@ -88,6 +88,25 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_secret_env="JIRA_OAUTH_CLIENT_SECRET",
         extra_authorize_params={"audience": "api.atlassian.com", "prompt": "consent"},
     ),
+    "dropbox": OAuthProviderConfig(
+        id="dropbox",
+        name="Dropbox",
+        authorize_url="https://www.dropbox.com/oauth2/authorize",
+        token_url="https://api.dropboxapi.com/oauth2/token",
+        scope="account_info.read files.metadata.read",
+        client_id_env="DROPBOX_OAUTH_CLIENT_ID",
+        client_secret_env="DROPBOX_OAUTH_CLIENT_SECRET",
+        extra_authorize_params={"token_access_type": "offline"},
+    ),
+    "onedrive": OAuthProviderConfig(
+        id="onedrive",
+        name="OneDrive",
+        authorize_url="https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        token_url="https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        scope="User.Read Files.Read offline_access",
+        client_id_env="MICROSOFT_OAUTH_CLIENT_ID",
+        client_secret_env="MICROSOFT_OAUTH_CLIENT_SECRET",
+    ),
 }
 
 

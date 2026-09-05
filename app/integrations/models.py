@@ -36,6 +36,8 @@ class IntegrationProvider(StrEnum):
     GOOGLE_CALENDAR = "google_calendar"
     GOOGLE_DRIVE = "google_drive"
     JIRA = "jira"
+    DROPBOX = "dropbox"
+    ONEDRIVE = "onedrive"
 
 
 class IntegrationRequest(BaseModel):
