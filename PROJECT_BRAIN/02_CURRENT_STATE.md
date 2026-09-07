@@ -75,6 +75,18 @@ contradicting note elsewhere.
 - **CREDENTIAL_REQUIRED:** `ZOOM_WEBHOOK_SECRET_TOKEN` is not configured, so
   no live webhook delivery was exercised.
 
+## SESSION 2026-09-07 — COMPLETE IMPLEMENTED-CATALOG STATUS COVERAGE
+
+- **IMPLEMENTED_TESTED:** Todoist, Asana, and Razorpay now have the same
+  live/configured/error status resolvers as every other implemented connector.
+  A regression test now asserts that every `implemented=True` catalog entry has
+  a resolver, preventing the Integration Hub from silently showing a working
+  adapter as merely available.
+- Focused catalog/status checks: **20 passed**. Full local gate after this
+  change: **584 backend tests passed, 13 skipped, 1 warning; 109 frontend tests
+  passed; typecheck, lint, and production build passed**. GitHub Actions CI
+  passed on isolated `staging`.
+
 ## SESSION 2026-09-05 — SLACK OAUTH MESSAGE CAPABILITIES
 
 - **IMPLEMENTED_TESTED:** Slack now uses the shared OAuth flow for identity,
@@ -2720,7 +2732,8 @@ build all clean.
   Trello-focused adapter and catalog checks: **7 passed**.
   Zoom-focused adapter and catalog checks: **6 passed**.
   Zoom webhook and event-normalizer checks: **12 passed**.
-  The full gate after the Zoom webhook work is **583 backend tests passed,
+  Complete implemented-catalog status coverage checks: **20 passed**.
+  The full gate after the status coverage fix is **584 backend tests passed,
   13 skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
