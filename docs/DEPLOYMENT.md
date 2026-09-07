@@ -274,8 +274,9 @@ dependency is genuinely reachable now) but expensive.
 - No scheduler subsystem exists (a `JobWorker` does; a scheduler does not).
 - No external metrics/tracing/alerting stack.
 - Tenant isolation is implemented for OAuth and catalog status through
-  server-held `AGENT_OS_API_KEYS_JSON` mappings; multi-tenant production still
-  needs two-key staging smoke tests and key rotation validation.
+  server-held `AGENT_OS_API_KEYS_JSON` mappings, including MCP server records;
+  multi-tenant production still needs two-key staging smoke tests and key
+  rotation validation.
 - No rate limiting on the public API surface (the runtime rate limiter governs
   integration calls, not inbound HTTP). Verified: no inbound limiter exists.
 - No request size limits or explicit request timeouts on inbound HTTP.

@@ -14,6 +14,8 @@ contradicting note elsewhere.
   public callback, which switches context only after single-use validation.
 - Public connector catalog reads accept a valid API key optionally so connected
   status is scoped to that tenant; anonymous reads remain backward compatible.
+- MCP server records and redacted listings now use the same tenant context, so
+  configured endpoints and server-side secrets cannot cross tenant boundaries.
 - **NOT LIVE-VALIDATED:** multi-tenant behavior still needs two real staging
   keys, separate OAuth consent flows, and a restart/reconnect smoke test.
 

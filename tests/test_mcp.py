@@ -1,10 +1,12 @@
 import json
+from contextlib import contextmanager
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from app.api import phase9
+from app.core.tenant import current_tenant_id
 from app.integrations.mcp.client import MCPHttpClient
 from app.integrations.mcp.models import MCPAuthType
 from app.integrations.mcp.store import MCPServerStore
@@ -30,6 +32,15 @@ def _rpc_handler(responses: dict[str, dict]):
         return httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "error": {"message": "Method not found"}})
 
     return handler
+
+
+@contextmanager
+def _tenant(tenant_id: str):
+    token = current_tenant_id.set(tenant_id)
+    try:
+        yield
+    finally:
+        current_tenant_id.reset(token)
 
 
 # --- MCPHttpClient ---
@@ -123,6 +134,22 @@ async def test_mcp_client_sends_bearer_auth_header():
 
 
 # --- MCP API routes ---
+
+
+def test_mcp_server_registry_isolated_between_tenants():
+    store = MCPServerStore()
+    payload = {
+        "name": "Tenant MCP",
+        "endpoint": "https://mcp.example/rpc",
+    }
+    from app.integrations.mcp.models import MCPServerCreate
+
+    with _tenant("tenant-a"):
+        server = store.create(MCPServerCreate(**payload))
+        assert [item.id for item in store.list()] == [server.id]
+    with _tenant("tenant-b"):
+        assert store.list() == []
+        assert store.get(server.id) is None
 
 
 def test_mcp_server_list_is_public():

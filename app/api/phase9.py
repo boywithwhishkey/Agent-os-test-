@@ -440,9 +440,13 @@ async def list_catalog_route() -> list[ConnectorEntry]:
     return [_resolve_entry(spec) for spec in list_catalog()]
 
 
-@public_router.get("/mcp/servers", response_model=list[MCPServerPublic])
+@public_router.get(
+    "/mcp/servers",
+    response_model=list[MCPServerPublic],
+    dependencies=[Depends(optional_api_key_tenant)],
+)
 async def list_mcp_servers_route() -> list[MCPServerPublic]:
-    """Redacted MCP server list — never includes secret_value."""
+    """Redacted, tenant-scoped MCP server list — never includes secrets."""
     return [record.to_public() for record in mcp_store.list()]
 
 

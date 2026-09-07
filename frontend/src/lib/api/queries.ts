@@ -251,7 +251,7 @@ export function useExecuteIntegration() {
 export function useMCPServers() {
   return useQuery({
     queryKey: ["mcp-servers"],
-    queryFn: () => api.get<MCPServer[]>("/api/v1/integrations/mcp/servers", { skipAuth: true }),
+    queryFn: () => api.get<MCPServer[]>("/api/v1/integrations/mcp/servers"),
     refetchInterval: 30_000,
   });
 }
