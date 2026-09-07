@@ -52,7 +52,7 @@ without that loop remain metadata only.
 
 ### Daily productivity
 
-Google Gmail/Calendar/Drive/Sheets, Microsoft Outlook/Calendar/OneDrive, Notion,
+Google Gmail/Calendar/Drive/Sheets, LinkedIn, Microsoft Outlook/Calendar/OneDrive, Notion,
 GitHub/GitLab, Linear (issue list/create/update implemented), Jira, Dropbox, Todoist, Trello, Asana, Zoom, and
 calendar/meeting providers are added through the same OAuth/API families.
 
@@ -123,7 +123,7 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 42 catalog entries. All forty-two have adapters and tests; PostgreSQL
+THYNACT now has 43 catalog entries. All forty-three have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. There are no catalog-only entries left;
 the next work is capability depth, multi-user tenant isolation, provider-specific
@@ -134,6 +134,8 @@ provider refresh/webhook delivery is still credential-gated.
 Verified webhook jobs now also carry a server-resolved tenant id through the
 queue/worker path; multi-tenant callback smoke tests and live account routing
 remain pending isolated staging credentials.
+LinkedIn now has a member OIDC identity and bounded text-post foundation; the
+`w_member_social` product permission and live app credentials remain pending.
 Google Gmail/Calendar/Drive/Sheets now share one OAuth client configuration and
 have bounded identity/list/range adapters plus Drive file-content reads; Sheets
 row appends and other write capabilities remain separately gated.

@@ -19,6 +19,23 @@ contradicting note elsewhere.
   Sheets read/append contract and shared OAuth configuration). No Google
   credential was available, so live validation remains pending.
 
+## SESSION 2026-09-07 — LINKEDIN MEMBER CONNECTOR
+
+- **IMPLEMENTED_TESTED:** LinkedIn now has a shared OAuth connector with OIDC
+  identity and a bounded text-only `social.post.publish` operation. Publishing
+  uses the current REST Posts API headers and derives the member author URN from
+  the connected account rather than accepting an arbitrary author from workflow
+  input. The canonical capability remains HIGH_RISK and is approval/audit gated
+  by the broker.
+- Text length, member subject format, fixed visibility/distribution, API version,
+  timeout, and secret-safe error handling are enforced. Organization posts,
+  media uploads, comments, and analytics remain explicitly unclaimed.
+- Focused LinkedIn/catalog checks: **32 passed, 1 warning**. No LinkedIn app
+  credentials were available, so live validation and provider permission review
+  remain pending. Full backend gate after both connector increments: **644
+  passed, 13 skipped, 1 warning**; frontend **109 passed**, typecheck, lint,
+  and production build passed.
+
 ## SESSION 2026-09-07 — PROVIDER-SPECIFIC META WEBHOOKS
 
 - **IMPLEMENTED_TESTED:** verified Meta callbacks now support dedicated

@@ -163,6 +163,15 @@ class Settings(BaseSettings):
     google_oauth_client_secret: str | None = Field(
         default=None, validation_alias="GOOGLE_OAUTH_CLIENT_SECRET"
     )
+    linkedin_oauth_client_id: str | None = Field(
+        default=None, validation_alias="LINKEDIN_OAUTH_CLIENT_ID"
+    )
+    linkedin_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="LINKEDIN_OAUTH_CLIENT_SECRET"
+    )
+    linkedin_api_version: str = Field(
+        default="202601", validation_alias="LINKEDIN_API_VERSION"
+    )
     jira_oauth_client_id: str | None = Field(
         default=None, validation_alias="JIRA_OAUTH_CLIENT_ID"
     )

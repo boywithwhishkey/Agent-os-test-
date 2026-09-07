@@ -36,6 +36,7 @@ class IntegrationProvider(StrEnum):
     GOOGLE_CALENDAR = "google_calendar"
     GOOGLE_DRIVE = "google_drive"
     GOOGLE_SHEETS = "google_sheets"
+    LINKEDIN = "linkedin"
     JIRA = "jira"
     DROPBOX = "dropbox"
     ONEDRIVE = "onedrive"

@@ -191,6 +191,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Microsoft Outlook",
         "requires": ["MICROSOFT_OAUTH_CLIENT_ID", "MICROSOFT_OAUTH_CLIENT_SECRET"],
     },
+    IntegrationProvider.LINKEDIN: {
+        "name": "LinkedIn",
+        "requires": ["LINKEDIN_OAUTH_CLIENT_ID", "LINKEDIN_OAUTH_CLIENT_SECRET"],
+    },
 }
 
 
@@ -370,6 +374,11 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.outlook import OutlookOAuthAdapter
 
         return OutlookOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "linkedin":
+        from app.integrations.linkedin import LinkedInOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return LinkedInOAuthAdapter(connection_store=oauth_connection_store)
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -521,6 +530,8 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         )
     if provider == IntegrationProvider.OUTLOOK:
         return bool(settings.microsoft_oauth_client_id and settings.microsoft_oauth_client_secret)
+    if provider == IntegrationProvider.LINKEDIN:
+        return bool(settings.linkedin_oauth_client_id and settings.linkedin_oauth_client_secret)
     return False
 
 

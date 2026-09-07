@@ -61,6 +61,8 @@ CLOSED; do not re-litigate them.
 The active expansion goal is tracked in `PROJECT_BRAIN/11_CONNECTOR_ROADMAP.md`.
 Google Sheets now has a shared OAuth adapter with bounded range reads and
 approval-governed row appends; it remains credential-gated for live validation.
+LinkedIn now has shared OAuth identity and approval-governed text publishing;
+the app registration and `w_member_social` permission remain credential-gated.
 Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel remains read-only; Linear now has
@@ -263,7 +265,8 @@ dependency then value; never put secret values in this file.
    environment — see `docs/DEPLOYMENT.md` §4.
 8. **Optional provider credentials**, one connector each: `GEMINI_API_KEY`,
    `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `CLOUDFLARE_API_TOKEN`,
-   `RENDER_API_KEY`, `N8N_BASE_URL`, `MAKE_WEBHOOK_URL`.
+   `RENDER_API_KEY`, `N8N_BASE_URL`, `MAKE_WEBHOOK_URL`, and a separate
+   LinkedIn OAuth app with `w_member_social` enabled.
 9. **Production deployment authorization** — merging to `main` IS a production
    deploy. Withheld until staging is validated.
 

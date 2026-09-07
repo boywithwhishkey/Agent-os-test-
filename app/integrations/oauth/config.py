@@ -100,6 +100,15 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_secret_env="GOOGLE_OAUTH_CLIENT_SECRET",
         extra_authorize_params={"access_type": "offline", "prompt": "consent"},
     ),
+    "linkedin": OAuthProviderConfig(
+        id="linkedin",
+        name="LinkedIn",
+        authorize_url="https://www.linkedin.com/oauth/v2/authorization",
+        token_url="https://www.linkedin.com/oauth/v2/accessToken",
+        scope="openid profile email w_member_social",
+        client_id_env="LINKEDIN_OAUTH_CLIENT_ID",
+        client_secret_env="LINKEDIN_OAUTH_CLIENT_SECRET",
+    ),
     "jira": OAuthProviderConfig(
         id="jira",
         name="Jira",

@@ -511,6 +511,21 @@ CATALOG: list[CatalogSpec] = [
         implemented=True,
         requires=["MICROSOFT_OAUTH_CLIENT_ID", "MICROSOFT_OAUTH_CLIENT_SECRET"],
     ),
+    CatalogSpec(
+        id="linkedin",
+        name="LinkedIn",
+        description="Read a connected member profile and publish governed text posts.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.OAUTH,
+        icon="Linkedin",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Verify identity", "Publish text post"],
+        canonical_capabilities=["identity.account.read", "social.post.publish"],
+        popular=True,
+        documentation_url="https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api",
+        implemented=True,
+        requires=["LINKEDIN_OAUTH_CLIENT_ID", "LINKEDIN_OAUTH_CLIENT_SECRET"],
+    ),
     # --- Data ---
     CatalogSpec(
         id="postgresql",

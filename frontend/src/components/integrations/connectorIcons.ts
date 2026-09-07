@@ -29,6 +29,7 @@ import {
   Magnet,
   CloudSun,
   CreditCard,
+  Linkedin,
   type LucideIcon,
 } from "lucide-react";
 
@@ -62,6 +63,7 @@ const iconMap: Record<string, LucideIcon> = {
   Magnet,
   CloudSun,
   CreditCard,
+  Linkedin,
 };
 
 export function getConnectorIcon(name: string): LucideIcon {
