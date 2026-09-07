@@ -109,6 +109,16 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="LINKEDIN_OAUTH_CLIENT_ID",
         client_secret_env="LINKEDIN_OAUTH_CLIENT_SECRET",
     ),
+    "pinterest": OAuthProviderConfig(
+        id="pinterest",
+        name="Pinterest",
+        authorize_url="https://www.pinterest.com/oauth/",
+        token_url="https://api.pinterest.com/v5/oauth/token",
+        scope="user_accounts:read boards:read boards:write pins:read pins:write",
+        client_id_env="PINTEREST_OAUTH_CLIENT_ID",
+        client_secret_env="PINTEREST_OAUTH_CLIENT_SECRET",
+        token_auth="basic",
+    ),
     "jira": OAuthProviderConfig(
         id="jira",
         name="Jira",

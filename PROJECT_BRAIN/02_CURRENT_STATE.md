@@ -5,6 +5,17 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — PINTEREST CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Pinterest now has a shared OAuth 2.0 connector with
+  account verification and approval-governed image Pin publishing to a
+  server-selected board. Board ids, public HTTPS media/link URLs, title and
+  description lengths, and provider error handling are bounded before calls.
+- The connector uses Pinterest API v5's Basic-auth token exchange and shared
+  tenant-scoped token refresh path. No Pinterest credentials were available,
+  so live validation remains pending; production publishing is not enabled by
+  default.
+
 ## SESSION 2026-09-07 — GOOGLE SHEETS CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Google Sheets now has a first-class OAuth connector

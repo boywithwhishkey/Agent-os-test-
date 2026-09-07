@@ -526,6 +526,21 @@ CATALOG: list[CatalogSpec] = [
         implemented=True,
         requires=["LINKEDIN_OAUTH_CLIENT_ID", "LINKEDIN_OAUTH_CLIENT_SECRET"],
     ),
+    CatalogSpec(
+        id="pinterest",
+        name="Pinterest",
+        description="Read the connected account and publish governed image Pins to a board.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.OAUTH,
+        icon="Pin",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Verify identity", "Publish image Pin"],
+        canonical_capabilities=["identity.account.read", "social.post.publish"],
+        popular=True,
+        documentation_url="https://developers.pinterest.com/docs/work-with-organic-content-and-users/create-boards-and-pins/",
+        implemented=True,
+        requires=["PINTEREST_OAUTH_CLIENT_ID", "PINTEREST_OAUTH_CLIENT_SECRET"],
+    ),
     # --- Data ---
     CatalogSpec(
         id="postgresql",

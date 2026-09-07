@@ -18,6 +18,7 @@ SLACK = OAUTH_PROVIDERS["slack"]
 NOTION = OAUTH_PROVIDERS["notion"]
 GITLAB = OAUTH_PROVIDERS["gitlab"]
 SNAPCHAT = OAUTH_PROVIDERS["snapchat"]
+PINTEREST = OAUTH_PROVIDERS["pinterest"]
 
 
 def test_build_authorize_url_includes_state_and_redirect(monkeypatch):
@@ -37,6 +38,12 @@ def test_build_authorize_url_requires_client_id(monkeypatch):
     monkeypatch.setattr(settings, "github_oauth_client_id", None)
     with pytest.raises(OAuthNotConfigured):
         service.build_authorize_url(GITHUB, OAuthStateStore())
+
+
+def test_pinterest_oauth_metadata_uses_basic_token_exchange():
+    assert PINTEREST.token_auth == "basic"
+    assert PINTEREST.authorize_url == "https://www.pinterest.com/oauth/"
+    assert "pins:write" in PINTEREST.scope
 
 
 def test_state_store_is_single_use():

@@ -63,6 +63,9 @@ Google Sheets now has a shared OAuth adapter with bounded range reads and
 approval-governed row appends; it remains credential-gated for live validation.
 LinkedIn now has shared OAuth identity and approval-governed text publishing;
 the app registration and `w_member_social` permission remain credential-gated.
+Pinterest now has shared OAuth identity and approval-governed image Pin
+publishing; its app registration and board/pin permissions remain
+credential-gated.
 Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel remains read-only; Linear now has

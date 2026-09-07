@@ -172,6 +172,12 @@ class Settings(BaseSettings):
     linkedin_api_version: str = Field(
         default="202601", validation_alias="LINKEDIN_API_VERSION"
     )
+    pinterest_oauth_client_id: str | None = Field(
+        default=None, validation_alias="PINTEREST_OAUTH_CLIENT_ID"
+    )
+    pinterest_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="PINTEREST_OAUTH_CLIENT_SECRET"
+    )
     jira_oauth_client_id: str | None = Field(
         default=None, validation_alias="JIRA_OAUTH_CLIENT_ID"
     )

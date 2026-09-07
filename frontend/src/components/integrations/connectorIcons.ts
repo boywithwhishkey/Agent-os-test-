@@ -30,6 +30,7 @@ import {
   CloudSun,
   CreditCard,
   Linkedin,
+  Pin,
   type LucideIcon,
 } from "lucide-react";
 
@@ -64,6 +65,7 @@ const iconMap: Record<string, LucideIcon> = {
   CloudSun,
   CreditCard,
   Linkedin,
+  Pin,
 };
 
 export function getConnectorIcon(name: string): LucideIcon {

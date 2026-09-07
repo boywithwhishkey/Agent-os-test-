@@ -37,6 +37,7 @@ class IntegrationProvider(StrEnum):
     GOOGLE_DRIVE = "google_drive"
     GOOGLE_SHEETS = "google_sheets"
     LINKEDIN = "linkedin"
+    PINTEREST = "pinterest"
     JIRA = "jira"
     DROPBOX = "dropbox"
     ONEDRIVE = "onedrive"
