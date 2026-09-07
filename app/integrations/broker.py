@@ -38,6 +38,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
+from app.core.config import settings
 from app.integrations.base import CapabilityNotWired
 from app.integrations.capabilities import Capability, UnknownCapability, resolve
 from app.integrations.catalog import list_catalog
@@ -47,6 +48,8 @@ from app.integrations.factory import (
     provider_requirements,
 )
 from app.integrations.models import ConnectorKind
+from app.integrations.oauth.config import get_oauth_provider
+from app.integrations.oauth.registry import oauth_connection_store
 from app.tools.audit import ToolAuditLog
 from app.tools.models import ToolRisk
 from app.tools.policy import ToolPolicy
@@ -111,6 +114,26 @@ def _requirements(connector_id: str) -> list[str]:
         if provider.value == connector_id:
             return provider_requirements(provider)
     return []
+
+
+def _oauth_connection_missing(connector_id: str) -> bool:
+    """Return whether a configured OAuth app still lacks an account token.
+
+    A few Meta/Snapchat adapters intentionally support a legacy server token;
+    those fallbacks count as connected here. Every other registered OAuth
+    provider must have a token in the shared connection store before a
+    provider operation is attempted.
+    """
+    if get_oauth_provider(connector_id) is None:
+        return False
+    if oauth_connection_store.get(connector_id).access_token:
+        return False
+    static_fallbacks = {
+        "snapchat": settings.snapchat_access_token,
+        "whatsapp": settings.meta_access_token,
+        "instagram": settings.meta_access_token,
+    }
+    return not bool(static_fallbacks.get(connector_id))
 
 
 class ConnectorBroker:
@@ -183,6 +206,20 @@ class ConnectorBroker:
                 error=(
                     f"{connector} is not configured"
                     + (f". Set {', '.join(missing)}." if missing else ".")
+                ),
+            )
+            await self._record(result, correlation_id)
+            return result
+
+        if _oauth_connection_missing(connector):
+            result = BrokerResult(
+                outcome=BrokerOutcome.NOT_CONNECTED,
+                capability=capability_id,
+                connector=connector,
+                risk=capability.risk,
+                error=(
+                    f"{connector} is configured but no OAuth account is connected. "
+                    "Authorize the connector before executing this capability."
                 ),
             )
             await self._record(result, correlation_id)

@@ -13,6 +13,7 @@ import pytest
 from app.integrations.broker import BrokerOutcome, ConnectorBroker, providers_for
 from app.integrations.catalog import list_catalog
 from app.integrations.models import ConnectorKind
+from app.integrations.oauth.store import OAuthConnectionStore
 from app.tools.approvals import InMemoryApprovalStore
 from app.tools.models import ToolRisk
 from app.tools.policy import ToolPolicy
@@ -134,6 +135,27 @@ async def test_a_provider_exception_becomes_an_audited_failure_not_a_traceback(m
 
     assert result.outcome is BrokerOutcome.PROVIDER_ERROR
     assert "provider exploded" in result.error
+    assert audit.rows[-1]["success"] is False
+
+
+async def test_configured_oauth_app_without_account_is_explicitly_not_connected(monkeypatch) -> None:
+    called = False
+
+    async def perform(*_args):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: cid == "gmail")
+    monkeypatch.setattr("app.integrations.broker.oauth_connection_store", OAuthConnectionStore())
+    broker, audit = _broker(perform)
+
+    result = await broker.execute("mail.message.list", correlation_id="oauth-missing")
+
+    assert result.outcome is BrokerOutcome.NOT_CONNECTED
+    assert result.connector == "gmail"
+    assert "Authorize" in (result.error or "")
+    assert called is False
+    assert audit.rows[-1]["correlation_id"] == "oauth-missing"
     assert audit.rows[-1]["success"] is False
 
 
