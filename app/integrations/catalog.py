@@ -550,6 +550,24 @@ CATALOG: list[CatalogSpec] = [
         implemented=True,
         requires=["ASANA_ACCESS_TOKEN", "ASANA_WORKSPACE_GID"],
     ),
+    CatalogSpec(
+        id="razorpay",
+        name="Razorpay",
+        description="Read Razorpay payments/orders and create approval-gated refunds.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.API,
+        icon="IndianRupee",
+        auth_type=ConnectorAuthType.API_KEY,
+        capabilities=["List payments", "List orders", "Create refund"],
+        canonical_capabilities=[
+            "commerce.payment.list",
+            "commerce.order.list",
+            "commerce.refund.create",
+        ],
+        documentation_url="https://razorpay.com/docs/api/",
+        implemented=True,
+        requires=["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"],
+    ),
     # --- Other useful ---
     CatalogSpec(
         id="dropbox",

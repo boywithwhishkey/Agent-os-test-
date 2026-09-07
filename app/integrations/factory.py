@@ -171,6 +171,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Asana",
         "requires": ["ASANA_ACCESS_TOKEN", "ASANA_WORKSPACE_GID"],
     },
+    IntegrationProvider.RAZORPAY: {
+        "name": "Razorpay",
+        "requires": ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"],
+    },
 }
 
 
@@ -329,6 +333,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.asana import AsanaAdapter
 
         return AsanaAdapter()
+    if normalized == "razorpay":
+        from app.integrations.razorpay import RazorpayAdapter
+
+        return RazorpayAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -438,4 +446,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.todoist_api_token)
     if provider == IntegrationProvider.ASANA:
         return bool(settings.asana_access_token and settings.asana_workspace_gid)
+    if provider == IntegrationProvider.RAZORPAY:
+        return bool(settings.razorpay_key_id and settings.razorpay_key_secret)
     return False

@@ -44,6 +44,7 @@ class IntegrationProvider(StrEnum):
     SUPABASE = "supabase"
     TODOIST = "todoist"
     ASANA = "asana"
+    RAZORPAY = "razorpay"
 
 
 class IntegrationRequest(BaseModel):
