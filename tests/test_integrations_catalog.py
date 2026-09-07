@@ -109,3 +109,10 @@ def test_every_catalog_entry_has_required_metadata():
         assert item["connector_type"] in {"mcp", "api", "oauth", "webhook"}
         assert item["auth_type"]
         assert isinstance(item["capabilities"], list)
+
+
+def test_every_implemented_connector_has_a_live_status_resolver():
+    from app.api.phase9 import _LIVE_STATUS_RESOLVERS
+
+    implemented = {item["id"] for item in client.get("/api/v1/integrations").json() if item["implemented"]}
+    assert implemented <= set(_LIVE_STATUS_RESOLVERS)

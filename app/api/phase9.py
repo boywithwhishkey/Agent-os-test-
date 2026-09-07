@@ -270,6 +270,21 @@ def _supabase_live_status() -> dict:
     return _status_store_backed_status("supabase", configured=is_provider_configured(provider))
 
 
+def _todoist_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "todoist")
+    return _status_store_backed_status("todoist", configured=is_provider_configured(provider))
+
+
+def _asana_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "asana")
+    return _status_store_backed_status("asana", configured=is_provider_configured(provider))
+
+
+def _razorpay_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "razorpay")
+    return _status_store_backed_status("razorpay", configured=is_provider_configured(provider))
+
+
 def _oauth_live_status(provider_id: str) -> dict:
     """Shared status shape for every OAuth2 connector: CONNECTED once the
     OAuth callback has stored a real access token (`oauth_connection_store`),
@@ -337,6 +352,9 @@ _LIVE_STATUS_RESOLVERS = {
     "zoom": _zoom_live_status,
     "zapier": _zapier_live_status,
     "supabase": _supabase_live_status,
+    "todoist": _todoist_live_status,
+    "asana": _asana_live_status,
+    "razorpay": _razorpay_live_status,
 }
 
 
