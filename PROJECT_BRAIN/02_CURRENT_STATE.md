@@ -1,9 +1,29 @@
-# CURRENT STATE — verified as of 2026-09-07, tenant-isolated OAuth checkpoint
+# CURRENT STATE — verified as of 2026-09-07, tenant-isolated connector checkpoint
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
+
+## SESSION 2026-09-07 — TENANT-SCOPED WEBHOOK DELIVERY
+
+- **IMPLEMENTED_TESTED:** verified webhook ingress now resolves a delivery to
+  a server-held tenant map (`AGENT_OS_WEBHOOK_TENANT_MAP`) using provider
+  account identifiers such as Shopify shop domain, Stripe Connect account,
+  Slack team, Zoom account, Meta page/WABA/phone id, or Telegram bot id when
+  present. Account-specific routes take precedence over provider fallbacks;
+  unknown and conflicting routes fail closed. No request header can select a
+  tenant.
+- Queue payloads now carry the resolved tenant id, and `WebhookConsumer`
+  establishes and resets that tenant context around normalization, workflow
+  lookup, and execution. Legacy single-operator deployments continue to use
+  `AGENT_OS_OAUTH_TENANT_ID` when the map is empty.
+- Focused webhook/tenancy/consumer checks: **17 passed**. Full backend gate:
+  **618 passed, 13 skipped, 1 warning**; frontend **109 passed**, typecheck,
+  lint (9 pre-existing warnings), and production build passed.
+- **NOT LIVE-VALIDATED:** the routing contract still needs two real staging
+  tenants, provider account identifiers, and signed deliveries against the
+  isolated staging backend.
 
 ## SESSION 2026-09-07 — TENANT-ISOLATED OAUTH STATE
 

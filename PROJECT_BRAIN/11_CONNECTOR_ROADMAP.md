@@ -87,6 +87,12 @@ creating one-off integrations.
   public callback restores the tenant from its validated state claim. Never
   accept a client-supplied tenant header. Multi-user rollout still requires
   credential-backed staging smoke tests and key-rotation runbooks.
+- Verified webhook callbacks are routed only by the server-held
+  `AGENT_OS_WEBHOOK_TENANT_MAP` using provider/account identifiers; account
+  routes take precedence over provider fallbacks, and unknown or conflicting
+  routes fail closed. The resolved tenant travels in the queue job and is
+  restored around worker execution. Do not use a tenant header or payload
+  field as an authority source.
 - Adapter accepts canonical capability arguments only and never an arbitrary
   provider URL or operation name from an agent.
 - Read, write, and high-risk operations use the shared capability risk model;
@@ -107,6 +113,9 @@ event expansion, sandbox validation, and live credential checks. OAuth refresh-o
 encrypted expiry metadata, and verified Meta / Telegram webhook ingress with
 queue handoff and replay suppression are now implemented and tested; live
 provider refresh/webhook delivery is still credential-gated.
+Verified webhook jobs now also carry a server-resolved tenant id through the
+queue/worker path; multi-tenant callback smoke tests and live account routing
+remain pending isolated staging credentials.
 Google Gmail/Calendar/Drive now share one OAuth client configuration and have
 read-only identity/list adapters plus bounded Drive file-content reads; write
 capabilities remain separately gated.

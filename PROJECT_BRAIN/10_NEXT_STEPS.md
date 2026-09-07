@@ -56,7 +56,7 @@ CLOSED; do not re-litigate them.
 - ~~Environment rediscovery each session~~ — `scripts/bootstrap_claude_cloud.sh`
   + `scripts/project_doctor.sh`.
 
-## CONNECTOR PLATFORM — WHAT TO DO NEXT (updated 2026-09-04)
+## CONNECTOR PLATFORM — WHAT TO DO NEXT (updated 2026-09-07)
 
 The active expansion goal is tracked in `PROJECT_BRAIN/11_CONNECTOR_ROADMAP.md`.
 Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
@@ -68,6 +68,9 @@ remains credential- and allowlist-gated for live validation.
 WhatsApp Cloud and Instagram now also have shared Meta OAuth authorization and
 refresh paths, while retaining server-token fallback; Meta app review and
 business-account credentials are still required for live validation.
+Verified webhook ingress now carries a server-resolved tenant id through the
+queue and worker. Configure `AGENT_OS_WEBHOOK_TENANT_MAP` with provider/account
+keys before enabling multi-tenant callbacks; live staging smoke tests remain.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
 Render now has fixed service listing and governed deploy-trigger operations;
