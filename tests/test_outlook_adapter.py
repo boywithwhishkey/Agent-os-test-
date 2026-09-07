@@ -70,6 +70,51 @@ async def test_outlook_send_mail_and_create_event_use_approval_capabilities():
     assert seen[1][1] == "/v1.0/me/calendar/events"
 
 
+@pytest.mark.anyio
+async def test_outlook_draft_update_and_delete_use_fixed_graph_routes():
+    seen: list[tuple[str, str, dict | None]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content) if request.content else None
+        seen.append((request.method, request.url.path, body))
+        if request.method == "POST":
+            return httpx.Response(201, json={"id": "draft-1", "isDraft": True})
+        if request.method == "PATCH":
+            return httpx.Response(200, json={"id": "event-1", "subject": "Updated"})
+        return httpx.Response(204)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        adapter = OutlookOAuthAdapter(connection_store=_store(), client=client)
+        draft = await adapter.run_capability(
+            "mail.draft.create",
+            {"subject": "Draft", "body": "Body", "to": "person@example.com"},
+        )
+        updated = await adapter.run_capability(
+            "calendar.event.update",
+            {"event_id": "event-1", "subject": "Updated"},
+        )
+        deleted = await adapter.run_capability(
+            "calendar.event.delete", {"event_id": "event-1"}
+        )
+
+    assert draft == {"id": "draft-1", "isDraft": True}
+    assert updated == {"id": "event-1", "subject": "Updated"}
+    assert deleted == {"provider": "outlook", "event_id": "event-1", "status_code": 204}
+    assert seen == [
+        (
+            "POST",
+            "/v1.0/me/messages",
+            {
+                "subject": "Draft",
+                "body": {"contentType": "Text", "content": "Body"},
+                "toRecipients": [{"emailAddress": {"address": "person@example.com"}}],
+            },
+        ),
+        ("PATCH", "/v1.0/me/events/event-1", {"subject": "Updated"}),
+        ("DELETE", "/v1.0/me/events/event-1", None),
+    ]
+
+
 def test_outlook_validates_message_and_event_arguments():
     with pytest.raises(ValueError, match="recipients"):
         import asyncio
@@ -87,6 +132,14 @@ def test_outlook_validates_message_and_event_arguments():
             OutlookOAuthAdapter._create_event(
                 OutlookOAuthAdapter.__new__(OutlookOAuthAdapter),
                 {"subject": "Demo", "start": "bad", "end": "bad"},
+            )
+        )
+    with pytest.raises(ValueError, match="at least one"):
+        import asyncio
+
+        asyncio.run(
+            OutlookOAuthAdapter._update_event(
+                OutlookOAuthAdapter.__new__(OutlookOAuthAdapter), {"event_id": "event-1"}
             )
         )
 
