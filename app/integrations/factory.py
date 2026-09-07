@@ -175,6 +175,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Trello",
         "requires": ["TRELLO_API_KEY", "TRELLO_TOKEN", "TRELLO_BOARD_ID", "TRELLO_LIST_ID"],
     },
+    IntegrationProvider.ZOOM: {
+        "name": "Zoom",
+        "requires": ["ZOOM_OAUTH_CLIENT_ID", "ZOOM_OAUTH_CLIENT_SECRET"],
+    },
     IntegrationProvider.RAZORPAY: {
         "name": "Razorpay",
         "requires": ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"],
@@ -345,6 +349,11 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.trello import TrelloAdapter
 
         return TrelloAdapter()
+    if normalized == "zoom":
+        from app.integrations.oauth.registry import oauth_connection_store
+        from app.integrations.zoom import ZoomOAuthAdapter
+
+        return ZoomOAuthAdapter(connection_store=oauth_connection_store)
     if normalized == "razorpay":
         from app.integrations.razorpay import RazorpayAdapter
 
@@ -470,6 +479,8 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
             and settings.trello_board_id
             and settings.trello_list_id
         )
+    if provider == IntegrationProvider.ZOOM:
+        return bool(settings.zoom_oauth_client_id and settings.zoom_oauth_client_secret)
     if provider == IntegrationProvider.RAZORPAY:
         return bool(settings.razorpay_key_id and settings.razorpay_key_secret)
     if provider == IntegrationProvider.OUTLOOK:

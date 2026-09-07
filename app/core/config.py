@@ -179,6 +179,12 @@ class Settings(BaseSettings):
     trello_token: str | None = Field(default=None, validation_alias="TRELLO_TOKEN")
     trello_board_id: str | None = Field(default=None, validation_alias="TRELLO_BOARD_ID")
     trello_list_id: str | None = Field(default=None, validation_alias="TRELLO_LIST_ID")
+    zoom_oauth_client_id: str | None = Field(
+        default=None, validation_alias="ZOOM_OAUTH_CLIENT_ID"
+    )
+    zoom_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="ZOOM_OAUTH_CLIENT_SECRET"
+    )
     razorpay_key_id: str | None = Field(default=None, validation_alias="RAZORPAY_KEY_ID")
     razorpay_key_secret: str | None = Field(default=None, validation_alias="RAZORPAY_KEY_SECRET")
     oauth_storage_backend: str = Field(

@@ -128,6 +128,16 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="MICROSOFT_OAUTH_CLIENT_ID",
         client_secret_env="MICROSOFT_OAUTH_CLIENT_SECRET",
     ),
+    "zoom": OAuthProviderConfig(
+        id="zoom",
+        name="Zoom",
+        authorize_url="https://zoom.us/oauth/authorize",
+        token_url="https://zoom.us/oauth/token",
+        scope="user:read meeting:read meeting:write offline_access",
+        client_id_env="ZOOM_OAUTH_CLIENT_ID",
+        client_secret_env="ZOOM_OAUTH_CLIENT_SECRET",
+        token_auth="basic",
+    ),
     "hubspot": OAuthProviderConfig(
         id="hubspot",
         name="HubSpot",

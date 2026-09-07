@@ -45,6 +45,7 @@ class IntegrationProvider(StrEnum):
     TODOIST = "todoist"
     ASANA = "asana"
     TRELLO = "trello"
+    ZOOM = "zoom"
     RAZORPAY = "razorpay"
     OUTLOOK = "outlook"
 

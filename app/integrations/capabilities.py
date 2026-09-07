@@ -84,6 +84,9 @@ CAPABILITIES: dict[str, Capability] = {
         _write("calendar.event.create", "Create a calendar event"),
         _write("calendar.event.update", "Update a calendar event"),
         _high("calendar.event.delete", "Delete a calendar event"),
+        # --- Meetings ----------------------------------------------------
+        _read("meeting.session.list", "List scheduled meetings"),
+        _high("meeting.session.create", "Create a meeting"),
         # --- Files --------------------------------------------------------
         _read("files.file.list", "List files"),
         _read("files.file.read", "Read file contents"),
