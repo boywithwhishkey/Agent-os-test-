@@ -43,6 +43,24 @@ contradicting note elsewhere.
   `TRELLO_BOARD_ID`, and `TRELLO_LIST_ID` through the deployment secret
   manager before use.
 
+## SESSION 2026-09-07 — ZOOM GOVERNED MEETING CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Zoom now uses the shared OAuth authorization and
+  refresh flow for account identity, bounded scheduled-meeting listing with
+  cursor support, and approval-gated meeting creation. The adapter fixes the
+  meeting type to scheduled meetings, validates ISO-8601 start times,
+  duration, topic, timezone, and agenda, and never accepts a provider path or
+  arbitrary operation from workflow input.
+- Added canonical `meeting.session.list` (READ) and
+  `meeting.session.create` (HIGH_RISK) capabilities, plus catalog, factory,
+  status, broker, approval, and audit wiring. Focused Zoom checks: **6
+  passed**. Full local gate after this change: **580 backend tests passed, 13
+  skipped, 1 warning; 109 frontend tests passed; typecheck, lint, and
+  production build passed**. GitHub Actions CI passed on isolated `staging`.
+- **CREDENTIAL_REQUIRED:** no Zoom OAuth client or user token was available;
+  no live Zoom request was made. Configure `ZOOM_OAUTH_CLIENT_ID` and
+  `ZOOM_OAUTH_CLIENT_SECRET` through the deployment secret manager before use.
+
 ## SESSION 2026-09-05 — SLACK OAUTH MESSAGE CAPABILITIES
 
 - **IMPLEMENTED_TESTED:** Slack now uses the shared OAuth flow for identity,
@@ -2686,7 +2704,8 @@ build all clean.
   Razorpay-focused adapter, broker, and catalog checks: **42 passed**.
   Outlook-focused adapter and catalog checks: **5 passed**.
   Trello-focused adapter and catalog checks: **7 passed**.
-  The full gate after the Trello connector work is **574 backend tests passed,
+  Zoom-focused adapter and catalog checks: **6 passed**.
+  The full gate after the Zoom connector work is **580 backend tests passed,
   13 skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,

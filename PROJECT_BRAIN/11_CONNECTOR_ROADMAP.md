@@ -150,6 +150,10 @@ Trello now has a fixed-board/list API-key adapter for account identity,
 bounded open-card listing, and approval-gated card creation through the
 canonical productivity task capabilities; live Trello credentials remain
 unconfigured.
+Zoom now has shared OAuth identity, bounded scheduled-meeting reads with
+cursor support, and approval-gated scheduled-meeting creation through the
+canonical `meeting.session.*` capabilities; live Zoom credentials remain
+unconfigured.
 Razorpay now has fixed `commerce.payment.list` and `commerce.order.list`
 operations plus approval-gated `commerce.refund.create`; the key pair stays
 server-side and live payment credentials remain unconfigured.
