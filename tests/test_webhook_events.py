@@ -33,6 +33,17 @@ def test_meta_whatsapp_message_and_status_are_normalized():
     assert status.payload["status"]["status"] == "delivered"
 
 
+def test_zoom_meeting_event_is_normalized_to_provider_event_type():
+    event = normalize_webhook(
+        "zoom",
+        '{"event":"meeting.started","payload":{"object":{"id":"meeting-1"}}}',
+        "zoom:delivery",
+    )
+    assert event.event_type == "meeting.started"
+    assert event.event_id == "meeting-1"
+    assert event.payload["delivery_id"] == "zoom:delivery"
+
+
 @pytest.mark.parametrize("body", ["not-json", "[]", '{"message":{}}'])
 def test_normalizer_rejects_invalid_telegram_shapes(body):
     with pytest.raises(WebhookPayloadError):

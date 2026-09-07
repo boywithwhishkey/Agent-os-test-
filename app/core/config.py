@@ -185,6 +185,12 @@ class Settings(BaseSettings):
     zoom_oauth_client_secret: str | None = Field(
         default=None, validation_alias="ZOOM_OAUTH_CLIENT_SECRET"
     )
+    zoom_webhook_secret_token: str | None = Field(
+        default=None, validation_alias="ZOOM_WEBHOOK_SECRET_TOKEN"
+    )
+    zoom_webhook_max_skew_seconds: int = Field(
+        default=300, ge=30, le=3_600, validation_alias="ZOOM_WEBHOOK_MAX_SKEW_SECONDS"
+    )
     razorpay_key_id: str | None = Field(default=None, validation_alias="RAZORPAY_KEY_ID")
     razorpay_key_secret: str | None = Field(default=None, validation_alias="RAZORPAY_KEY_SECRET")
     oauth_storage_backend: str = Field(

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
+import time
 
 from fastapi.testclient import TestClient
 
@@ -70,4 +72,49 @@ def test_telegram_webhook_requires_secret_header(monkeypatch):
         )
     assert accepted.status_code == 200
     assert accepted.json()["provider"] == "telegram"
+    assert rejected.status_code == 403
+
+
+def _zoom_headers(body: bytes, secret: str) -> dict[str, str]:
+    timestamp = str(int(time.time()))
+    message = f"v0:{timestamp}:{body.decode()}".encode()
+    digest = hmac.new(secret.encode(), message, hashlib.sha256).hexdigest()
+    return {"X-Zm-Request-Timestamp": timestamp, "X-Zm-Signature": f"v0={digest}"}
+
+
+def test_zoom_webhook_answers_validation_challenge(monkeypatch):
+    secret = "zoom-secret"
+    monkeypatch.setattr(settings, "zoom_webhook_secret_token", secret)
+    body = json.dumps(
+        {"event": "endpoint.url_validation", "payload": {"plainToken": "plain-token"}}
+    ).encode()
+
+    with TestClient(app) as client:
+        response = client.post("/api/v1/webhooks/zoom", content=body, headers=_zoom_headers(body, secret))
+
+    expected = hmac.new(secret.encode(), b"plain-token", hashlib.sha256).hexdigest()
+    assert response.status_code == 200
+    assert response.json() == {"plainToken": "plain-token", "encryptedToken": expected}
+
+
+def test_zoom_webhook_queues_verified_event_and_rejects_replay(monkeypatch):
+    secret = "zoom-secret"
+    monkeypatch.setattr(settings, "zoom_webhook_secret_token", secret)
+    queue = InMemoryJobQueue()
+    monkeypatch.setattr(webhook_routes, "_delivery_queue", queue)
+    body = b'{"event":"meeting.started","payload":{"object":{"id":"meeting-1"}}}'
+    headers = _zoom_headers(body, secret)
+
+    with TestClient(app) as client:
+        accepted = client.post("/api/v1/webhooks/zoom", content=body, headers=headers)
+        duplicate = client.post("/api/v1/webhooks/zoom", content=body, headers=headers)
+        rejected = client.post(
+            "/api/v1/webhooks/zoom",
+            content=body,
+            headers={**headers, "X-Zm-Signature": "v0=" + "0" * 64},
+        )
+
+    assert accepted.status_code == 200
+    assert accepted.json()["provider"] == "zoom"
+    assert duplicate.json()["duplicate"] is True
     assert rejected.status_code == 403

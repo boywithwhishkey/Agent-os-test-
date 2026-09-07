@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import hashlib
 import hmac
+import json
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 
 from app.core.config import settings
-from app.integrations.webhooks import delivery_id, verify_meta_signature, verify_telegram_secret
+from app.integrations.webhooks import (
+    delivery_id,
+    verify_meta_signature,
+    verify_telegram_secret,
+    verify_zoom_signature,
+)
 from app.queue.base import JobQueue, QueueJob
 from app.queue.factory import build_job_queue
 
@@ -78,6 +85,37 @@ async def telegram_webhook(request: Request) -> dict[str, str | bool]:
     ):
         raise HTTPException(status_code=403, detail="Invalid Telegram webhook secret")
     return await _accept_delivery("telegram", body)
+
+
+@router.post("/zoom")
+async def zoom_webhook(request: Request) -> dict[str, str | bool]:
+    """Verify and queue Zoom events, answering Zoom's endpoint challenge."""
+    body = await request.body()
+    secret = settings.zoom_webhook_secret_token
+    if not secret:
+        raise HTTPException(status_code=503, detail="ZOOM_WEBHOOK_SECRET_TOKEN is not configured")
+    if not verify_zoom_signature(
+        body,
+        request.headers.get("x-zm-request-timestamp"),
+        request.headers.get("x-zm-signature"),
+        secret,
+        max_skew_seconds=settings.zoom_webhook_max_skew_seconds,
+    ):
+        raise HTTPException(status_code=403, detail="Invalid Zoom webhook signature")
+    try:
+        document = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=400, detail="Zoom webhook payload must be valid JSON") from exc
+    if not isinstance(document, dict):
+        raise HTTPException(status_code=400, detail="Zoom webhook payload must be a JSON object")
+    if document.get("event") == "endpoint.url_validation":
+        payload = document.get("payload")
+        plain_token = payload.get("plainToken") if isinstance(payload, dict) else None
+        if not isinstance(plain_token, str) or not 1 <= len(plain_token) <= 512:
+            raise HTTPException(status_code=400, detail="Zoom webhook challenge is invalid")
+        encrypted = hmac.new(secret.encode("utf-8"), plain_token.encode("utf-8"), hashlib.sha256).hexdigest()
+        return {"plainToken": plain_token, "encryptedToken": encrypted}
+    return await _accept_delivery("zoom", body)
 
 
 def hmac_compare(received: str | None, expected: str) -> bool:

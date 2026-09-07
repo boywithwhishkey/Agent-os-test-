@@ -37,6 +37,8 @@ def normalize_webhook(provider: str, body: str, delivery_id: str) -> WebhookEven
         return _normalize_telegram(document, delivery_id)
     if normalized_provider == "meta":
         return _normalize_meta(document, delivery_id)
+    if normalized_provider == "zoom":
+        return _normalize_zoom(document, delivery_id)
     return WebhookEvent(
         provider=normalized_provider,
         event_type="event.received",
@@ -126,4 +128,21 @@ def _normalize_meta(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
         event_type="event.received",
         event_id=delivery_id,
         payload={"object": object_name, "entry": first_entry, "provider_payload": document},
+    )
+
+
+def _normalize_zoom(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
+    event_name = document.get("event")
+    if not isinstance(event_name, str) or not 1 <= len(event_name.strip()) <= 128:
+        raise WebhookPayloadError("Zoom webhook is missing a valid event name")
+    payload = document.get("payload")
+    object_data = payload.get("object") if isinstance(payload, dict) else None
+    event_id = object_data.get("id") if isinstance(object_data, dict) else None
+    if not isinstance(event_id, str) or not 1 <= len(event_id) <= 256:
+        event_id = delivery_id
+    return WebhookEvent(
+        provider="zoom",
+        event_type=event_name.strip(),
+        event_id=event_id,
+        payload={"provider_payload": document, "delivery_id": delivery_id},
     )
