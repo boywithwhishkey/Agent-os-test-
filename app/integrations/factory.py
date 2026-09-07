@@ -135,6 +135,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Google Tasks",
         "requires": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     },
+    IntegrationProvider.GOOGLE_CONTACTS: {
+        "name": "Google Contacts",
+        "requires": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+    },
     IntegrationProvider.JIRA: {
         "name": "Jira",
         "requires": [
@@ -331,6 +335,11 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         return GoogleOAuthAdapter(
             provider=IntegrationProvider(normalized), connection_store=oauth_connection_store
         )
+    if normalized == "google_contacts":
+        from app.integrations.google_contacts import GoogleContactsOAuthAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
+
+        return GoogleContactsOAuthAdapter(connection_store=oauth_connection_store)
     if normalized == "jira":
         from app.integrations.jira import JiraOAuthAdapter
         from app.integrations.oauth.registry import oauth_connection_store
@@ -511,6 +520,7 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         IntegrationProvider.GOOGLE_DRIVE,
         IntegrationProvider.GOOGLE_SHEETS,
         IntegrationProvider.GOOGLE_TASKS,
+        IntegrationProvider.GOOGLE_CONTACTS,
     }:
         return bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
     if provider == IntegrationProvider.JIRA:

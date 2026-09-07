@@ -21,6 +21,7 @@ SNAPCHAT = OAUTH_PROVIDERS["snapchat"]
 PINTEREST = OAUTH_PROVIDERS["pinterest"]
 REDDIT = OAUTH_PROVIDERS["reddit"]
 MICROSOFT_TODO = OAUTH_PROVIDERS["microsoft_todo"]
+GOOGLE_CONTACTS = OAUTH_PROVIDERS["google_contacts"]
 
 
 def test_build_authorize_url_includes_state_and_redirect(monkeypatch):
@@ -59,6 +60,12 @@ def test_microsoft_todo_oauth_metadata_is_separate_from_outlook():
     assert MICROSOFT_TODO.client_id_env == "MICROSOFT_OAUTH_CLIENT_ID"
     assert "Tasks.ReadWrite" in MICROSOFT_TODO.scope
     assert "offline_access" in MICROSOFT_TODO.scope
+
+
+def test_google_contacts_oauth_metadata_requests_contacts_scope():
+    assert GOOGLE_CONTACTS.client_id_env == "GOOGLE_OAUTH_CLIENT_ID"
+    assert "https://www.googleapis.com/auth/contacts" in GOOGLE_CONTACTS.scope
+    assert "offline_access" not in GOOGLE_CONTACTS.scope
 
 
 def test_state_store_is_single_use():

@@ -14,6 +14,17 @@ contradicting note elsewhere.
 - No Microsoft app credentials were available, so live Graph validation remains
   pending.
 
+## SESSION 2026-09-07 — GOOGLE CONTACTS CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Google Contacts now has a separate shared-client OAuth
+  configuration using the People API `contacts` scope, with account identity,
+  bounded connection-list reads, and approval-governed contact creation.
+- Contact names, email addresses, phone numbers, organizations, page sizes, and
+  pagination tokens are validated before provider requests; the adapter uses the
+  tenant-scoped OAuth refresh path and secret-safe errors.
+- No Google OAuth credentials were available, so live People API validation
+  remains pending.
+
 ## SESSION 2026-09-07 — GOOGLE TASKS CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Google Tasks now reuses the shared Google OAuth

@@ -47,6 +47,9 @@ without that loop remain metadata only.
 11. Microsoft To Do — separate Microsoft OAuth account verification, bounded
     task reads, and approval-gated task creation are implemented; live Graph
     authorization remains pending.
+12. Google Contacts — separate Google OAuth `contacts` scope, account
+    verification, bounded contact-list reads, and approval-gated contact
+    creation are implemented; live People API authorization remains pending.
 
 ### Commerce and payments
 
@@ -135,7 +138,7 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 43 catalog entries. All forty-three have adapters and tests; PostgreSQL
+THYNACT now has 48 catalog entries. All forty-eight have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. There are no catalog-only entries left;
 the next work is capability depth, multi-user tenant isolation, provider-specific

@@ -37,6 +37,7 @@ class IntegrationProvider(StrEnum):
     GOOGLE_DRIVE = "google_drive"
     GOOGLE_SHEETS = "google_sheets"
     GOOGLE_TASKS = "google_tasks"
+    GOOGLE_CONTACTS = "google_contacts"
     LINKEDIN = "linkedin"
     PINTEREST = "pinterest"
     REDDIT = "reddit"

@@ -130,6 +130,7 @@ CAPABILITIES: dict[str, Capability] = {
         _write("queue.job.enqueue", "Enqueue a job"),
         # --- CRM ---------------------------------------------------------------
         _read("crm.contact.list", "List CRM contacts"),
+        _write("crm.contact.create", "Create a CRM contact"),
         _write("crm.contact.update", "Update a CRM contact"),
         _read("crm.deal.list", "List deals"),
         _read("crm.ticket.list", "List tickets"),
