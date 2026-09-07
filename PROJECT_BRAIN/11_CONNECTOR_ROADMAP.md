@@ -91,8 +91,10 @@ creating one-off integrations.
   `AGENT_OS_WEBHOOK_TENANT_MAP` using provider/account identifiers; account
   routes take precedence over provider fallbacks, and unknown or conflicting
   routes fail closed. The resolved tenant travels in the queue job and is
-  restored around worker execution. Do not use a tenant header or payload
-  field as an authority source.
+  restored around worker execution. `AGENT_OS_WEBHOOK_WORKFLOW_MAP` may pin a
+  tenant to a workflow with a `tenant:provider` key, which takes precedence
+  over the provider fallback. Do not use a tenant header or payload field as
+  an authority source.
 - Adapter accepts canonical capability arguments only and never an arbitrary
   provider URL or operation name from an agent.
 - Read, write, and high-risk operations use the shared capability risk model;

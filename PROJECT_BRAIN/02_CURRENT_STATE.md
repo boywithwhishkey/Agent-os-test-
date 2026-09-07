@@ -16,10 +16,11 @@ contradicting note elsewhere.
   tenant.
 - Queue payloads now carry the resolved tenant id, and `WebhookConsumer`
   establishes and resets that tenant context around normalization, workflow
-  lookup, and execution. Legacy single-operator deployments continue to use
-  `AGENT_OS_OAUTH_TENANT_ID` when the map is empty.
-- Focused webhook/tenancy/consumer checks: **17 passed**. Full backend gate:
-  **618 passed, 13 skipped, 1 warning**; frontend **109 passed**, typecheck,
+  lookup, and execution. Tenant-specific workflow routes (`tenant:provider`)
+  take precedence over the legacy provider route. Legacy single-operator
+  deployments continue to use `AGENT_OS_OAUTH_TENANT_ID` when the map is empty.
+- Focused webhook/tenancy/consumer checks: **18 passed**. Full backend gate:
+  **619 passed, 13 skipped, 1 warning**; frontend **109 passed**, typecheck,
   lint (9 pre-existing warnings), and production build passed.
 - **NOT LIVE-VALIDATED:** the routing contract still needs two real staging
   tenants, provider account identifiers, and signed deliveries against the
