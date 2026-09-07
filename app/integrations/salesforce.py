@@ -26,7 +26,13 @@ class SalesforceOAuthAdapter(IntegrationAdapter):
         connection_store: OAuthConnectionStore,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.instance_url = self._normalize_url(instance_url or settings.salesforce_instance_url or "")
+        self.instance_url = self._normalize_url(
+            instance_url
+            or settings.connector_credential(
+                "SALESFORCE_INSTANCE_URL", settings.salesforce_instance_url
+            )
+            or ""
+        )
         self.api_version = api_version or settings.salesforce_api_version
         self._connection_store = connection_store
         self._client = client

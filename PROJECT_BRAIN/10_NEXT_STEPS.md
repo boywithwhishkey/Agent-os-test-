@@ -76,6 +76,9 @@ API-token connectors now accept the server-held
 non-default tenants, then validate rotation and restart behavior in staging.
 The selector now covers AI, automation, chat webhook, cloud/deployment, Linear,
 and Supabase adapters in addition to the commerce/social/productivity set.
+Jira cloud IDs and Salesforce instance URLs are now tenant-scoped with their
+OAuth connections; a tenant without either identifier fails closed instead of
+borrowing another tenant's destination.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
 Render now has fixed service listing and governed deploy-trigger operations;

@@ -101,6 +101,58 @@ def test_factory_and_ai_adapter_use_scoped_api_credentials(monkeypatch) -> None:
         assert is_provider_configured(IntegrationProvider.OPENAI) is False
 
 
+def test_oauth_provider_routing_identifiers_are_scoped_with_the_connection(monkeypatch) -> None:
+    from app.integrations.factory import is_provider_configured
+    from app.integrations.jira import JiraOAuthAdapter
+    from app.integrations.models import IntegrationProvider
+    from app.integrations.oauth.store import OAuthConnectionStore
+    from app.integrations.salesforce import SalesforceOAuthAdapter
+
+    monkeypatch.setattr(settings, "oauth_tenant_id", "operator")
+    monkeypatch.setattr(settings, "jira_oauth_client_id", "jira-client")
+    monkeypatch.setattr(settings, "jira_oauth_client_secret", "jira-secret")
+    monkeypatch.setattr(settings, "salesforce_oauth_client_id", "sf-client")
+    monkeypatch.setattr(settings, "salesforce_oauth_client_secret", "sf-secret")
+    monkeypatch.setattr(
+        settings,
+        "connector_credentials_json",
+        json.dumps(
+            {
+                "tenant-a": {
+                    "JIRA_CLOUD_ID": "jira-cloud-a",
+                    "SALESFORCE_INSTANCE_URL": "https://tenant-a.my.salesforce.com",
+                }
+            }
+        ),
+    )
+
+    with tenant("tenant-a"):
+        assert JiraOAuthAdapter(connection_store=OAuthConnectionStore()).cloud_id == "jira-cloud-a"
+        assert (
+            SalesforceOAuthAdapter(connection_store=OAuthConnectionStore()).instance_url
+            == "https://tenant-a.my.salesforce.com"
+        )
+        assert is_provider_configured(IntegrationProvider.JIRA) is True
+        assert is_provider_configured(IntegrationProvider.SALESFORCE) is True
+
+    with tenant("tenant-b"):
+        assert is_provider_configured(IntegrationProvider.JIRA) is False
+        assert is_provider_configured(IntegrationProvider.SALESFORCE) is False
+        for adapter_factory, name in (
+            (lambda: JiraOAuthAdapter(connection_store=OAuthConnectionStore()), "JIRA_CLOUD_ID"),
+            (
+                lambda: SalesforceOAuthAdapter(connection_store=OAuthConnectionStore()),
+                "SALESFORCE_INSTANCE_URL",
+            ),
+        ):
+            try:
+                adapter_factory()
+            except RuntimeError as exc:
+                assert name in str(exc)
+            else:  # pragma: no cover - defensive assertion
+                raise AssertionError(f"tenant-b inherited {name}")
+
+
 def test_oauth_state_claim_carries_the_owning_tenant() -> None:
     store = OAuthStateStore()
     with tenant("tenant-a"):

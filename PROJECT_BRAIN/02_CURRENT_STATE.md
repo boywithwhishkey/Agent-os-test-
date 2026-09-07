@@ -5,6 +5,18 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — TENANT-SCOPED OAUTH ROUTING IDENTIFIERS
+
+- **IMPLEMENTED_TESTED:** Jira `JIRA_CLOUD_ID` and Salesforce
+  `SALESFORCE_INSTANCE_URL` now resolve through the server-held tenant
+  credential map alongside their tenant-scoped OAuth access tokens. The
+  adapter factories and configuration checks fail closed for a tenant that
+  lacks its routing identifier instead of inheriting another tenant's
+  destination.
+- Focused tenant/OAuth checks: **30 passed, 1 warning**. Full backend gate:
+  **624 passed, 13 skipped, 1 warning**. No provider credentials or live
+  staging calls were used.
+
 ## SESSION 2026-09-07 — TENANT-SCOPED API CONNECTOR COVERAGE
 
 - **IMPLEMENTED_TESTED:** the server-held tenant credential selector now also

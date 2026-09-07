@@ -25,7 +25,11 @@ class JiraOAuthAdapter(IntegrationAdapter):
         connection_store: OAuthConnectionStore,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.cloud_id = (cloud_id or settings.jira_cloud_id or "").strip()
+        self.cloud_id = (
+            cloud_id
+            or settings.connector_credential("JIRA_CLOUD_ID", settings.jira_cloud_id)
+            or ""
+        ).strip()
         self._connection_store = connection_store
         self._client = client
         if not self.cloud_id:

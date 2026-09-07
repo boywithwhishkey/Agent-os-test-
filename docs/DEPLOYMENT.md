@@ -49,7 +49,7 @@ commit values.** Staging values must differ from production.
 | `AGENT_OS_APP_ENV` | non-secret config | `staging`. Must match the DB stamp. |
 | `AGENT_OS_API_KEY` | **required secret (single-tenant mode)** | Legacy operator key gating `/api/v1/*`. Generate a fresh one; never reuse production's. |
 | `AGENT_OS_API_KEYS_JSON` | **optional secret map** | Multi-tenant mode: JSON object mapping each server-held API key to a tenant id, for example `{\"tenant-key-a\":\"tenant-a\"}`. Never use a client-supplied tenant header. |
-| `AGENT_OS_CONNECTOR_CREDENTIALS_JSON` | **optional secret map** | Tenant-scoped API/webhook connector credentials, keyed by stable tenant id and provider env name. Non-default tenants do not fall back to deployment-global provider tokens. Keep values only in the deployment secret manager. |
+| `AGENT_OS_CONNECTOR_CREDENTIALS_JSON` | **optional secret map** | Tenant-scoped API/webhook credentials and OAuth routing identifiers, keyed by stable tenant id and provider env name (for example `JIRA_CLOUD_ID` and `SALESFORCE_INSTANCE_URL`). Non-default tenants do not fall back to deployment-global provider tokens or destinations. Keep values only in the deployment secret manager. |
 | `DATABASE_URL` | derived | Injected from `thynact-staging-db`. Never a literal. |
 | `REDIS_URL` | derived | Injected from `thynact-staging-redis`. Never a literal. |
 | `AGENT_OS_REQUIRE_DURABLE_PERSISTENCE` | non-secret config | `true` — fail closed if any subsystem is still in-memory. |

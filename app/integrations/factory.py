@@ -471,7 +471,7 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(
             settings.jira_oauth_client_id
             and settings.jira_oauth_client_secret
-            and settings.jira_cloud_id
+            and _credential("JIRA_CLOUD_ID", settings.jira_cloud_id)
         )
     if provider == IntegrationProvider.DROPBOX:
         return bool(settings.dropbox_oauth_client_id and settings.dropbox_oauth_client_secret)
@@ -483,7 +483,7 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(
             settings.salesforce_oauth_client_id
             and settings.salesforce_oauth_client_secret
-            and settings.salesforce_instance_url
+            and _credential("SALESFORCE_INSTANCE_URL", settings.salesforce_instance_url)
         )
     if provider == IntegrationProvider.ZAPIER:
         return bool(_credential("ZAPIER_WEBHOOK_URL", settings.zapier_webhook_url))

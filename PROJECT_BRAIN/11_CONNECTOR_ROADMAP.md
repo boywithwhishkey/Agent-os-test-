@@ -102,6 +102,10 @@ creating one-off integrations.
   This selector is wired through AI, automation, chat webhook, cloud,
   deployment, data, social, commerce, and productivity adapters; infrastructure
   database/queue settings remain deployment-scoped by design.
+  OAuth client registrations remain deployment-scoped, but tenant-specific
+  routing identifiers use the same map: Jira `JIRA_CLOUD_ID` and Salesforce
+  `SALESFORCE_INSTANCE_URL` are isolated with their OAuth connections. A tenant
+  without its routing identifier fails closed.
 - Adapter accepts canonical capability arguments only and never an arbitrary
   provider URL or operation name from an agent.
 - Read, write, and high-risk operations use the shared capability risk model;
