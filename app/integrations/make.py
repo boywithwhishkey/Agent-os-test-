@@ -30,9 +30,15 @@ class MakeWebhookAdapter(IntegrationAdapter):
         auth_value: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.webhook_url = webhook_url or settings.make_webhook_url or ""
-        self.auth_header = auth_header or settings.make_webhook_auth_header
-        self.auth_value = auth_value or settings.make_webhook_auth_value
+        self.webhook_url = webhook_url or settings.connector_credential(
+            "MAKE_WEBHOOK_URL", settings.make_webhook_url
+        ) or ""
+        self.auth_header = auth_header or settings.connector_credential(
+            "MAKE_WEBHOOK_AUTH_HEADER", settings.make_webhook_auth_header
+        )
+        self.auth_value = auth_value or settings.connector_credential(
+            "MAKE_WEBHOOK_AUTH_VALUE", settings.make_webhook_auth_value
+        )
         self._client = client
 
         if not self.webhook_url.strip():

@@ -17,7 +17,9 @@ class OpenAIAdapter(IntegrationAdapter):
     execute() is intentionally unsupported here."""
 
     def __init__(self, *, api_key: str | None = None, client: httpx.AsyncClient | None = None) -> None:
-        self.api_key = api_key or settings.openai_api_key
+        self.api_key = api_key or settings.connector_credential(
+            "OPENAI_API_KEY", settings.openai_api_key
+        )
         self._client = client
         if not self.api_key:
             raise RuntimeError("OPENAI_API_KEY is required")

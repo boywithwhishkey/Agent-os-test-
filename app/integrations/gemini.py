@@ -15,7 +15,9 @@ class GeminiAdapter(IntegrationAdapter):
     read-only call — rather than generating content."""
 
     def __init__(self, *, api_key: str | None = None, client: httpx.AsyncClient | None = None) -> None:
-        self.api_key = api_key or settings.gemini_api_key
+        self.api_key = api_key or settings.connector_credential(
+            "GEMINI_API_KEY", settings.gemini_api_key
+        )
         self._client = client
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY is required")

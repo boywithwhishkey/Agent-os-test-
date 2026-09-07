@@ -25,8 +25,12 @@ class RenderAdapter(IntegrationAdapter):
         service_id: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.api_key = api_key or settings.render_api_key
-        self.service_id = service_id or settings.render_service_id
+        self.api_key = api_key or settings.connector_credential(
+            "RENDER_API_KEY", settings.render_api_key
+        )
+        self.service_id = service_id or settings.connector_credential(
+            "RENDER_SERVICE_ID", settings.render_service_id
+        )
         self._client = client
         if not self.api_key:
             raise RuntimeError("RENDER_API_KEY is required")

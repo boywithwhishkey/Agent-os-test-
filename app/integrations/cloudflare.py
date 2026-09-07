@@ -21,7 +21,9 @@ class CloudflareAdapter(IntegrationAdapter):
     _ZONE_ID = re.compile(r"[A-Za-z0-9]{1,32}\Z")
 
     def __init__(self, *, api_token: str | None = None, client: httpx.AsyncClient | None = None) -> None:
-        self.api_token = api_token or settings.cloudflare_api_token
+        self.api_token = api_token or settings.connector_credential(
+            "CLOUDFLARE_API_TOKEN", settings.cloudflare_api_token
+        )
         self._client = client
         if not self.api_token:
             raise RuntimeError("CLOUDFLARE_API_TOKEN is required")

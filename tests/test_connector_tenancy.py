@@ -83,6 +83,24 @@ def test_scoped_stripe_adapter_uses_the_active_tenant_credential(monkeypatch) ->
             raise AssertionError("tenant-b reused tenant-a's Stripe credential")
 
 
+def test_factory_and_ai_adapter_use_scoped_api_credentials(monkeypatch) -> None:
+    from app.integrations.factory import is_provider_configured
+    from app.integrations.models import IntegrationProvider
+    from app.integrations.openai import OpenAIAdapter
+
+    monkeypatch.setattr(settings, "oauth_tenant_id", "operator")
+    monkeypatch.setattr(
+        settings,
+        "connector_credentials_json",
+        json.dumps({"tenant-a": {"OPENAI_API_KEY": "sk_tenant_a"}}),
+    )
+    with tenant("tenant-a"):
+        assert is_provider_configured(IntegrationProvider.OPENAI) is True
+        assert OpenAIAdapter().api_key == "sk_tenant_a"
+    with tenant("tenant-b"):
+        assert is_provider_configured(IntegrationProvider.OPENAI) is False
+
+
 def test_oauth_state_claim_carries_the_owning_tenant() -> None:
     store = OAuthStateStore()
     with tenant("tenant-a"):

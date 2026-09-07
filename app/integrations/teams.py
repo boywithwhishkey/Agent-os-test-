@@ -18,7 +18,9 @@ class TeamsWebhookAdapter(IntegrationAdapter):
         webhook_url: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.webhook_url = webhook_url or settings.teams_webhook_url or ""
+        self.webhook_url = webhook_url or settings.connector_credential(
+            "TEAMS_WEBHOOK_URL", settings.teams_webhook_url
+        ) or ""
         self._client = client
         if not self.webhook_url.strip():
             raise RuntimeError("TEAMS_WEBHOOK_URL is required")

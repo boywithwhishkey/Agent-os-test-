@@ -26,9 +26,17 @@ class SupabaseAdapter(IntegrationAdapter):
         read_table: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.url = self._normalize_url(url or settings.supabase_url or "")
-        self.anon_key = anon_key or settings.supabase_anon_key or ""
-        self.read_table = (read_table or settings.supabase_read_table or "").strip()
+        self.url = self._normalize_url(
+            url or settings.connector_credential("SUPABASE_URL", settings.supabase_url) or ""
+        )
+        self.anon_key = anon_key or settings.connector_credential(
+            "SUPABASE_ANON_KEY", settings.supabase_anon_key
+        ) or ""
+        self.read_table = (
+            read_table
+            or settings.connector_credential("SUPABASE_READ_TABLE", settings.supabase_read_table)
+            or ""
+        ).strip()
         self._client = client
         if not self.url:
             raise RuntimeError("SUPABASE_URL must be an HTTPS URL")

@@ -24,9 +24,15 @@ class VercelAdapter(IntegrationAdapter):
         team_id: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.api_token = api_token or settings.vercel_api_token or ""
-        self.team_id = team_id or settings.vercel_team_id
-        self.deploy_hook_url = settings.vercel_deploy_hook_url
+        self.api_token = api_token or settings.connector_credential(
+            "VERCEL_API_TOKEN", settings.vercel_api_token
+        ) or ""
+        self.team_id = team_id or settings.connector_credential(
+            "VERCEL_TEAM_ID", settings.vercel_team_id
+        )
+        self.deploy_hook_url = settings.connector_credential(
+            "VERCEL_DEPLOY_HOOK_URL", settings.vercel_deploy_hook_url
+        )
         self._client = client
         if not self.api_token.strip():
             raise RuntimeError("VERCEL_API_TOKEN is required")

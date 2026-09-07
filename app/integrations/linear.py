@@ -17,7 +17,9 @@ class LinearAdapter(IntegrationAdapter):
     _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}\Z")
 
     def __init__(self, *, api_key: str | None = None, client: httpx.AsyncClient | None = None) -> None:
-        self.api_key = api_key or settings.linear_api_key or ""
+        self.api_key = api_key or settings.connector_credential(
+            "LINEAR_API_KEY", settings.linear_api_key
+        ) or ""
         self._client = client
         if not self.api_key.strip():
             raise RuntimeError("LINEAR_API_KEY is required")

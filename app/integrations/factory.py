@@ -384,21 +384,21 @@ def provider_requirements(provider: IntegrationProvider) -> list[str]:
 
 def is_provider_configured(provider: IntegrationProvider) -> bool:
     if provider == IntegrationProvider.N8N:
-        return bool(settings.n8n_base_url.strip())
+        return bool(_credential("N8N_BASE_URL", settings.n8n_base_url))
     if provider == IntegrationProvider.GEMINI:
-        return bool(settings.gemini_api_key)
+        return bool(_credential("GEMINI_API_KEY", settings.gemini_api_key))
     if provider == IntegrationProvider.POSTGRESQL:
         return bool(settings.database_url.strip())
     if provider == IntegrationProvider.REDIS:
         return bool(settings.redis_url.strip())
     if provider == IntegrationProvider.OPENAI:
-        return bool(settings.openai_api_key)
+        return bool(_credential("OPENAI_API_KEY", settings.openai_api_key))
     if provider == IntegrationProvider.ANTHROPIC:
-        return bool(settings.anthropic_api_key)
+        return bool(_credential("ANTHROPIC_API_KEY", settings.anthropic_api_key))
     if provider == IntegrationProvider.CLOUDFLARE:
-        return bool(settings.cloudflare_api_token)
+        return bool(_credential("CLOUDFLARE_API_TOKEN", settings.cloudflare_api_token))
     if provider == IntegrationProvider.RENDER:
-        return bool(settings.render_api_key)
+        return bool(_credential("RENDER_API_KEY", settings.render_api_key))
     if provider == IntegrationProvider.GITHUB:
         return bool(settings.github_oauth_client_id) and bool(settings.github_oauth_client_secret)
     if provider == IntegrationProvider.SLACK:
@@ -408,9 +408,9 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
     if provider == IntegrationProvider.GITLAB:
         return bool(settings.gitlab_oauth_client_id) and bool(settings.gitlab_oauth_client_secret)
     if provider == IntegrationProvider.MAKE:
-        return bool(settings.make_webhook_url)
+        return bool(_credential("MAKE_WEBHOOK_URL", settings.make_webhook_url))
     if provider == IntegrationProvider.DISCORD:
-        return bool(settings.discord_webhook_url)
+        return bool(_credential("DISCORD_WEBHOOK_URL", settings.discord_webhook_url))
     if provider == IntegrationProvider.TELEGRAM:
         return bool(_credential("TELEGRAM_BOT_TOKEN", settings.telegram_bot_token))
     if provider == IntegrationProvider.WHATSAPP:
@@ -430,7 +430,7 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
             )
         )
     if provider == IntegrationProvider.TEAMS:
-        return bool(settings.teams_webhook_url)
+        return bool(_credential("TEAMS_WEBHOOK_URL", settings.teams_webhook_url))
     if provider == IntegrationProvider.SHOPIFY:
         return bool(
             _credential("SHOPIFY_ADMIN_ACCESS_TOKEN", settings.shopify_admin_access_token)
@@ -450,9 +450,9 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
             and _credential("WOOCOMMERCE_CONSUMER_SECRET", settings.woocommerce_consumer_secret)
         )
     if provider == IntegrationProvider.VERCEL:
-        return bool(settings.vercel_api_token)
+        return bool(_credential("VERCEL_API_TOKEN", settings.vercel_api_token))
     if provider == IntegrationProvider.LINEAR:
-        return bool(settings.linear_api_key)
+        return bool(_credential("LINEAR_API_KEY", settings.linear_api_key))
     if provider == IntegrationProvider.AMAZON:
         return bool(
             _credential("AMAZON_LWA_CLIENT_ID", settings.amazon_lwa_client_id)
@@ -486,9 +486,13 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
             and settings.salesforce_instance_url
         )
     if provider == IntegrationProvider.ZAPIER:
-        return bool(settings.zapier_webhook_url)
+        return bool(_credential("ZAPIER_WEBHOOK_URL", settings.zapier_webhook_url))
     if provider == IntegrationProvider.SUPABASE:
-        return bool(settings.supabase_url and settings.supabase_anon_key and settings.supabase_read_table)
+        return bool(
+            _credential("SUPABASE_URL", settings.supabase_url)
+            and _credential("SUPABASE_ANON_KEY", settings.supabase_anon_key)
+            and _credential("SUPABASE_READ_TABLE", settings.supabase_read_table)
+        )
     if provider == IntegrationProvider.TODOIST:
         return bool(_credential("TODOIST_API_TOKEN", settings.todoist_api_token))
     if provider == IntegrationProvider.ASANA:
