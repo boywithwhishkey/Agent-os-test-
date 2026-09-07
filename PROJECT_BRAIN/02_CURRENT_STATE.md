@@ -5,6 +5,20 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — SLACK IDENTITY CAPABILITY COMPLETION
+
+- **IMPLEMENTED_TESTED:** Slack's catalog-declared `identity.account.read`
+  capability now runs through the governed adapter path using the fixed
+  `auth.test` endpoint and shared OAuth refresh handling. The result is
+  deliberately filtered to safe identity fields; token-shaped response data
+  is not returned.
+- Focused Slack adapter checks: **33 passed**. Full local gate after this
+  change: **590 backend tests passed, 13 skipped, 1 warning; 109 frontend
+  tests passed; typecheck, lint, and production build passed**. GitHub CI is
+  pending for commit `77e7055`.
+- **CREDENTIAL_REQUIRED:** no Slack OAuth connection was available here, so
+  the operation remains mocked/contract-tested rather than live-validated.
+
 ## SESSION 2026-09-07 — GOVERNED CAPABILITY API RUNTIME PATH
 
 - **IMPLEMENTED_TESTED:** The canonical connector broker is now reachable at

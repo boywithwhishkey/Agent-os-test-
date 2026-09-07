@@ -171,6 +171,8 @@ bounded channel/text arguments and secret-safe provider errors. It also has a
 bounded OAuth-backed `conversations.history` read with cursor pagination;
 provider credentials and live Slack validation remain gated. Channel discovery
 uses the fixed `conversations.list` endpoint with an allowlisted type filter.
+Its catalog-declared `identity.account.read` capability now also routes through
+the fixed `auth.test` endpoint and filters the returned identity fields.
 
 ## Operator prerequisites
 
