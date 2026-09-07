@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from app.core.tenant import get_current_tenant
+
 
 @dataclass(slots=True)
 class IntegrationStatusRecord:
@@ -22,11 +24,13 @@ class IntegrationStatusStore:
     restart.
     """
 
-    def __init__(self) -> None:
-        self._records: dict[str, IntegrationStatusRecord] = {}
+    def __init__(self, *, tenant_id: str = "operator") -> None:
+        self._tenant_id = tenant_id
+        self._records: dict[tuple[str, str], IntegrationStatusRecord] = {}
 
     def get(self, provider: str) -> IntegrationStatusRecord:
-        return self._records.setdefault(provider, IntegrationStatusRecord())
+        key = (get_current_tenant(self._tenant_id), provider)
+        return self._records.setdefault(key, IntegrationStatusRecord())
 
     def record_check(
         self, provider: str, *, connected: bool, latency_ms: float | None, error: str | None

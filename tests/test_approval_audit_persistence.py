@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 import pytest
 
 from app.core.config import settings
+from app.core.tenant import current_tenant_id
 from app.persistence.database import Database
 from app.persistence.postgres_stores import PostgresApprovalStore, PostgresToolAuditLog
 from app.tools.approvals import InMemoryApprovalStore
@@ -19,18 +20,19 @@ class FakeApprovalDatabase(Database):
 
     async def fetchrow(self, query, *args):
         if query.strip().upper().startswith("INSERT INTO TOOL_APPROVALS"):
-            approval_id, tool, approved_by, reason = args
-            self._rows[approval_id] = {
+            tenant_id, approval_id, tool, approved_by, reason = args
+            self._rows[(tenant_id, approval_id)] = {
+                "tenant_id": tenant_id,
                 "approval_id": approval_id,
                 "tool": tool,
                 "approved_by": approved_by,
                 "reason": reason,
                 "consumed": False,
             }
-            return dict(self._rows[approval_id])
+            return dict(self._rows[(tenant_id, approval_id)])
         if query.strip().upper().startswith("UPDATE TOOL_APPROVALS"):
-            approval_id, tool = args
-            record = self._rows.get(approval_id)
+            tenant_id, approval_id, tool = args
+            record = self._rows.get((tenant_id, approval_id))
             if not record or record["tool"] != tool or record["consumed"]:
                 return None
             record["consumed"] = True
@@ -70,6 +72,7 @@ class FakeAuditDatabase(Database):
                 "correlation_id": correlation_id,
             }
             for (
+                _tenant_id,
                 tool,
                 success,
                 risk,
@@ -97,6 +100,25 @@ async def test_in_memory_audit_log_records_events():
     events = await log.list()
     assert len(events) == 1
     assert events[0]["tool"] == "echo"
+
+
+@pytest.mark.asyncio
+async def test_in_memory_approvals_and_audit_are_tenant_scoped():
+    approvals = InMemoryApprovalStore()
+    audit = InMemoryToolAuditLog()
+    token = current_tenant_id.set("tenant-a")
+    try:
+        grant = await approvals.issue("artifact.write", approved_by="a")
+        await audit.record(tool="artifact.write", success=True, risk="write", approval_required=True)
+    finally:
+        current_tenant_id.reset(token)
+
+    token = current_tenant_id.set("tenant-b")
+    try:
+        assert await approvals.consume(grant.approval_id, grant.tool) is None
+        assert await audit.list() == []
+    finally:
+        current_tenant_id.reset(token)
 
 
 @pytest.mark.asyncio

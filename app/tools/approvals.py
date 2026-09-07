@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from uuid import uuid4
 
+from app.core.tenant import get_current_tenant
 from app.tools.models import ApprovalGrant
 
 
@@ -19,8 +20,12 @@ class ApprovalStore(ABC):
 
 
 class InMemoryApprovalStore(ApprovalStore):
-    def __init__(self) -> None:
-        self._grants: dict[str, ApprovalGrant] = {}
+    def __init__(self, *, tenant_id: str = "operator") -> None:
+        self._tenant_id = tenant_id
+        self._grants: dict[tuple[str, str], ApprovalGrant] = {}
+
+    def _key(self, approval_id: str) -> tuple[str, str]:
+        return get_current_tenant(self._tenant_id), approval_id
 
     async def issue(
         self, tool: str, approved_by: str, reason: str | None = None
@@ -31,12 +36,13 @@ class InMemoryApprovalStore(ApprovalStore):
             approved_by=approved_by,
             reason=reason,
         )
-        self._grants[grant.approval_id] = grant
+        self._grants[self._key(grant.approval_id)] = grant
         return grant
 
     async def consume(self, approval_id: str, tool: str) -> ApprovalGrant | None:
-        grant = self._grants.get(approval_id)
+        key = self._key(approval_id)
+        grant = self._grants.get(key)
         if grant is None or grant.tool != tool:
             return None
-        self._grants.pop(approval_id, None)
+        self._grants.pop(key, None)
         return grant

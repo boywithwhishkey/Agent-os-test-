@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
+from app.core.tenant import get_current_tenant
 from app.memory.models import MemoryQuery, MemoryRecord, MemoryWrite
 from app.memory.store import MemoryStore
 from app.models.task import Task
@@ -287,8 +288,12 @@ class PostgresTaskStore(TaskStore):
 
 
 class PostgresApprovalStore(ApprovalStore):
-    def __init__(self, db: Database) -> None:
+    def __init__(self, db: Database, *, tenant_id: str = "operator") -> None:
         self.db = db
+        self._tenant_id = tenant_id
+
+    def _effective_tenant(self) -> str:
+        return get_current_tenant(self._tenant_id)
 
     async def issue(
         self, tool: str, approved_by: str, reason: str | None = None
@@ -296,10 +301,11 @@ class PostgresApprovalStore(ApprovalStore):
         approval_id = str(uuid4())
         row = await self.db.fetchrow(
             '''
-            INSERT INTO tool_approvals (approval_id, tool, approved_by, reason)
-            VALUES ($1,$2,$3,$4)
+            INSERT INTO tool_approvals (tenant_id, approval_id, tool, approved_by, reason)
+            VALUES ($1,$2,$3,$4,$5)
             RETURNING approval_id, tool, approved_by, reason
             ''',
+            self._effective_tenant(),
             approval_id,
             tool,
             approved_by,
@@ -312,9 +318,10 @@ class PostgresApprovalStore(ApprovalStore):
             '''
             UPDATE tool_approvals
             SET consumed_at = NOW()
-            WHERE approval_id = $1 AND tool = $2 AND consumed_at IS NULL
+            WHERE tenant_id = $1 AND approval_id = $2 AND tool = $3 AND consumed_at IS NULL
             RETURNING approval_id, tool, approved_by, reason
             ''',
+            self._effective_tenant(),
             approval_id,
             tool,
         )
@@ -324,8 +331,12 @@ class PostgresApprovalStore(ApprovalStore):
 
 
 class PostgresToolAuditLog(ToolAuditLog):
-    def __init__(self, db: Database) -> None:
+    def __init__(self, db: Database, *, tenant_id: str = "operator") -> None:
         self.db = db
+        self._tenant_id = tenant_id
+
+    def _effective_tenant(self) -> str:
+        return get_current_tenant(self._tenant_id)
 
     async def record(
         self,
@@ -340,11 +351,12 @@ class PostgresToolAuditLog(ToolAuditLog):
         await self.db.execute(
             '''
             INSERT INTO tool_audit_events (
-                timestamp, tool, success, risk, approval_required, error,
+                tenant_id, timestamp, tool, success, risk, approval_required, error,
                 correlation_id
             )
-            VALUES (NOW(), $1,$2,$3,$4,$5,$6)
+            VALUES ($1, NOW(), $2,$3,$4,$5,$6,$7)
             ''',
+            self._effective_tenant(),
             tool,
             success,
             risk,
@@ -359,9 +371,11 @@ class PostgresToolAuditLog(ToolAuditLog):
             SELECT timestamp, tool, success, risk, approval_required, error,
                    correlation_id
             FROM tool_audit_events
+            WHERE tenant_id = $1
             ORDER BY id ASC
             LIMIT 1000
-            '''
+            ''',
+            self._effective_tenant(),
         )
         return [
             {

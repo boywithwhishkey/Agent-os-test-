@@ -16,8 +16,16 @@ contradicting note elsewhere.
   status is scoped to that tenant; anonymous reads remain backward compatible.
 - MCP server records and redacted listings now use the same tenant context, so
   configured endpoints and server-side secrets cannot cross tenant boundaries.
+- Approval grants, audit events, and connector test/execution telemetry are
+  tenant-scoped in memory and PostgreSQL; migration `011_tenant_governance.sql`
+  assigns legacy rows to `operator` and filters new reads/writes by context.
 - **NOT LIVE-VALIDATED:** multi-tenant behavior still needs two real staging
   keys, separate OAuth consent flows, and a restart/reconnect smoke test.
+- Focused tenant/MCP/governance checks and the full local gate pass: **609
+  backend tests passed, 13 skipped, 1 warning; 109 frontend tests passed;
+  typecheck, lint, and production build passed**. Local PostgreSQL/Redis live
+  checks remain unavailable in this shell; GitHub CI validates the real
+  PostgreSQL/Redis migration path.
 
 ## SESSION 2026-09-07 — DURABLE OAUTH STATE
 
@@ -34,7 +42,7 @@ contradicting note elsewhere.
   after this change: **606 backend tests passed, 13 skipped, 1 warning;
   frontend typecheck, lint, tests, and build passed**. Local Postgres/Redis
   checks were skipped because those services were not running in this shell.
-- **NOT LIVE-VALIDATED:** a real staging database still needs migration 010
+- **NOT LIVE-VALIDATED:** a real staging database still needs migrations 010 and 011
   applied and a restart/reconnect smoke test.
 
 ## SESSION 2026-09-07 — SNAPCHAT PUBLIC PROFILE READ
@@ -374,7 +382,7 @@ contradicting note elsewhere.
   missing/invalid. Development defaults remain process-local memory.
 - **VERIFIED:** focused OAuth, persistence-safety, readiness, and durable-store
   tests pass. No production or Ride&Glide configuration was changed. Staging
-  still needs migrations 008 and 009, a generated Fernet key, and restart/reconnect
+  still needs migrations 008 through 011, a generated Fernet key, and restart/reconnect
   validation before this is called live validated.
 
 ## SESSION 2026-09-05 — OAUTH REFRESH AND EXPIRY LIFECYCLE

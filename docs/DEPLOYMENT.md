@@ -57,7 +57,7 @@ commit values.** Staging values must differ from production.
 | `AGENT_OS_FRONTEND_URL` | non-secret config | `https://staging.thynact.com`. |
 | `AGENT_OS_OAUTH_REDIRECT_BASE_URL` | non-secret config | `https://api-staging.thynact.com`. |
 | `AGENT_OS_OAUTH_TENANT_ID` | non-secret config | Default tenant for anonymous/public reads and the legacy `AGENT_OS_API_KEY`; use stable opaque ids. |
-| `AGENT_OS_OAUTH_STORAGE_BACKEND` | non-secret config | `postgres` for durable, encrypted OAuth connections and state; run migrations 008–010 first. |
+| `AGENT_OS_OAUTH_STORAGE_BACKEND` | non-secret config | `postgres` for durable, encrypted OAuth connections and state; run migrations 008–011 first. |
 | `AGENT_OS_OAUTH_ENCRYPTION_KEY` | **required secret with Postgres OAuth** | Fernet key for OAuth token ciphertext; rotate through a migration plan, never commit it. |
 | `GITHUB_OAUTH_CLIENT_ID` / `_SECRET` | OAuth credential | **Separate app registration**, not production's with another callback. |
 | `SLACK_SIGNING_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/slack`; keep this separate per environment. |
@@ -268,8 +268,8 @@ dependency is genuinely reachable now) but expensive.
 - No production datastores; production is ephemeral and mislabelled.
 - No staging deployment yet — `render.yaml` has never been synced, so it is
   unvalidated against Render's live schema.
-- OAuth durability is implemented behind PostgreSQL/Fernet, but production
-  still needs migrations 008–010, a managed encryption key, rotation runbook,
+- OAuth and governance durability are implemented behind PostgreSQL/Fernet,
+  but production still needs migrations 008–011, a managed encryption key, rotation runbook,
   and restart/reconnect validation.
 - No scheduler subsystem exists (a `JobWorker` does; a scheduler does not).
 - No external metrics/tracing/alerting stack.

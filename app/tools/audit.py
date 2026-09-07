@@ -5,6 +5,8 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from app.core.tenant import get_current_tenant
+
 
 @dataclass(slots=True)
 class ToolAuditEvent:
@@ -39,9 +41,10 @@ class ToolAuditLog(ABC):
 
 
 class InMemoryToolAuditLog(ToolAuditLog):
-    def __init__(self, max_events: int = 1000) -> None:
+    def __init__(self, max_events: int = 1000, *, tenant_id: str = "operator") -> None:
         self.max_events = max_events
-        self._events: list[ToolAuditEvent] = []
+        self._tenant_id = tenant_id
+        self._events: list[tuple[str, ToolAuditEvent]] = []
 
     async def record(
         self,
@@ -54,7 +57,9 @@ class InMemoryToolAuditLog(ToolAuditLog):
         correlation_id: str | None = None,
     ) -> None:
         self._events.append(
-            ToolAuditEvent(
+            (
+                get_current_tenant(self._tenant_id),
+                ToolAuditEvent(
                 timestamp=datetime.now(UTC).isoformat(),
                 tool=tool,
                 success=success,
@@ -62,10 +67,12 @@ class InMemoryToolAuditLog(ToolAuditLog):
                 approval_required=approval_required,
                 error=error,
                 correlation_id=correlation_id,
+                ),
             )
         )
         if len(self._events) > self.max_events:
             self._events = self._events[-self.max_events :]
 
     async def list(self) -> list[dict[str, Any]]:
-        return [asdict(event) for event in self._events]
+        tenant_id = get_current_tenant(self._tenant_id)
+        return [asdict(event) for event_tenant, event in self._events if event_tenant == tenant_id]
