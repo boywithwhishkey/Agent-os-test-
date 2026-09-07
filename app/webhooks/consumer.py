@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.config import settings
+from app.core.tenant import current_tenant_id
 from app.queue.base import QueueJob
 from app.webhooks.events import normalize_webhook
 
@@ -26,6 +28,19 @@ class WebhookConsumer:
     async def handle(self, job: QueueJob) -> Any:
         if job.type != "connector.webhook":
             raise ValueError(f"Unsupported webhook job type: {job.type}")
+        tenant_id = job.payload.get("tenant_id")
+        if not isinstance(tenant_id, str) or not tenant_id.strip():
+            # Jobs created before tenant routing was introduced remain
+            # processable in the single-operator deployment mode. New API
+            # ingress always stamps an explicit tenant id into the job.
+            tenant_id = settings.oauth_tenant_id
+        token = current_tenant_id.set(tenant_id.strip())
+        try:
+            return await self._handle_in_tenant(job)
+        finally:
+            current_tenant_id.reset(token)
+
+    async def _handle_in_tenant(self, job: QueueJob) -> Any:
         provider = job.payload.get("provider")
         body = job.payload.get("body")
         delivery = job.payload.get("delivery_id")

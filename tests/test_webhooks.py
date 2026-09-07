@@ -208,6 +208,29 @@ def test_shopify_webhook_verifies_raw_body_and_deduplicates_by_delivery_id(monke
     assert rejected.status_code == 403
 
 
+def test_shopify_webhook_stamps_server_resolved_tenant_on_queue_job(monkeypatch):
+    secret = "shopify-secret"
+    monkeypatch.setattr(settings, "shopify_webhook_secret", secret)
+    monkeypatch.setattr(
+        settings,
+        "webhook_tenant_map",
+        '{"shopify:example.myshopify.com":"merchant-a"}',
+    )
+    queue = InMemoryJobQueue()
+    monkeypatch.setattr(webhook_routes, "_delivery_queue", queue)
+    body = b'{"id":123}'
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/webhooks/shopify",
+            content=body,
+            headers=_shopify_headers(body, secret),
+        )
+    assert response.status_code == 200
+    job = __import__("asyncio").run(queue.dequeue("webhooks"))
+    assert job is not None
+    assert job.payload["tenant_id"] == "merchant-a"
+
+
 def _stripe_headers(body: bytes, secret: str, timestamp: int | None = None) -> dict[str, str]:
     timestamp = timestamp or int(time.time())
     digest = hmac.new(secret.encode(), f"{timestamp}.".encode() + body, hashlib.sha256).hexdigest()

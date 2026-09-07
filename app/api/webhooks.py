@@ -19,6 +19,11 @@ from app.integrations.webhooks import (
 )
 from app.queue.base import JobQueue, QueueJob
 from app.queue.factory import build_job_queue
+from app.webhooks.tenancy import (
+    WebhookTenantNotConfigured,
+    payload_identifiers,
+    resolve_webhook_tenant,
+)
 
 router = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks"])
 _delivery_queue: JobQueue | None = None
@@ -44,6 +49,19 @@ async def _accept_delivery(
         raw_body = body.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise HTTPException(status_code=400, detail="Webhook payload must be UTF-8") from exc
+    try:
+        document = json.loads(raw_body)
+    except json.JSONDecodeError:
+        document = None
+    try:
+        tenant_id = resolve_webhook_tenant(
+            provider,
+            identifiers=payload_identifiers(provider, document, metadata),
+            routes=settings.webhook_tenant_routes,
+            default_tenant=settings.oauth_tenant_id,
+        )
+    except WebhookTenantNotConfigured as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     if delivery_key and 1 <= len(delivery_key) <= 256:
         identifier = f"{provider}:{delivery_key}"
     else:
@@ -60,6 +78,7 @@ async def _accept_delivery(
                 "body": raw_body,
                 "delivery_id": identifier,
                 "metadata": metadata or {},
+                "tenant_id": tenant_id,
             },
         )
     )

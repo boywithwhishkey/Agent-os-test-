@@ -80,6 +80,9 @@ class Settings(BaseSettings):
     webhook_workflow_map: str = Field(
         default="", validation_alias="AGENT_OS_WEBHOOK_WORKFLOW_MAP"
     )
+    webhook_tenant_map: str = Field(
+        default="", validation_alias="AGENT_OS_WEBHOOK_TENANT_MAP"
+    )
     meta_access_token: str | None = Field(default=None, validation_alias="META_ACCESS_TOKEN")
     meta_oauth_client_id: str | None = Field(
         default=None, validation_alias="META_OAUTH_CLIENT_ID"
@@ -371,6 +374,27 @@ class Settings(BaseSettings):
             raise ValueError("AGENT_OS_WEBHOOK_WORKFLOW_MAP must map provider names to workflow ids")
         return value
 
+    @field_validator("webhook_tenant_map")
+    @classmethod
+    def _validate_webhook_tenant_map(cls, value: str) -> str:
+        if not value.strip():
+            return value
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise ValueError("AGENT_OS_WEBHOOK_TENANT_MAP must be a JSON object") from exc
+        if not isinstance(parsed, dict) or any(
+            not isinstance(key, str)
+            or not key.strip()
+            or not isinstance(tenant, str)
+            or not tenant.strip()
+            for key, tenant in parsed.items()
+        ):
+            raise ValueError(
+                "AGENT_OS_WEBHOOK_TENANT_MAP must map provider keys to tenant ids"
+            )
+        return value
+
     @property
     def docs_enabled(self) -> bool:
         if self.enable_docs is not None:
@@ -475,6 +499,14 @@ class Settings(BaseSettings):
             return {}
         parsed = json.loads(self.webhook_workflow_map)
         return {key.strip().lower(): route.strip() for key, route in parsed.items()}
+
+    @property
+    def webhook_tenant_routes(self) -> dict[str, str]:
+        """Map verified provider/account keys to isolated tenant ids."""
+        if not self.webhook_tenant_map.strip():
+            return {}
+        parsed = json.loads(self.webhook_tenant_map)
+        return {key.strip().lower(): tenant.strip() for key, tenant in parsed.items()}
 
     @property
     def api_key_tenants(self) -> dict[str, str]:
