@@ -46,6 +46,43 @@ async def test_slack_adapter_verifies_stored_token():
 
 
 @pytest.mark.asyncio
+async def test_slack_identity_capability_reads_only_auth_test_fields():
+    store = OAuthConnectionStore()
+    store.record_success("slack", access_token="xoxb-test", token_type="bearer", scope="identity.basic")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://slack.com/api/auth.test"
+        assert request.headers["Authorization"] == "Bearer xoxb-test"
+        return httpx.Response(
+            200,
+            json={
+                "ok": True,
+                "url": "https://acme.slack.com/",
+                "team": "Acme",
+                "team_id": "T123",
+                "user": "operator",
+                "user_id": "U123",
+                "bot_id": "B123",
+                "token": "must-not-be-returned",
+            },
+        )
+
+    async with _client(handler) as client:
+        adapter = SlackOAuthAdapter(connection_store=store, client=client)
+        result = await adapter.run_capability("identity.account.read", {})
+
+    assert result == {
+        "provider": "slack",
+        "url": "https://acme.slack.com/",
+        "team": "Acme",
+        "team_id": "T123",
+        "user": "operator",
+        "user_id": "U123",
+        "bot_id": "B123",
+    }
+
+
+@pytest.mark.asyncio
 async def test_slack_adapter_detects_ok_false_despite_http_200():
     # Slack's Web API always answers HTTP 200 — failures are only visible in
     # the JSON body. A naive status-code check would wrongly report success.

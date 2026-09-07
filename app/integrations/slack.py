@@ -44,6 +44,8 @@ class SlackOAuthAdapter(IntegrationAdapter):
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
+        if capability_id == "identity.account.read":
+            return await self._read_identity()
         if capability_id == "chat.channel.list":
             return await self._list_channels(arguments)
         if capability_id == "chat.message.list":
@@ -88,6 +90,41 @@ class SlackOAuthAdapter(IntegrationAdapter):
             raise RuntimeError("Slack request timed out") from exc
         except httpx.HTTPError as exc:
             raise RuntimeError(f"Slack request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
+
+    async def _read_identity(self) -> dict[str, Any]:
+        """Return the bounded identity fields from Slack's auth.test call."""
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            response = await request_with_oauth_refresh(
+                OAUTH_PROVIDERS["slack"],
+                connection_store=self._connection_store,
+                client=client,
+                send=lambda token: client.get(
+                    "https://slack.com/api/auth.test",
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=10.0,
+                ),
+            )
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise RuntimeError("Slack returned a non-JSON identity response") from exc
+            if response.status_code >= 400 or not body.get("ok"):
+                raise RuntimeError(
+                    f"Slack rejected the identity request ({body.get('error', f'HTTP {response.status_code}')})"
+                )
+            return {
+                "provider": IntegrationProvider.SLACK.value,
+                **{key: body[key] for key in ("url", "team", "team_id", "user", "user_id", "bot_id") if key in body},
+            }
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("Slack identity request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"Slack identity request failed: {type(exc).__name__}") from exc
         finally:
             if own_client:
                 await client.aclose()
