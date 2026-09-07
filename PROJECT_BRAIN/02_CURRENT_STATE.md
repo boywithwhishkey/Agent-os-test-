@@ -2645,7 +2645,8 @@ build all clean.
   **61 passed** (Linear's earlier focused set was 34).
   Todoist-focused adapter, broker, and catalog checks: **42 passed**.
   Asana-focused adapter, broker, and catalog checks: **46 passed**.
-  The full gate after the Asana connector work is **557 backend tests passed, 13
+  Razorpay-focused adapter, broker, and catalog checks: **42 passed**.
+  The full gate after the Razorpay connector work is **561 backend tests passed, 13
   skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
@@ -2678,6 +2679,9 @@ build all clean.
   approval-gated task creation, with fixed API v1 routes and idempotency keys.
 - Asana now has a fixed-workspace Bearer adapter for bounded task listing and
   approval-gated task creation; workflow input cannot select another workspace.
+- Razorpay now has fixed Basic-auth payment/order reads and an approval-gated
+  refund route with a required receipt idempotency key; no live payment action
+  was performed.
 - Verified local functional commits are `a8b3908`, `3104b1c`, `931bc56`,
-  `7f4ffdb`, and `451b1c8`. These are pushed to the isolated branch and
+  `7f4ffdb`, `451b1c8`, and `bfb9dad`. These are pushed to the isolated branch and
   `staging`; Ride&Glide and production remain untouched.

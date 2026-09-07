@@ -141,6 +141,9 @@ idempotency; live credentials remain unconfigured.
 Asana now has the same canonical task routes through a fixed configured
 workspace and Bearer token; workflow input cannot change workspace scope and
 live credentials remain unconfigured.
+Razorpay now has fixed `commerce.payment.list` and `commerce.order.list`
+operations plus approval-gated `commerce.refund.create`; the key pair stays
+server-side and live payment credentials remain unconfigured.
 Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a
