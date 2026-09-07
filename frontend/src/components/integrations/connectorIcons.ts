@@ -31,6 +31,7 @@ import {
   CreditCard,
   Linkedin,
   Pin,
+  MessageCircle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -66,6 +67,7 @@ const iconMap: Record<string, LucideIcon> = {
   CreditCard,
   Linkedin,
   Pin,
+  MessageCircle,
 };
 
 export function getConnectorIcon(name: string): LucideIcon {

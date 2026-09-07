@@ -38,6 +38,9 @@ without that loop remain metadata only.
 8. Pinterest — shared OAuth account verification and approval-gated image Pin
    publishing are implemented against API v5; board discovery, video Pins,
    analytics, and live app approval remain follow-on/credential-gated work.
+9. Reddit — shared OAuth account verification and approval-gated text/link
+   submission are implemented; moderation, comments, media, and live app
+   validation remain follow-on/credential-gated work.
 
 ### Commerce and payments
 

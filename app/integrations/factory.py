@@ -199,6 +199,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Pinterest",
         "requires": ["PINTEREST_OAUTH_CLIENT_ID", "PINTEREST_OAUTH_CLIENT_SECRET"],
     },
+    IntegrationProvider.REDDIT: {
+        "name": "Reddit",
+        "requires": ["REDDIT_OAUTH_CLIENT_ID", "REDDIT_OAUTH_CLIENT_SECRET"],
+    },
 }
 
 
@@ -388,6 +392,11 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.pinterest import PinterestOAuthAdapter
 
         return PinterestOAuthAdapter(connection_store=oauth_connection_store)
+    if normalized == "reddit":
+        from app.integrations.oauth.registry import oauth_connection_store
+        from app.integrations.reddit import RedditOAuthAdapter
+
+        return RedditOAuthAdapter(connection_store=oauth_connection_store)
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -543,6 +552,8 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.linkedin_oauth_client_id and settings.linkedin_oauth_client_secret)
     if provider == IntegrationProvider.PINTEREST:
         return bool(settings.pinterest_oauth_client_id and settings.pinterest_oauth_client_secret)
+    if provider == IntegrationProvider.REDDIT:
+        return bool(settings.reddit_oauth_client_id and settings.reddit_oauth_client_secret)
     return False
 
 

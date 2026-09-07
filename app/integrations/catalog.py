@@ -541,6 +541,21 @@ CATALOG: list[CatalogSpec] = [
         implemented=True,
         requires=["PINTEREST_OAUTH_CLIENT_ID", "PINTEREST_OAUTH_CLIENT_SECRET"],
     ),
+    CatalogSpec(
+        id="reddit",
+        name="Reddit",
+        description="Read the connected account and publish governed text or link posts.",
+        category=ConnectorCategory.OTHER,
+        connector_type=ConnectorType.OAUTH,
+        icon="MessageCircle",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Verify identity", "Publish text/link post"],
+        canonical_capabilities=["identity.account.read", "social.post.publish"],
+        popular=True,
+        documentation_url="https://www.reddit.com/dev/api/#POST_api_submit",
+        implemented=True,
+        requires=["REDDIT_OAUTH_CLIENT_ID", "REDDIT_OAUTH_CLIENT_SECRET"],
+    ),
     # --- Data ---
     CatalogSpec(
         id="postgresql",

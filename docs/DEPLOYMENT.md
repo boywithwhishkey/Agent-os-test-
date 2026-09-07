@@ -65,6 +65,8 @@ commit values.** Staging values must differ from production.
 | `LINKEDIN_OAUTH_CLIENT_ID` / `_SECRET` | OAuth credential | Separate LinkedIn app per environment; enable Sign In with LinkedIn and Share on LinkedIn (`w_member_social`) before live validation. |
 | `LINKEDIN_API_VERSION` | non-secret config | Versioned LinkedIn Posts API header, default `202601`; update deliberately when the provider version is advanced. |
 | `PINTEREST_OAUTH_CLIENT_ID` / `_SECRET` | OAuth credential | Separate Pinterest app per environment; request `user_accounts:read`, `boards:read`, `boards:write`, `pins:read`, and `pins:write` before live validation. |
+| `REDDIT_OAUTH_CLIENT_ID` / `_SECRET` | OAuth credential | Separate Reddit app per environment; request only `identity`, `read`, and `submit` for the implemented capabilities. |
+| `REDDIT_USER_AGENT` | non-secret config | Descriptive application User-Agent required by Reddit; keep it stable and identify the application/operator. |
 | `SLACK_SIGNING_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/slack`; keep this separate per environment. |
 | `SLACK_WEBHOOK_MAX_SKEW_SECONDS` | non-secret config | Default `300`; limits stale Slack callbacks. |
 | `META_APP_SECRET` | **webhook secret** | Required for signed `/api/v1/webhooks/whatsapp` and `/api/v1/webhooks/instagram` callbacks; `/meta` remains a compatibility route. |

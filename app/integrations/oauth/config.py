@@ -119,6 +119,18 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_secret_env="PINTEREST_OAUTH_CLIENT_SECRET",
         token_auth="basic",
     ),
+    "reddit": OAuthProviderConfig(
+        id="reddit",
+        name="Reddit",
+        authorize_url="https://www.reddit.com/api/v1/authorize",
+        token_url="https://www.reddit.com/api/v1/access_token",
+        scope="identity read submit",
+        client_id_env="REDDIT_OAUTH_CLIENT_ID",
+        client_secret_env="REDDIT_OAUTH_CLIENT_SECRET",
+        token_auth="basic",
+        extra_authorize_params={"duration": "permanent"},
+        extra_token_headers={"User-Agent": "THYNACT/0.1 by connector-platform"},
+    ),
     "jira": OAuthProviderConfig(
         id="jira",
         name="Jira",

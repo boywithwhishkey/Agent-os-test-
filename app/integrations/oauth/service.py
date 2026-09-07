@@ -41,6 +41,7 @@ async def refresh_access_token(
         raise OAuthNotConfigured(f"{config.client_id_env} and {config.client_secret_env} are required")
 
     headers = {"Accept": "application/json"}
+    headers.update(config.extra_token_headers)
     payload = {"grant_type": "refresh_token", "refresh_token": record.refresh_token}
     request_kwargs: dict[str, object]
     if config.token_auth == "basic":
@@ -178,6 +179,7 @@ async def exchange_code(
     http_client = client or httpx.AsyncClient()
     try:
         headers = {"Accept": "application/json"}
+        headers.update(config.extra_token_headers)
         payload = {"code": code, "redirect_uri": redirect_uri(config)}
         request_kwargs: dict[str, object]
 

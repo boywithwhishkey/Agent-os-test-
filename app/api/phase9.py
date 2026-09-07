@@ -305,6 +305,10 @@ def _pinterest_live_status() -> dict:
     return _oauth_live_status("pinterest")
 
 
+def _reddit_live_status() -> dict:
+    return _oauth_live_status("reddit")
+
+
 def _trello_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "trello")
     return _status_store_backed_status("trello", configured=is_provider_configured(provider))
@@ -405,6 +409,7 @@ _LIVE_STATUS_RESOLVERS = {
     "outlook": _outlook_live_status,
     "linkedin": _linkedin_live_status,
     "pinterest": _pinterest_live_status,
+    "reddit": _reddit_live_status,
     "trello": _trello_live_status,
     "zoom": _zoom_live_status,
     "zapier": _zapier_live_status,

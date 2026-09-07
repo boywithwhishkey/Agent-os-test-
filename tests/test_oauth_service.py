@@ -19,6 +19,7 @@ NOTION = OAUTH_PROVIDERS["notion"]
 GITLAB = OAUTH_PROVIDERS["gitlab"]
 SNAPCHAT = OAUTH_PROVIDERS["snapchat"]
 PINTEREST = OAUTH_PROVIDERS["pinterest"]
+REDDIT = OAUTH_PROVIDERS["reddit"]
 
 
 def test_build_authorize_url_includes_state_and_redirect(monkeypatch):
@@ -44,6 +45,13 @@ def test_pinterest_oauth_metadata_uses_basic_token_exchange():
     assert PINTEREST.token_auth == "basic"
     assert PINTEREST.authorize_url == "https://www.pinterest.com/oauth/"
     assert "pins:write" in PINTEREST.scope
+
+
+def test_reddit_oauth_metadata_uses_basic_exchange_and_permanent_access():
+    assert REDDIT.token_auth == "basic"
+    assert REDDIT.extra_authorize_params["duration"] == "permanent"
+    assert "submit" in REDDIT.scope
+    assert REDDIT.extra_token_headers["User-Agent"].startswith("THYNACT/")
 
 
 def test_state_store_is_single_use():

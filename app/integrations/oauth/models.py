@@ -30,6 +30,7 @@ class OAuthProviderConfig:
     token_auth: str = "body"  # "body" | "basic"
     token_body_format: str = "form"  # "form" | "json"
     extra_authorize_params: dict[str, str] = field(default_factory=dict)
+    extra_token_headers: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(slots=True)

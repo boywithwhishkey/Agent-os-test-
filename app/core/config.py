@@ -178,6 +178,16 @@ class Settings(BaseSettings):
     pinterest_oauth_client_secret: str | None = Field(
         default=None, validation_alias="PINTEREST_OAUTH_CLIENT_SECRET"
     )
+    reddit_oauth_client_id: str | None = Field(
+        default=None, validation_alias="REDDIT_OAUTH_CLIENT_ID"
+    )
+    reddit_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="REDDIT_OAUTH_CLIENT_SECRET"
+    )
+    reddit_user_agent: str = Field(
+        default="THYNACT/0.1 by connector-platform",
+        validation_alias="REDDIT_USER_AGENT",
+    )
     jira_oauth_client_id: str | None = Field(
         default=None, validation_alias="JIRA_OAUTH_CLIENT_ID"
     )

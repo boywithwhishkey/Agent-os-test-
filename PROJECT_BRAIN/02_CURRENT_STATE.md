@@ -5,6 +5,15 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — REDDIT CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Reddit now has a shared OAuth connector with
+  account verification and approval-governed text/link post submission. The
+  adapter uses Reddit's OAuth host, a descriptive User-Agent, fixed submit
+  endpoint, bounded subreddit/title/body/URL inputs, and secret-safe errors.
+- The connector requests only `identity`, `read`, and `submit` scopes. No Reddit
+  app credentials were available, so live validation remains pending.
+
 ## SESSION 2026-09-07 — PINTEREST CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Pinterest now has a shared OAuth 2.0 connector with
