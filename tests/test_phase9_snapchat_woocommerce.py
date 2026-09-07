@@ -83,6 +83,39 @@ async def test_snapchat_uses_connected_oauth_token_for_marketing_api() -> None:
 
 
 @pytest.mark.anyio
+async def test_snapchat_reads_a_bounded_public_profile() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.host == "businessapi.snapchat.com"
+        assert request.url.path == "/v1/public_profiles/profile-1"
+        assert request.headers["Authorization"] == "Bearer snap-token"
+        return httpx.Response(
+            200,
+            json={
+                "request_status": "SUCCESS",
+                "public_profiles": [{"public_profile": {"id": "profile-1", "display_name": "Demo"}}],
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await SnapchatMarketingAdapter(access_token="snap-token", client=client).run_capability(
+            "social.profile.read", {"profile_id": "profile-1"}
+        )
+    finally:
+        await client.aclose()
+
+    assert result["public_profiles"][0]["public_profile"]["id"] == "profile-1"
+
+
+def test_snapchat_public_profile_rejects_path_injection() -> None:
+    adapter = SnapchatMarketingAdapter(access_token="snap-token")
+    with pytest.raises(ValueError, match="profile_id"):
+        import asyncio
+
+        asyncio.run(adapter.run_capability("social.profile.read", {"profile_id": "../secrets"}))
+
+
+@pytest.mark.anyio
 async def test_woocommerce_lists_products_with_fixed_store_url() -> None:
     seen: list[tuple[str, str]] = []
 

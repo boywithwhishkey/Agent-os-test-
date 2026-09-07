@@ -5,6 +5,24 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — SNAPCHAT PUBLIC PROFILE READ
+
+- **IMPLEMENTED_TESTED:** Snapchat now exposes the canonical read-only
+  `social.profile.read` capability through the fixed Public Profile API route.
+  Profile identifiers are bounded to path-safe characters, provider URLs stay
+  server-defined, and the shared OAuth refresh-on-401 path is reused.
+- The Snapchat OAuth request now asks for both `snapchat-marketing-api` and
+  `snapchat-profile-api`. Public Profile API access remains Snap-allowlist and
+  credential dependent; no profile post, media upload, or ad mutation is
+  claimed.
+- Focused Snapchat/catalog/OAuth checks: **45 passed**. Full local gate after
+  this change: **605 backend tests passed, 13 skipped, 1 warning; frontend
+  typecheck, lint, tests, and build passed**. Local Postgres/Redis checks were
+  skipped because those services were not running in this shell.
+- **CREDENTIAL_REQUIRED:** no Snap OAuth token or Public Profile allowlisting
+  was available here, so this remains contract-tested rather than live-
+  validated.
+
 ## SESSION 2026-09-07 — SLACK SIGNED EVENTS INGRESS
 
 - **IMPLEMENTED_TESTED:** Slack Events API callbacks now have a dedicated

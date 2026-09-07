@@ -14,7 +14,7 @@ from app.integrations.oauth.store import OAuthConnectionStore
 
 
 class SnapchatMarketingAdapter(IntegrationAdapter):
-    """Read-only Snapchat Marketing API organization discovery."""
+    """Read-only Snapchat Marketing and Public Profile API operations."""
 
     def __init__(
         self,
@@ -42,6 +42,8 @@ class SnapchatMarketingAdapter(IntegrationAdapter):
         )
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
+        if capability_id == "social.profile.read":
+            return await self._get_public_profile(arguments)
         if capability_id not in {"identity.account.read", "ads.account.list"}:
             raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
         body = await self._get_organizations()
@@ -60,6 +62,55 @@ class SnapchatMarketingAdapter(IntegrationAdapter):
                 if isinstance(accounts, list):
                     ad_accounts.extend(accounts)
         return {"provider": IntegrationProvider.SNAPCHAT.value, "ad_accounts": ad_accounts}
+
+    async def _get_public_profile(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        profile_id = arguments.get("profile_id")
+        if (
+            not isinstance(profile_id, str)
+            or not 1 <= len(profile_id) <= 128
+            or any(char not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for char in profile_id)
+        ):
+            raise ValueError("social.profile.read requires a valid Snapchat profile_id")
+
+        own_client = self._client is None
+        client = self._client or httpx.AsyncClient()
+        try:
+            async def send(token: str) -> httpx.Response:
+                return await client.get(
+                    f"https://businessapi.snapchat.com/v1/public_profiles/{profile_id}",
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=10.0,
+                )
+
+            if self.access_token.strip():
+                response = await send(self.access_token)
+            elif self._connection_store is not None:
+                response = await request_with_oauth_refresh(
+                    OAUTH_PROVIDERS["snapchat"],
+                    connection_store=self._connection_store,
+                    client=client,
+                    send=send,
+                )
+            else:  # pragma: no cover - constructor prevents this state
+                raise OAuthExchangeError("Not authorized yet — connect a Snapchat account")
+            try:
+                body = response.json()
+            except ValueError as exc:
+                raise RuntimeError("Snapchat returned a non-JSON response") from exc
+            if response.status_code >= 400:
+                raise RuntimeError(f"Snapchat returned HTTP {response.status_code}")
+            if not isinstance(body, dict):
+                raise TypeError("Snapchat returned an invalid response")
+            if body.get("request_status") == "ERROR":
+                raise RuntimeError("Snapchat rejected the access token")
+            return body
+        except httpx.TimeoutException as exc:
+            raise RuntimeError("Snapchat request timed out") from exc
+        except httpx.HTTPError as exc:
+            raise RuntimeError(f"Snapchat request failed: {type(exc).__name__}") from exc
+        finally:
+            if own_client:
+                await client.aclose()
 
     async def _get_organizations(self) -> dict[str, Any]:
         own_client = self._client is None

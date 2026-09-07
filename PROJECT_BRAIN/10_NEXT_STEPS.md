@@ -115,13 +115,12 @@ The capability layer, risk classification and SSRF guard are in
    current OAuth key is deployment-scoped, not multi-user isolation. See
    the multi-tenancy section of `02_CURRENT_STATE.md`; do not ship multi-user
    on the current store.
-4. **Finish the remaining OAuth provider depth** (GitHub, GitLab, Slack,
-   Notion, and the Google/Microsoft providers) by mapping their declared
-   capabilities to real operations. Outlook mail drafts/send and the full
-   calendar event lifecycle are now wired, Trello now has fixed-board/list
-   task list/create routes, and Zoom now has OAuth meeting list/create routes
-   plus signed webhook ingress; Linear issue writes remain the reference for a
-   governed GraphQL mutation; Vercel deploy mutations remain disabled.
+4. **Deepen the OAuth provider surface systematically.** Core GitHub, GitLab,
+   Slack, Notion, Google/Microsoft, Meta, Snap, Dropbox, HubSpot, Salesforce,
+   Jira, Zoom, and Outlook paths now have real bounded operations. Remaining
+   work is provider-specific event expansion, sandbox/live runs, and any
+   additional writes only after their own approval contracts; Vercel deploy
+   mutations remain disabled.
 5. **Then** deepen the complete provider set systematically: tenant isolation,
    provider-specific event expansion,
    provider sandbox runs, and real credential-backed live validation. Gmail,
@@ -132,9 +131,9 @@ The capability layer, risk classification and SSRF guard are in
    Each new provider needs the full loop, not a card: transport, capability mapping, credential, risk, approval,
    audit, test, real call. One finished connector beats ten declared ones.
 
-Do **not** add catalog entries for providers without adapters. Fifteen already
-sit at NOT_IMPLEMENTED; more would make the marketplace a list of things that
-do not work.
+Do **not** add catalog entries for providers without adapters. The current
+catalog has no metadata-only entries; new entries must complete the full
+adapter, capability, governance, test, and status loop first.
 
 ## OPEN RIGHT NOW (2026-09-03)
 

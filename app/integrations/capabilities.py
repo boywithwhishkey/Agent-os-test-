@@ -100,6 +100,7 @@ CAPABILITIES: dict[str, Capability] = {
         _read("productivity.task.list", "List tasks"),
         _write("productivity.task.create", "Create a task"),
         # --- Social publishing --------------------------------------------
+        _read("social.profile.read", "Read a public social profile"),
         _high("social.post.publish", "Publish a social post"),
         # --- Advertising --------------------------------------------------
         _read("ads.account.list", "List advertising accounts"),
