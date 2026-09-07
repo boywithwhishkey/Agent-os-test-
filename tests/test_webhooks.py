@@ -112,11 +112,21 @@ def test_slack_webhook_queues_verified_event_and_rejects_replay(monkeypatch):
             content=body,
             headers={**headers, "X-Slack-Signature": "v0=" + "0" * 64},
         )
+        stale = client.post(
+            "/api/v1/webhooks/slack",
+            content=body,
+            headers=_slack_headers(
+                body,
+                secret,
+                timestamp=str(int(time.time()) - settings.slack_webhook_max_skew_seconds - 1),
+            ),
+        )
 
     assert accepted.status_code == 200
     assert accepted.json()["provider"] == "slack"
     assert duplicate.json()["duplicate"] is True
     assert rejected.status_code == 403
+    assert stale.status_code == 403
 
 
 def _zoom_headers(body: bytes, secret: str) -> dict[str, str]:
