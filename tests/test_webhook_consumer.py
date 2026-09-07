@@ -59,3 +59,25 @@ async def test_consumer_refuses_unconfigured_provider():
                 payload={"provider": "telegram", "body": "{}", "delivery_id": "telegram:abc"},
             )
         )
+
+
+@pytest.mark.asyncio
+async def test_tenant_specific_workflow_route_wins_over_provider_fallback():
+    engine = Engine()
+    consumer = WebhookConsumer(
+        definitions=Definitions({"id": "workflow-1"}),
+        engine=engine,
+        routes={"merchant-a:telegram": "workflow-1", "telegram": "other-workflow"},
+    )
+    result = await consumer.handle(
+        QueueJob(
+            type="connector.webhook",
+            payload={
+                "provider": "telegram",
+                "body": '{"update_id":2}',
+                "delivery_id": "telegram:2",
+                "tenant_id": "merchant-a",
+            },
+        )
+    )
+    assert result["workflow_id"] == "workflow-1"

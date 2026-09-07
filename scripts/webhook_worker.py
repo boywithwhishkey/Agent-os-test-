@@ -2,8 +2,10 @@
 """Run the isolated THYNACT webhook consumer process.
 
 The worker reads only the ``webhooks`` queue and routes provider events through
-the operator-configured ``AGENT_OS_WEBHOOK_WORKFLOW_MAP`` allowlist. It never
-accepts a workflow id from the incoming provider payload.
+the operator-configured ``AGENT_OS_WEBHOOK_WORKFLOW_MAP`` allowlist. Keys may
+be a provider (``telegram``) or a tenant-specific ``tenant:provider`` pair;
+the latter wins. It never accepts a workflow id from the incoming provider
+payload.
 """
 
 from __future__ import annotations

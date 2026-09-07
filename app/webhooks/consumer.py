@@ -36,11 +36,11 @@ class WebhookConsumer:
             tenant_id = settings.oauth_tenant_id
         token = current_tenant_id.set(tenant_id.strip())
         try:
-            return await self._handle_in_tenant(job)
+            return await self._handle_in_tenant(job, tenant_id.strip())
         finally:
             current_tenant_id.reset(token)
 
-    async def _handle_in_tenant(self, job: QueueJob) -> Any:
+    async def _handle_in_tenant(self, job: QueueJob, tenant_id: str) -> Any:
         provider = job.payload.get("provider")
         body = job.payload.get("body")
         delivery = job.payload.get("delivery_id")
@@ -49,7 +49,13 @@ class WebhookConsumer:
             isinstance(value, str) and value.strip() for value in (provider, body, delivery)
         ):
             raise ValueError("Webhook job is missing provider, body, or delivery_id")
-        workflow_id = self.routes.get(provider.lower())
+        normalized_provider = provider.lower()
+        tenant_route = f"{tenant_id.strip().lower()}:{normalized_provider}"
+        # A tenant-specific route is more precise than the legacy provider
+        # route. The latter remains useful for a single shared workflow in
+        # operator mode, while multi-tenant deployments can pin each tenant's
+        # event stream to its own definition.
+        workflow_id = self.routes.get(tenant_route) or self.routes.get(normalized_provider)
         if workflow_id is None:
             raise WebhookWorkflowNotConfigured(
                 f"No workflow route is configured for webhook provider {provider}"
