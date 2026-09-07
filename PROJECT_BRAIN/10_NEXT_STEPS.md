@@ -71,6 +71,9 @@ business-account credentials are still required for live validation.
 Verified webhook ingress now carries a server-resolved tenant id through the
 queue and worker. Configure `AGENT_OS_WEBHOOK_TENANT_MAP` with provider/account
 keys before enabling multi-tenant callbacks; live staging smoke tests remain.
+API-token connectors now accept the server-held
+`AGENT_OS_CONNECTOR_CREDENTIALS_JSON` tenant map; populate it before enabling
+non-default tenants, then validate rotation and restart behavior in staging.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
 Render now has fixed service listing and governed deploy-trigger operations;

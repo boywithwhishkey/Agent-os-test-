@@ -5,6 +5,25 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — TENANT-SCOPED API CONNECTOR CREDENTIALS
+
+- **IMPLEMENTED_TESTED:** server-held `AGENT_OS_CONNECTOR_CREDENTIALS_JSON`
+  can map stable tenant ids to provider env-name/value pairs. Scoped values
+  are selected from the request tenant and are never returned by API surfaces.
+  Non-default tenants do not fall back to deployment-global provider tokens;
+  the legacy global settings remain available only to the configured operator
+  tenant.
+- Telegram, Meta/WhatsApp/Instagram, Snapchat, Shopify, Stripe, WooCommerce,
+  Razorpay, Amazon SP-API, Asana, Todoist, and Trello adapters plus their
+  provider-configuration checks now resolve through this selector. This keeps
+  canonical capability routing and broker `NOT_CONNECTED` outcomes honest per
+  tenant instead of sharing one account silently.
+- Focused tenancy/commerce checks: **34 passed**. Full backend gate:
+  **622 passed, 13 skipped, 1 warning**; frontend **109 passed**, typecheck,
+  lint (9 pre-existing warnings), and production build passed.
+- **NOT LIVE-VALIDATED:** provider-specific tenant maps still need two real
+  staging tenants, credential rotation, and restart/reconnect smoke tests.
+
 ## SESSION 2026-09-07 — SHOPIFY CONNECTION HEALTH
 
 - **IMPLEMENTED_TESTED:** Shopify's adapter connection check now lives on the

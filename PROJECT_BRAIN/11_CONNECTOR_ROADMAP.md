@@ -95,6 +95,10 @@ creating one-off integrations.
   tenant to a workflow with a `tenant:provider` key, which takes precedence
   over the provider fallback. Do not use a tenant header or payload field as
   an authority source.
+- API-token connectors may use `AGENT_OS_CONNECTOR_CREDENTIALS_JSON`, keyed by
+  stable tenant id and provider env-name. A non-default tenant without a
+  scoped credential is reported as not configured rather than inheriting the
+  operator's token. Values remain server-side and are never serialized.
 - Adapter accepts canonical capability arguments only and never an arbitrary
   provider URL or operation name from an agent.
 - Read, write, and high-risk operations use the shared capability risk model;
