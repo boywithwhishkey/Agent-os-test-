@@ -97,3 +97,15 @@ def test_catalog_shows_configured_before_any_test_has_run(monkeypatch):
     entry = next(item for item in listing if item["id"] == "anthropic")
     assert entry["status"] == "configured"
     assert entry["connected"] is None
+
+
+def test_outlook_uses_oauth_status_resolver(monkeypatch):
+    monkeypatch.setattr(settings, "microsoft_oauth_client_id", "client-id")
+    monkeypatch.setattr(settings, "microsoft_oauth_client_secret", "client-secret")
+
+    listing = client.get("/api/v1/integrations").json()
+    entry = next(item for item in listing if item["id"] == "outlook")
+
+    assert entry["status"] == "configured"
+    assert entry["configured"] is True
+    assert entry["connected"] is None

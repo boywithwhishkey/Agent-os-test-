@@ -247,6 +247,10 @@ def _salesforce_live_status() -> dict:
     return _oauth_live_status("salesforce")
 
 
+def _outlook_live_status() -> dict:
+    return _oauth_live_status("outlook")
+
+
 def _zapier_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "zapier")
     return _status_store_backed_status("zapier", configured=is_provider_configured(provider))
@@ -319,6 +323,7 @@ _LIVE_STATUS_RESOLVERS = {
     "onedrive": _onedrive_live_status,
     "hubspot": _hubspot_live_status,
     "salesforce": _salesforce_live_status,
+    "outlook": _outlook_live_status,
     "zapier": _zapier_live_status,
     "supabase": _supabase_live_status,
 }
