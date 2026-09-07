@@ -1,66 +1,121 @@
-"""Characterisation tests for how connector credentials are actually scoped.
+"""Regression tests for tenant-scoped connector credentials.
 
-CLAUDE.md states a multi-tenancy invariant — credentials are per-tenant, and a
-user-owned external account must never be served by a global fallback
-credential. Today the code does not implement it: `OAuthConnectionStore` is a
-`dict[provider, record]` with no tenant or principal in the key, so there is
-exactly one GitHub connection per deployment.
-
-That is not currently a violation, because THYNACT has no user accounts: a
-deployment is one operator behind one API key, so "per deployment" and "per
-operator" are the same set. It becomes a violation the moment a second
-principal exists, and the failure mode is silent — everyone's requests would
-transparently use whoever authorised last.
-
-These tests pin the real contract so that transition cannot happen by
-accident. They are written to FAIL when tenancy is introduced, which is the
-point: whoever adds it has to come here and state the new scoping deliberately.
+The API key is the tenant selector. There is deliberately no client-supplied
+tenant header: a caller can only select a tenant for which the deployment
+holds a server-side key mapping. OAuth state carries the same tenant across
+the public callback, and connection records are keyed by ``(tenant, provider)``
+in both memory and PostgreSQL-backed modes.
 """
 
 from __future__ import annotations
 
-import inspect
+import json
+from contextlib import contextmanager
 
-from app.integrations.oauth.store import OAuthConnectionStore
+from fastapi.testclient import TestClient
+
+from app.api import phase9
+from app.core.config import settings
+from app.core.tenant import current_tenant_id
+from app.integrations.oauth.registry import oauth_connection_store, oauth_state_store
+from app.integrations.oauth.store import OAuthConnectionStore, OAuthStateStore
+from app.main import app
 
 
-def test_oauth_connections_are_scoped_to_the_deployment_not_a_principal() -> None:
+@contextmanager
+def tenant(tenant_id: str):
+    token = current_tenant_id.set(tenant_id)
+    try:
+        yield
+    finally:
+        current_tenant_id.reset(token)
+
+
+def test_oauth_connections_are_isolated_between_tenants() -> None:
     store = OAuthConnectionStore()
-    store.record_success("github", access_token="token-a", token_type="bearer", scope="repo")
 
-    # There is no principal argument to pass, and no way to ask for "my"
-    # connection as opposed to "the" connection.
-    signature = inspect.signature(store.record_success)
-    assert "tenant" not in signature.parameters
-    assert "principal" not in signature.parameters
-    assert set(signature.parameters) == {
-        "provider",
-        "access_token",
-        "token_type",
-        "scope",
-        "refresh_token",
-        "expires_in",
-        "expires_at",
-    }
+    with tenant("tenant-a"):
+        store.record_success("github", access_token="token-a", token_type="bearer", scope="repo")
+    with tenant("tenant-b"):
+        store.record_success("github", access_token="token-b", token_type="bearer", scope="repo")
 
-    # Consequence, stated explicitly: a second authorisation replaces the first
-    # for everyone, rather than sitting beside it.
-    store.record_success("github", access_token="token-b", token_type="bearer", scope="repo")
-    assert store.get("github").access_token == "token-b"
+    with tenant("tenant-a"):
+        assert store.get("github").access_token == "token-a"
+        assert store.disconnect("github") is True
+        assert store.get("github").access_token is None
+    with tenant("tenant-b"):
+        assert store.get("github").access_token == "token-b"
 
 
-def test_disconnect_removes_the_connection_for_the_whole_deployment() -> None:
-    store = OAuthConnectionStore()
-    store.record_success("slack", access_token="t", token_type="bearer", scope=None)
-    assert store.disconnect("slack") is True
-    # Not "disconnected for me" — gone.
-    assert store.get("slack").access_token is None
+def test_oauth_state_claim_carries_the_owning_tenant() -> None:
+    store = OAuthStateStore()
+    with tenant("tenant-a"):
+        state = store.create("slack")
+
+    with tenant("operator"):
+        claim = store.consume_claim(state)
+
+    assert claim is not None
+    assert claim.provider == "slack"
+    assert claim.tenant_id == "tenant-a"
 
 
 def test_access_tokens_never_leave_the_process_in_a_public_view() -> None:
-    """The one part of the credential contract that IS enforced today."""
     store = OAuthConnectionStore()
-    store.record_success("notion", access_token="secret-token-value", token_type="bearer", scope="read")
-    public = store.get("notion").to_public()
+    with tenant("tenant-a"):
+        store.record_success("notion", access_token="secret-token-value", token_type="bearer", scope="read")
+        public = store.get("notion").to_public()
     assert "secret-token-value" not in public.model_dump_json()
     assert not hasattr(public, "access_token")
+
+
+def test_server_held_api_keys_select_isolated_disconnect_target(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "api_key", None)
+    monkeypatch.setattr(
+        settings,
+        "api_keys_json",
+        json.dumps({"key-a": "tenant-a", "key-b": "tenant-b"}),
+    )
+    monkeypatch.setattr(settings, "github_oauth_client_id", "client")
+    monkeypatch.setattr(settings, "github_oauth_client_secret", "secret")
+    oauth_connection_store._connections.clear()
+    with tenant("tenant-a"):
+        oauth_connection_store.record_success("github", access_token="a", token_type="bearer", scope="repo")
+    with tenant("tenant-b"):
+        oauth_connection_store.record_success("github", access_token="b", token_type="bearer", scope="repo")
+
+    with TestClient(app) as client:
+        response = client.delete(
+            "/api/v1/integrations/oauth/github", headers={"X-API-Key": "key-a"}
+        )
+    assert response.status_code == 204
+    with tenant("tenant-a"):
+        assert oauth_connection_store.get("github").connected is False
+    with tenant("tenant-b"):
+        assert oauth_connection_store.get("github").access_token == "b"
+
+
+def test_public_oauth_callback_restores_state_tenant(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "github_oauth_client_id", "client")
+    monkeypatch.setattr(settings, "github_oauth_client_secret", "secret")
+    oauth_state_store._states.clear()
+    oauth_connection_store._connections.clear()
+    with tenant("tenant-a"):
+        state = oauth_state_store.create("github")
+
+    async def fake_exchange(config, *, code, connection_store, client=None):
+        connection_store.record_success(
+            config.id, access_token="tenant-a-token", token_type="bearer", scope="repo"
+        )
+
+    monkeypatch.setattr(phase9, "exchange_code", fake_exchange)
+    with TestClient(app) as client:
+        response = client.get(
+            f"/api/v1/integrations/oauth/github/callback?state={state}&code=ok",
+            follow_redirects=False,
+        )
+    assert response.status_code in (302, 307)
+    with tenant("tenant-a"):
+        assert oauth_connection_store.get("github").access_token == "tenant-a-token"
+    with tenant("operator"):
+        assert oauth_connection_store.get("github").connected is False

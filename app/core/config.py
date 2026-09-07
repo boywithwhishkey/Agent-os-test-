@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     app_port: int = 8000
     log_level: str = "INFO"
     api_key: str | None = Field(default=None, validation_alias="AGENT_OS_API_KEY")
+    api_keys_json: str | None = Field(
+        default=None, validation_alias="AGENT_OS_API_KEYS_JSON"
+    )
     cors_origins: str = Field(
         default=(
             "http://localhost:3000,http://localhost:5173,"
@@ -320,6 +323,26 @@ class Settings(BaseSettings):
             raise ValueError("AGENT_OS_OAUTH_STORAGE_BACKEND must be 'memory' or 'postgres'")
         return normalized
 
+    @field_validator("api_keys_json")
+    @classmethod
+    def _validate_api_keys_json(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return value
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise ValueError("AGENT_OS_API_KEYS_JSON must be a JSON object") from exc
+        if not isinstance(parsed, dict) or not parsed:
+            raise ValueError("AGENT_OS_API_KEYS_JSON must be a non-empty JSON object")
+        for key, tenant in parsed.items():
+            if not isinstance(key, str) or not key.strip():
+                raise ValueError("AGENT_OS_API_KEYS_JSON keys must be non-empty strings")
+            if not isinstance(tenant, str) or not tenant.strip():
+                raise ValueError(
+                    "AGENT_OS_API_KEYS_JSON values must be non-empty tenant strings"
+                )
+        return value
+
     @field_validator("webhook_workflow_map")
     @classmethod
     def _validate_webhook_workflow_map(cls, value: str) -> str:
@@ -443,6 +466,28 @@ class Settings(BaseSettings):
             return {}
         parsed = json.loads(self.webhook_workflow_map)
         return {key.strip().lower(): route.strip() for key, route in parsed.items()}
+
+    @property
+    def api_key_tenants(self) -> dict[str, str]:
+        """Map server-held API keys to tenant ids without exposing key values.
+
+        ``AGENT_OS_API_KEY`` remains a backwards-compatible single-operator
+        mode.  ``AGENT_OS_API_KEYS_JSON`` enables multiple isolated tenants;
+        both may be set only when they agree for the legacy key.
+        """
+        mapping: dict[str, str] = {}
+        if self.api_keys_json and self.api_keys_json.strip():
+            parsed = json.loads(self.api_keys_json)
+            mapping = {key: tenant.strip() for key, tenant in parsed.items()}
+        if self.api_key:
+            existing = mapping.get(self.api_key)
+            if existing is not None and existing != self.oauth_tenant_id:
+                raise ValueError(
+                    "AGENT_OS_API_KEY maps to a different tenant than "
+                    "AGENT_OS_OAUTH_TENANT_ID"
+                )
+            mapping.setdefault(self.api_key, self.oauth_tenant_id)
+        return mapping
 
     model_config = SettingsConfigDict(
         env_file=".env",

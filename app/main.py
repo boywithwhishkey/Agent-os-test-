@@ -22,6 +22,7 @@ from app.core import lifecycle
 from app.core.config import settings
 from app.core.correlation import CORRELATION_HEADER, get_or_create_correlation_id
 from app.core.readiness import check_readiness
+from app.core.tenant import current_tenant_id
 from app.integrations.oauth.crypto import OAuthTokenCipher
 from app.integrations.oauth.registry import oauth_connection_store, oauth_state_store
 
@@ -113,6 +114,22 @@ async def correlation_middleware(request: Request, call_next):
     response = await call_next(request)
     response.headers[CORRELATION_HEADER] = correlation_id
     return response
+
+
+@app.middleware("http")
+async def tenant_context_middleware(request: Request, call_next):
+    """Start every request with the deployment tenant and isolate its context.
+
+    Protected routes replace this with the tenant selected by the API-key
+    dependency. OAuth callbacks replace it only after consuming a valid,
+    single-use state claim. Resetting the context in ``finally`` prevents an
+    async worker from leaking one request's credentials into the next.
+    """
+    token = current_tenant_id.set(settings.oauth_tenant_id)
+    try:
+        return await call_next(request)
+    finally:
+        current_tenant_id.reset(token)
 
 
 @app.exception_handler(StarletteHTTPException)

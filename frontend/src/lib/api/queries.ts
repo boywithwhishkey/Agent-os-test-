@@ -215,13 +215,12 @@ export function useRuntimeStatus(provider: string, workflow: string, options?: {
 }
 
 // ---------- Integrations: unified connector catalog ----------
-// Catalog reads are public on the backend (no operator API key required) so
-// the Integration Hub renders for any visitor — only mutating actions below
-// (test/execute/MCP create/test/delete) require auth and will 401 without it.
+// Catalog reads remain public on the backend, but include the configured API
+// key when available so connected status is scoped to the current tenant.
 export function useConnectorCatalog() {
   return useQuery({
     queryKey: ["connector-catalog"],
-    queryFn: () => api.get<ConnectorEntry[]>("/api/v1/integrations", { skipAuth: true }),
+    queryFn: () => api.get<ConnectorEntry[]>("/api/v1/integrations"),
     refetchInterval: 30_000,
   });
 }

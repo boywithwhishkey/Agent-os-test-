@@ -47,7 +47,8 @@ commit values.** Staging values must differ from production.
 | Variable | Class | Notes |
 |---|---|---|
 | `AGENT_OS_APP_ENV` | non-secret config | `staging`. Must match the DB stamp. |
-| `AGENT_OS_API_KEY` | **required secret** | Operator key gating `/api/v1/*`. Generate a fresh one; never reuse production's. |
+| `AGENT_OS_API_KEY` | **required secret (single-tenant mode)** | Legacy operator key gating `/api/v1/*`. Generate a fresh one; never reuse production's. |
+| `AGENT_OS_API_KEYS_JSON` | **optional secret map** | Multi-tenant mode: JSON object mapping each server-held API key to a tenant id, for example `{\"tenant-key-a\":\"tenant-a\"}`. Never use a client-supplied tenant header. |
 | `DATABASE_URL` | derived | Injected from `thynact-staging-db`. Never a literal. |
 | `REDIS_URL` | derived | Injected from `thynact-staging-redis`. Never a literal. |
 | `AGENT_OS_REQUIRE_DURABLE_PERSISTENCE` | non-secret config | `true` — fail closed if any subsystem is still in-memory. |
@@ -55,16 +56,19 @@ commit values.** Staging values must differ from production.
 | `AGENT_OS_CORS_ORIGINS` | non-secret config | `https://staging.thynact.com` only. |
 | `AGENT_OS_FRONTEND_URL` | non-secret config | `https://staging.thynact.com`. |
 | `AGENT_OS_OAUTH_REDIRECT_BASE_URL` | non-secret config | `https://api-staging.thynact.com`. |
+| `AGENT_OS_OAUTH_TENANT_ID` | non-secret config | Default tenant for anonymous/public reads and the legacy `AGENT_OS_API_KEY`; use stable opaque ids. |
+| `AGENT_OS_OAUTH_STORAGE_BACKEND` | non-secret config | `postgres` for durable, encrypted OAuth connections and state; run migrations 008–010 first. |
+| `AGENT_OS_OAUTH_ENCRYPTION_KEY` | **required secret with Postgres OAuth** | Fernet key for OAuth token ciphertext; rotate through a migration plan, never commit it. |
 | `GITHUB_OAUTH_CLIENT_ID` / `_SECRET` | OAuth credential | **Separate app registration**, not production's with another callback. |
 | `SLACK_SIGNING_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/slack`; keep this separate per environment. |
 | `SLACK_WEBHOOK_MAX_SKEW_SECONDS` | non-secret config | Default `300`; limits stale Slack callbacks. |
 | `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `CLOUDFLARE_API_TOKEN`, `RENDER_API_KEY`, `N8N_BASE_URL`, `MAKE_WEBHOOK_URL` | optional provider credentials | Leave unset. Each then reports `CREDENTIAL_REQUIRED` honestly instead of borrowing production credentials. |
 
-There is **no** session/cookie secret and **no** credential-encryption key in
-this codebase today: the operator key is sent as `X-API-Key` and held in the
-browser's `sessionStorage`, and OAuth access tokens live in process memory
-(`app/integrations/oauth/store.py`), never persisted. Persisting them later
-requires encryption at rest and a key-management decision — see §7.
+There is **no** session/cookie secret: the selected API key is sent as
+`X-API-Key` and held in the browser's `sessionStorage`. In durable OAuth mode,
+access/refresh tokens are Fernet-encrypted in PostgreSQL and selected by the
+server-held tenant mapping; in development's memory fallback they remain
+process-local. The encryption key must come from the deployment secret manager.
 
 ## 3b. Zero-cost staging on Render (no payment method)
 
@@ -264,11 +268,14 @@ dependency is genuinely reachable now) but expensive.
 - No production datastores; production is ephemeral and mislabelled.
 - No staging deployment yet — `render.yaml` has never been synced, so it is
   unvalidated against Render's live schema.
-- OAuth tokens are in-memory and unencrypted; no vault, no rotation.
+- OAuth durability is implemented behind PostgreSQL/Fernet, but production
+  still needs migrations 008–010, a managed encryption key, rotation runbook,
+  and restart/reconnect validation.
 - No scheduler subsystem exists (a `JobWorker` does; a scheduler does not).
 - No external metrics/tracing/alerting stack.
-- No multi-tenancy: there is no tenant column or principal beyond the single
-  operator API key. Tenant isolation is a design goal, not a current property.
+- Tenant isolation is implemented for OAuth and catalog status through
+  server-held `AGENT_OS_API_KEYS_JSON` mappings; multi-tenant production still
+  needs two-key staging smoke tests and key rotation validation.
 - No rate limiting on the public API surface (the runtime rate limiter governs
   integration calls, not inbound HTTP). Verified: no inbound limiter exists.
 - No request size limits or explicit request timeouts on inbound HTTP.

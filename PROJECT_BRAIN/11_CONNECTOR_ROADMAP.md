@@ -82,10 +82,11 @@ creating one-off integrations.
 - Provider credentials are server-side only; no secrets in frontend storage,
   logs, errors, fixtures, Project Brain, or git.
 - OAuth state is single-use and expires; state digests and access/refresh tokens
-  are tenant-scoped in PostgreSQL when durable OAuth storage is enabled. The
-  current tenant key is deployment-scoped; a full multi-user identity/tenant
-  layer is still required before serving multiple operators from one
-  deployment.
+  are tenant-scoped in PostgreSQL when durable OAuth storage is enabled.
+  `AGENT_OS_API_KEYS_JSON` selects the tenant from server-held keys, and the
+  public callback restores the tenant from its validated state claim. Never
+  accept a client-supplied tenant header. Multi-user rollout still requires
+  credential-backed staging smoke tests and key-rotation runbooks.
 - Adapter accepts canonical capability arguments only and never an arbitrary
   provider URL or operation name from an agent.
 - Read, write, and high-risk operations use the shared capability risk model;

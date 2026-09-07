@@ -41,6 +41,7 @@ async def test_durable_store_loads_decrypts_and_scopes_by_tenant() -> None:
     db = FakeDatabase(
         rows=[
             {
+                "tenant_id": "tenant-a",
                 "provider": "github",
                 "access_token_ciphertext": cipher.encrypt("access-secret"),
                 "refresh_token_ciphertext": cipher.encrypt("refresh-secret"),
@@ -58,7 +59,9 @@ async def test_durable_store_loads_decrypts_and_scopes_by_tenant() -> None:
     record = store.get("github")
     assert record.access_token == "access-secret"
     assert record.refresh_token == "refresh-secret"
-    assert db.calls[0][1] == ("tenant-a",)
+    # Multi-tenant startup loads every encrypted row into a tenant-keyed cache
+    # so synchronous adapters can select the authenticated tenant safely.
+    assert db.calls[0][1] == ()
 
 
 @pytest.mark.asyncio
@@ -98,5 +101,4 @@ async def test_durable_state_is_hashed_tenant_scoped_and_single_use() -> None:
     assert db.calls[1][1][1] != state
 
     assert await store.consume_async(state) == "github"
-    assert db.calls[2][1][0] == "tenant-state"
-    assert db.calls[2][1][1] != state
+    assert db.calls[2][1][0] != state

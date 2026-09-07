@@ -36,6 +36,15 @@ class OAuthProviderConfig:
 class OAuthStateRecord:
     provider: str
     created_at: datetime
+    tenant_id: str = "operator"
+
+
+@dataclass(frozen=True, slots=True)
+class OAuthStateClaim:
+    """Validated state metadata used to establish callback tenant context."""
+
+    provider: str
+    tenant_id: str
 
 
 @dataclass(slots=True)

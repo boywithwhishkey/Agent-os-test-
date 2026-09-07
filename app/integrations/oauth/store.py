@@ -4,8 +4,14 @@ import hashlib
 from datetime import datetime, timedelta
 from uuid import uuid4
 
+from app.core.tenant import get_current_tenant
 from app.integrations.oauth.crypto import OAuthTokenCipher
-from app.integrations.oauth.models import OAuthConnectionRecord, OAuthStateRecord, utcnow
+from app.integrations.oauth.models import (
+    OAuthConnectionRecord,
+    OAuthStateClaim,
+    OAuthStateRecord,
+    utcnow,
+)
 from app.persistence.database import Database
 
 STATE_TTL = timedelta(minutes=10)
@@ -13,9 +19,9 @@ STATE_TTL = timedelta(minutes=10)
 
 class OAuthStateStore:
     """Short-lived, single-use CSRF state tokens for the authorize/callback
-    round trip. In-memory and process-local, like the rest of this
-    codebase's integration telemetry (see status_store.py) — a lost state on
-    restart just means the user retries "Authorize", not a security issue."""
+    round trip. Development uses a process-local fallback; durable deployments
+    store only a digest in PostgreSQL. Every claim carries its owning tenant so
+    a public callback cannot attach a token to the wrong account."""
 
     def __init__(self) -> None:
         self._states: dict[str, OAuthStateRecord] = {}
@@ -32,33 +38,43 @@ class OAuthStateStore:
     def create(self, provider: str) -> str:
         self._expire_old()
         token = uuid4().hex
-        self._states[token] = OAuthStateRecord(provider=provider, created_at=utcnow())
+        self._states[token] = OAuthStateRecord(
+            provider=provider,
+            created_at=utcnow(),
+            tenant_id=self._effective_tenant(),
+        )
         return token
 
     def consume(self, state: str) -> str | None:
         """Validate and invalidate a state token in one step. Returns the
         provider it was issued for, or None if it's missing/expired/reused."""
-        self._expire_old()
-        record = self._states.pop(state, None)
+        record = self._consume_record(state)
         if record is None:
             return None
         return record.provider
+
+    def consume_claim(self, state: str) -> OAuthStateClaim | None:
+        record = self._consume_record(state)
+        if record is None:
+            return None
+        return OAuthStateClaim(provider=record.provider, tenant_id=record.tenant_id)
 
     async def create_async(self, provider: str) -> str:
         """Create state in PostgreSQL when durable OAuth storage is enabled."""
         if self._database is None:
             return self.create(provider)
         token = uuid4().hex
+        tenant_id = self._effective_tenant()
         await self._database.execute(
             "DELETE FROM oauth_states WHERE tenant_id = $1 AND created_at < NOW() - INTERVAL '10 minutes'",
-            self._tenant_id,
+            tenant_id,
         )
         await self._database.execute(
             """
             INSERT INTO oauth_states (tenant_id, state_hash, provider, created_at)
             VALUES ($1, $2, $3, $4)
             """,
-            self._tenant_id,
+            tenant_id,
             self._hash(token),
             provider,
             utcnow(),
@@ -67,20 +83,29 @@ class OAuthStateStore:
 
     async def consume_async(self, state: str) -> str | None:
         """Atomically consume one durable state token, with TTL enforcement."""
+        claim = await self.consume_claim_async(state)
+        return claim.provider if claim else None
+
+    async def consume_claim_async(self, state: str) -> OAuthStateClaim | None:
+        """Consume state and return the tenant-bound OAuth claim."""
         if self._database is None:
-            return self.consume(state)
+            return self.consume_claim(state)
+        tenant_id = self._effective_tenant()
         row = await self._database.fetchrow(
             """
             DELETE FROM oauth_states
-            WHERE tenant_id = $1
-              AND state_hash = $2
+            WHERE state_hash = $1
               AND created_at >= NOW() - INTERVAL '10 minutes'
-            RETURNING provider
+            RETURNING provider, tenant_id
             """,
-            self._tenant_id,
             self._hash(state),
         )
-        return row.get("provider") if row else None
+        if not row:
+            return None
+        return OAuthStateClaim(
+            provider=row["provider"],
+            tenant_id=str(row.get("tenant_id") or tenant_id),
+        )
 
     @staticmethod
     def _hash(state: str) -> str:
@@ -92,15 +117,22 @@ class OAuthStateStore:
         for token in expired:
             self._states.pop(token, None)
 
+    def _consume_record(self, state: str) -> OAuthStateRecord | None:
+        self._expire_old()
+        return self._states.pop(state, None)
+
+    def _effective_tenant(self) -> str:
+        return get_current_tenant(self._tenant_id)
+
 
 class OAuthConnectionStore:
     """Tracks one deployment tenant's OAuth connections.
 
     The in-memory mode remains useful for local development/tests. When a
-    database and cipher are configured, the cache is loaded at startup and
-    every token mutation is written encrypted to PostgreSQL. The tenant id is
-    part of every database key so a future multi-tenant auth layer cannot
-    accidentally read another tenant's connection.
+    database and cipher are configured, encrypted rows for all tenants are
+    loaded at startup and every token mutation is written to PostgreSQL. The
+    cache key is always ``(tenant, provider)`` and the active tenant comes from
+    server-held API-key context, never from a request header.
     """
 
     def __init__(
@@ -110,7 +142,7 @@ class OAuthConnectionStore:
         tenant_id: str = "operator",
         cipher: OAuthTokenCipher | None = None,
     ) -> None:
-        self._connections: dict[str, OAuthConnectionRecord] = {}
+        self._connections: dict[tuple[str, str], OAuthConnectionRecord] = {}
         self._database = database
         self._tenant_id = tenant_id
         self._cipher = cipher
@@ -136,16 +168,15 @@ class OAuthConnectionStore:
             raise RuntimeError("OAuth token encryption is not configured")
         rows = await self._database.fetch(
             """
-            SELECT provider, access_token_ciphertext, refresh_token_ciphertext,
+            SELECT tenant_id, provider, access_token_ciphertext, refresh_token_ciphertext,
                    token_type, scope, expires_at, connected_at, last_error
             FROM oauth_connections
-            WHERE tenant_id = $1
-            """,
-            self._tenant_id,
+            """
         )
         self._connections.clear()
         for row in rows:
-            self._connections[row["provider"]] = OAuthConnectionRecord(
+            tenant_id = str(row.get("tenant_id") or self._tenant_id)
+            self._connections[(tenant_id, row["provider"])] = OAuthConnectionRecord(
                 provider=row["provider"],
                 access_token=self._cipher.decrypt(row["access_token_ciphertext"]),
                 refresh_token=(
@@ -161,7 +192,8 @@ class OAuthConnectionStore:
             )
 
     def get(self, provider: str) -> OAuthConnectionRecord:
-        return self._connections.setdefault(provider, OAuthConnectionRecord(provider=provider))
+        key = (self._effective_tenant(), provider)
+        return self._connections.setdefault(key, OAuthConnectionRecord(provider=provider))
 
     def record_success(
         self,
@@ -196,8 +228,9 @@ class OAuthConnectionStore:
         record.last_error = error
 
     def disconnect(self, provider: str) -> bool:
-        existed = provider in self._connections and self._connections[provider].connected
-        self._connections.pop(provider, None)
+        key = (self._effective_tenant(), provider)
+        existed = key in self._connections and self._connections[key].connected
+        self._connections.pop(key, None)
         return existed
 
     async def persist(self, provider: str) -> None:
@@ -229,7 +262,7 @@ class OAuthConnectionStore:
                 connected_at = EXCLUDED.connected_at,
                 last_error = EXCLUDED.last_error
             """,
-            self._tenant_id,
+            self._effective_tenant(),
             provider,
             self._cipher.encrypt(record.access_token),
             self._cipher.encrypt(record.refresh_token) if record.refresh_token else None,
@@ -245,6 +278,9 @@ class OAuthConnectionStore:
             return
         await self._database.execute(
             "DELETE FROM oauth_connections WHERE tenant_id = $1 AND provider = $2",
-            self._tenant_id,
+            self._effective_tenant(),
             provider,
         )
+
+    def _effective_tenant(self) -> str:
+        return get_current_tenant(self._tenant_id)

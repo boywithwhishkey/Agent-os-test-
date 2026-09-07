@@ -1,9 +1,21 @@
-# CURRENT STATE — verified as of 2026-09-07, durable OAuth checkpoint
+# CURRENT STATE — verified as of 2026-09-07, tenant-isolated OAuth checkpoint
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
+
+## SESSION 2026-09-07 — TENANT-ISOLATED OAUTH STATE
+
+- **IMPLEMENTED_TESTED:** OAuth connections are keyed by `(tenant, provider)`
+  in memory and in PostgreSQL. `AGENT_OS_API_KEYS_JSON` maps server-held API
+  keys to tenant ids while preserving the legacy single-key mode; no tenant
+  header is accepted. OAuth state claims carry the owning tenant across the
+  public callback, which switches context only after single-use validation.
+- Public connector catalog reads accept a valid API key optionally so connected
+  status is scoped to that tenant; anonymous reads remain backward compatible.
+- **NOT LIVE-VALIDATED:** multi-tenant behavior still needs two real staging
+  keys, separate OAuth consent flows, and a restart/reconnect smoke test.
 
 ## SESSION 2026-09-07 — DURABLE OAUTH STATE
 
@@ -353,10 +365,11 @@ contradicting note elsewhere.
   `OAuthTokenCipher` uses authenticated Fernet encryption; ciphertext only is
   written to the database and tokens remain redacted from public models.
 - Storage is opt-in with `AGENT_OS_OAUTH_STORAGE_BACKEND=postgres`,
-  `AGENT_OS_OAUTH_ENCRYPTION_KEY`, and a deployment-scoped
-  `AGENT_OS_OAUTH_TENANT_ID`. Startup loads only that tenant's rows and fails
-  closed if the database or encryption key is missing/invalid. Development
-  defaults remain process-local memory.
+  `AGENT_OS_OAUTH_ENCRYPTION_KEY`, and a default
+  `AGENT_OS_OAUTH_TENANT_ID`. Startup loads encrypted rows into a
+  `(tenant, provider)` cache; request-scoped server-held API-key mappings select
+  the active tenant and fail closed if the database or encryption key is
+  missing/invalid. Development defaults remain process-local memory.
 - **VERIFIED:** focused OAuth, persistence-safety, readiness, and durable-store
   tests pass. No production or Ride&Glide configuration was changed. Staging
   still needs migrations 008 and 009, a generated Fernet key, and restart/reconnect

@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from app.core.auth import require_api_key
+from app.core.auth import optional_api_key_tenant, require_api_key
 from app.core.config import settings
 from app.core.correlation import get_or_create_correlation_id
+from app.core.tenant import set_current_tenant
 from app.integrations.broker import ConnectorBroker
 from app.integrations.capabilities import UnknownCapability, requires_approval, resolve, resolve_all
 from app.integrations.catalog import CatalogSpec, list_catalog
@@ -425,12 +426,17 @@ def _resolve_entry(spec: CatalogSpec) -> ConnectorEntry:
     )
 
 
-@public_router.get("", response_model=list[ConnectorEntry])
+@public_router.get(
+    "",
+    response_model=list[ConnectorEntry],
+    dependencies=[Depends(optional_api_key_tenant)],
+)
 async def list_catalog_route() -> list[ConnectorEntry]:
     """The full connector catalog with live status. Public — no secrets are
     ever included here, only whether something is configured/connected, so
-    the Integration Hub can render for any visitor regardless of whether an
-    operator API key is set in this browser."""
+    the Integration Hub can render for any visitor. When a key is present, the
+    response is scoped to that key's tenant rather than another operator's
+    connected accounts."""
     return [_resolve_entry(spec) for spec in list_catalog()]
 
 
@@ -619,8 +625,12 @@ async def oauth_callback_route(
         oauth_connection_store.record_failure(config.id, error=error)
         return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message={quote(error)}")
 
-    if not state or await oauth_state_store.consume_async(state) != config.id:
+    claim = await oauth_state_store.consume_claim_async(state) if state else None
+    if claim is None or claim.provider != config.id:
         return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message=invalid_or_expired_state")
+    # The callback is intentionally public, so the validated state claim is
+    # the only trusted source for the tenant that owns the authorization.
+    set_current_tenant(claim.tenant_id)
 
     if not code:
         return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message=missing_code")
