@@ -464,6 +464,28 @@ CATALOG: list[CatalogSpec] = [
         implemented=True,
         requires=["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     ),
+    CatalogSpec(
+        id="outlook",
+        name="Microsoft Outlook",
+        description="Read and approval-send Outlook mail and manage calendar events.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.OAUTH,
+        icon="MailCheck",
+        auth_type=ConnectorAuthType.OAUTH2,
+        capabilities=["Connect account", "Read email", "Send email", "Read events", "Create events"],
+        canonical_capabilities=[
+            "identity.account.read",
+            "mail.message.list",
+            "mail.message.read",
+            "mail.message.send",
+            "calendar.event.list",
+            "calendar.event.create",
+        ],
+        popular=True,
+        documentation_url="https://learn.microsoft.com/en-us/graph/overview",
+        implemented=True,
+        requires=["MICROSOFT_OAUTH_CLIENT_ID", "MICROSOFT_OAUTH_CLIENT_SECRET"],
+    ),
     # --- Data ---
     CatalogSpec(
         id="postgresql",

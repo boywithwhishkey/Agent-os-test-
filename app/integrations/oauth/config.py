@@ -119,6 +119,15 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="MICROSOFT_OAUTH_CLIENT_ID",
         client_secret_env="MICROSOFT_OAUTH_CLIENT_SECRET",
     ),
+    "outlook": OAuthProviderConfig(
+        id="outlook",
+        name="Microsoft Outlook",
+        authorize_url="https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        token_url="https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        scope="User.Read Mail.Read Mail.Send Calendars.ReadWrite offline_access",
+        client_id_env="MICROSOFT_OAUTH_CLIENT_ID",
+        client_secret_env="MICROSOFT_OAUTH_CLIENT_SECRET",
+    ),
     "hubspot": OAuthProviderConfig(
         id="hubspot",
         name="HubSpot",

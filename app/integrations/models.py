@@ -45,6 +45,7 @@ class IntegrationProvider(StrEnum):
     TODOIST = "todoist"
     ASANA = "asana"
     RAZORPAY = "razorpay"
+    OUTLOOK = "outlook"
 
 
 class IntegrationRequest(BaseModel):
