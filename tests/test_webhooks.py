@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import json
@@ -172,3 +173,64 @@ def test_zoom_webhook_queues_verified_event_and_rejects_replay(monkeypatch):
     assert accepted.json()["provider"] == "zoom"
     assert duplicate.json()["duplicate"] is True
     assert rejected.status_code == 403
+
+
+def _shopify_headers(body: bytes, secret: str, webhook_id: str = "shopify-delivery-1") -> dict[str, str]:
+    digest = base64.b64encode(hmac.new(secret.encode(), body, hashlib.sha256).digest()).decode()
+    return {
+        "X-Shopify-Hmac-Sha256": digest,
+        "X-Shopify-Webhook-Id": webhook_id,
+        "X-Shopify-Topic": "orders/updated",
+        "X-Shopify-Shop-Domain": "example.myshopify.com",
+        "X-Shopify-Event-Id": "shopify-event-1",
+    }
+
+
+def test_shopify_webhook_verifies_raw_body_and_deduplicates_by_delivery_id(monkeypatch):
+    secret = "shopify-secret"
+    monkeypatch.setattr(settings, "shopify_webhook_secret", secret)
+    queue = InMemoryJobQueue()
+    monkeypatch.setattr(webhook_routes, "_delivery_queue", queue)
+    body = b'{"id":123,"name":"order"}'
+    headers = _shopify_headers(body, secret)
+
+    with TestClient(app) as client:
+        accepted = client.post("/api/v1/webhooks/shopify", content=body, headers=headers)
+        duplicate = client.post("/api/v1/webhooks/shopify", content=body, headers=headers)
+        rejected = client.post(
+            "/api/v1/webhooks/shopify",
+            content=body,
+            headers={**headers, "X-Shopify-Hmac-Sha256": "0" * len(headers["X-Shopify-Hmac-Sha256"])},
+        )
+
+    assert accepted.status_code == 200
+    assert duplicate.json()["duplicate"] is True
+    assert rejected.status_code == 403
+
+
+def _stripe_headers(body: bytes, secret: str, timestamp: int | None = None) -> dict[str, str]:
+    timestamp = timestamp or int(time.time())
+    digest = hmac.new(secret.encode(), f"{timestamp}.".encode() + body, hashlib.sha256).hexdigest()
+    return {"Stripe-Signature": f"t={timestamp},v1={digest}"}
+
+
+def test_stripe_webhook_verifies_signed_event_and_rejects_stale_delivery(monkeypatch):
+    secret = "whsec_test"
+    monkeypatch.setattr(settings, "stripe_webhook_secret", secret)
+    queue = InMemoryJobQueue()
+    monkeypatch.setattr(webhook_routes, "_delivery_queue", queue)
+    body = b'{"id":"evt_1","type":"payment_intent.succeeded","data":{"object":{}}}'
+    headers = _stripe_headers(body, secret)
+
+    with TestClient(app) as client:
+        accepted = client.post("/api/v1/webhooks/stripe", content=body, headers=headers)
+        duplicate = client.post("/api/v1/webhooks/stripe", content=body, headers=headers)
+        stale = client.post(
+            "/api/v1/webhooks/stripe",
+            content=body,
+            headers=_stripe_headers(body, secret, int(time.time()) - settings.stripe_webhook_max_skew_seconds - 1),
+        )
+
+    assert accepted.status_code == 200
+    assert duplicate.json()["duplicate"] is True
+    assert stale.status_code == 403

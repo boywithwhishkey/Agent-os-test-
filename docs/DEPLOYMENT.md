@@ -62,6 +62,9 @@ commit values.** Staging values must differ from production.
 | `GITHUB_OAUTH_CLIENT_ID` / `_SECRET` | OAuth credential | **Separate app registration**, not production's with another callback. |
 | `SLACK_SIGNING_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/slack`; keep this separate per environment. |
 | `SLACK_WEBHOOK_MAX_SKEW_SECONDS` | non-secret config | Default `300`; limits stale Slack callbacks. |
+| `SHOPIFY_WEBHOOK_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/shopify`; verifies the raw-body `X-Shopify-Hmac-SHA256` signature. |
+| `STRIPE_WEBHOOK_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/stripe`; use the endpoint-specific `whsec_...` secret. |
+| `STRIPE_WEBHOOK_MAX_SKEW_SECONDS` | non-secret config | Default `300`; rejects stale Stripe signed deliveries. |
 | `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `CLOUDFLARE_API_TOKEN`, `RENDER_API_KEY`, `N8N_BASE_URL`, `MAKE_WEBHOOK_URL` | optional provider credentials | Leave unset. Each then reports `CREDENTIAL_REQUIRED` honestly instead of borrowing production credentials. |
 
 There is **no** session/cookie secret: the selected API key is sent as

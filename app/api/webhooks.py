@@ -11,7 +11,9 @@ from app.core.config import settings
 from app.integrations.webhooks import (
     delivery_id,
     verify_meta_signature,
+    verify_shopify_signature,
     verify_slack_signature,
+    verify_stripe_signature,
     verify_telegram_secret,
     verify_zoom_signature,
 )
@@ -29,14 +31,23 @@ def _get_delivery_queue() -> JobQueue:
     return _delivery_queue
 
 
-async def _accept_delivery(provider: str, body: bytes) -> dict[str, str | bool]:
+async def _accept_delivery(
+    provider: str,
+    body: bytes,
+    *,
+    delivery_key: str | None = None,
+    metadata: dict[str, str] | None = None,
+) -> dict[str, str | bool]:
     if len(body) > settings.webhook_max_body_bytes:
         raise HTTPException(status_code=413, detail="Webhook payload is too large")
     try:
         raw_body = body.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise HTTPException(status_code=400, detail="Webhook payload must be UTF-8") from exc
-    identifier = delivery_id(provider, body)
+    if delivery_key and 1 <= len(delivery_key) <= 256:
+        identifier = f"{provider}:{delivery_key}"
+    else:
+        identifier = delivery_id(provider, body)
     queue = _get_delivery_queue()
     if not await queue.claim_once(identifier):
         return {"accepted": True, "duplicate": True, "provider": provider, "delivery_id": identifier}
@@ -44,7 +55,12 @@ async def _accept_delivery(provider: str, body: bytes) -> dict[str, str | bool]:
         QueueJob(
             queue="webhooks",
             type="connector.webhook",
-            payload={"provider": provider, "body": raw_body, "delivery_id": identifier},
+            payload={
+                "provider": provider,
+                "body": raw_body,
+                "delivery_id": identifier,
+                "metadata": metadata or {},
+            },
         )
     )
     return {"accepted": True, "duplicate": False, "provider": provider, "delivery_id": identifier}
@@ -146,6 +162,49 @@ async def zoom_webhook(request: Request) -> dict[str, str | bool]:
         encrypted = hmac.new(secret.encode("utf-8"), plain_token.encode("utf-8"), hashlib.sha256).hexdigest()
         return {"plainToken": plain_token, "encryptedToken": encrypted}
     return await _accept_delivery("zoom", body)
+
+
+@router.post("/shopify")
+async def shopify_webhook(request: Request) -> dict[str, str | bool]:
+    """Verify and queue Shopify HTTPS deliveries using raw-body HMAC."""
+    body = await request.body()
+    secret = settings.shopify_webhook_secret
+    if not secret:
+        raise HTTPException(status_code=503, detail="SHOPIFY_WEBHOOK_SECRET is not configured")
+    if not verify_shopify_signature(body, request.headers.get("x-shopify-hmac-sha256"), secret):
+        raise HTTPException(status_code=403, detail="Invalid Shopify webhook signature")
+    metadata = {
+        key: value
+        for key, value in {
+            "topic": request.headers.get("x-shopify-topic"),
+            "shop_domain": request.headers.get("x-shopify-shop-domain"),
+            "event_id": request.headers.get("x-shopify-event-id"),
+        }.items()
+        if value
+    }
+    return await _accept_delivery(
+        "shopify",
+        body,
+        delivery_key=request.headers.get("x-shopify-webhook-id"),
+        metadata=metadata,
+    )
+
+
+@router.post("/stripe")
+async def stripe_webhook(request: Request) -> dict[str, str | bool]:
+    """Verify and queue Stripe events using the raw-body signed payload."""
+    body = await request.body()
+    secret = settings.stripe_webhook_secret
+    if not secret:
+        raise HTTPException(status_code=503, detail="STRIPE_WEBHOOK_SECRET is not configured")
+    if not verify_stripe_signature(
+        body,
+        request.headers.get("stripe-signature"),
+        secret,
+        max_skew_seconds=settings.stripe_webhook_max_skew_seconds,
+    ):
+        raise HTTPException(status_code=403, detail="Invalid Stripe webhook signature")
+    return await _accept_delivery("stripe", body)
 
 
 def hmac_compare(received: str | None, expected: str) -> bool:

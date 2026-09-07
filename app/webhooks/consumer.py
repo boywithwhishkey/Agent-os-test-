@@ -29,6 +29,7 @@ class WebhookConsumer:
         provider = job.payload.get("provider")
         body = job.payload.get("body")
         delivery = job.payload.get("delivery_id")
+        metadata = job.payload.get("metadata")
         if not all(
             isinstance(value, str) and value.strip() for value in (provider, body, delivery)
         ):
@@ -43,7 +44,12 @@ class WebhookConsumer:
             raise WebhookWorkflowNotConfigured(
                 f"Webhook workflow definition {workflow_id} does not exist"
             )
-        event = normalize_webhook(provider, body, delivery)
+        event = normalize_webhook(
+            provider,
+            body,
+            delivery,
+            metadata if isinstance(metadata, dict) else None,
+        )
         context = {
             "webhook": {
                 "provider": provider,

@@ -17,7 +17,12 @@ class WebhookEvent(BaseModel):
     payload: dict[str, Any]
 
 
-def normalize_webhook(provider: str, body: str, delivery_id: str) -> WebhookEvent:
+def normalize_webhook(
+    provider: str,
+    body: str,
+    delivery_id: str,
+    metadata: dict[str, Any] | None = None,
+) -> WebhookEvent:
     """Convert provider JSON into a stable event envelope.
 
     The normalizer is deliberately conservative: it preserves the relevant
@@ -41,6 +46,10 @@ def normalize_webhook(provider: str, body: str, delivery_id: str) -> WebhookEven
         return _normalize_slack(document, delivery_id)
     if normalized_provider == "zoom":
         return _normalize_zoom(document, delivery_id)
+    if normalized_provider == "shopify":
+        return _normalize_shopify(document, delivery_id, metadata or {})
+    if normalized_provider == "stripe":
+        return _normalize_stripe(document, delivery_id)
     return WebhookEvent(
         provider=normalized_provider,
         event_type="event.received",
@@ -179,4 +188,33 @@ def _normalize_slack(document: dict[str, Any], delivery_id: str) -> WebhookEvent
             "authorizations": document.get("authorizations"),
             "delivery_id": delivery_id,
         },
+    )
+
+
+def _normalize_shopify(
+    document: dict[str, Any], delivery_id: str, metadata: dict[str, Any]
+) -> WebhookEvent:
+    topic = metadata.get("topic")
+    event_type = topic.strip() if isinstance(topic, str) and topic.strip() else "event.received"
+    event_id = metadata.get("event_id")
+    if not isinstance(event_id, str) or not event_id.strip():
+        event_id = delivery_id
+    return WebhookEvent(
+        provider="shopify",
+        event_type=event_type,
+        event_id=event_id,
+        payload={"shop_domain": metadata.get("shop_domain"), "provider_payload": document},
+    )
+
+
+def _normalize_stripe(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
+    event_type = document.get("type")
+    if not isinstance(event_type, str) or not event_type.strip():
+        event_type = "event.received"
+    event_id = document.get("id") if isinstance(document.get("id"), str) else delivery_id
+    return WebhookEvent(
+        provider="stripe",
+        event_type=event_type.strip(),
+        event_id=event_id,
+        payload={"provider_payload": document},
     )

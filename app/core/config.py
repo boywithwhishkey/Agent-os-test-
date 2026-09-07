@@ -101,6 +101,15 @@ class Settings(BaseSettings):
     shopify_shop_domain: str | None = Field(default=None, validation_alias="SHOPIFY_SHOP_DOMAIN")
     shopify_api_version: str = Field(default="2025-07", validation_alias="SHOPIFY_API_VERSION")
     stripe_secret_key: str | None = Field(default=None, validation_alias="STRIPE_SECRET_KEY")
+    stripe_webhook_secret: str | None = Field(
+        default=None, validation_alias="STRIPE_WEBHOOK_SECRET"
+    )
+    stripe_webhook_max_skew_seconds: int = Field(
+        default=300, ge=30, le=3_600, validation_alias="STRIPE_WEBHOOK_MAX_SKEW_SECONDS"
+    )
+    shopify_webhook_secret: str | None = Field(
+        default=None, validation_alias="SHOPIFY_WEBHOOK_SECRET"
+    )
     snapchat_access_token: str | None = Field(default=None, validation_alias="SNAPCHAT_ACCESS_TOKEN")
     snapchat_oauth_client_id: str | None = Field(
         default=None, validation_alias="SNAPCHAT_OAUTH_CLIENT_ID"

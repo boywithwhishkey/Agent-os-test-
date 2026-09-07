@@ -21,11 +21,23 @@ contradicting note elsewhere.
   assigns legacy rows to `operator` and filters new reads/writes by context.
 - **NOT LIVE-VALIDATED:** multi-tenant behavior still needs two real staging
   keys, separate OAuth consent flows, and a restart/reconnect smoke test.
-- Focused tenant/MCP/governance checks and the full local gate pass: **609
+- Focused tenant/MCP/governance checks and the full local gate pass: **613
   backend tests passed, 13 skipped, 1 warning; 109 frontend tests passed;
   typecheck, lint, and production build passed**. Local PostgreSQL/Redis live
   checks remain unavailable in this shell; GitHub CI validates the real
   PostgreSQL/Redis migration path.
+
+## SESSION 2026-09-07 — SHOPIFY AND STRIPE WEBHOOK INGRESS
+
+- **IMPLEMENTED_TESTED:** Shopify HTTPS deliveries now verify the raw-body
+  base64 HMAC, use `X-Shopify-Webhook-Id` for duplicate suppression, preserve
+  topic/shop/event metadata, and normalize into the canonical webhook envelope.
+  Stripe deliveries now verify the raw-body `Stripe-Signature` `t=...,v1=...`
+  contract with a bounded timestamp window and normalize event ids/types.
+- Both routes hand off only verified payloads to the existing queue and remain
+  credential-gated; no provider secret or live delivery was available here.
+- Focused webhook/normalization checks: **20 passed**. Live provider
+  validation remains pending staging secrets and registered webhook endpoints.
 
 ## SESSION 2026-09-07 — DURABLE OAUTH STATE
 

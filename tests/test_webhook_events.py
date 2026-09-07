@@ -55,6 +55,29 @@ def test_slack_event_callback_is_normalized_to_inner_event():
     assert event.payload["event"]["text"] == "hi"
 
 
+def test_shopify_and_stripe_events_use_provider_metadata_and_ids():
+    shopify = normalize_webhook(
+        "shopify",
+        '{"id":123,"name":"order"}',
+        "shopify:delivery",
+        {
+            "topic": "orders/updated",
+            "shop_domain": "example.myshopify.com",
+            "event_id": "shopify-event-1",
+        },
+    )
+    stripe = normalize_webhook(
+        "stripe",
+        '{"id":"evt_1","type":"payment_intent.succeeded","data":{"object":{}}}',
+        "stripe:delivery",
+    )
+    assert shopify.event_type == "orders/updated"
+    assert shopify.event_id == "shopify-event-1"
+    assert shopify.payload["shop_domain"] == "example.myshopify.com"
+    assert stripe.event_type == "payment_intent.succeeded"
+    assert stripe.event_id == "evt_1"
+
+
 @pytest.mark.parametrize("body", ["not-json", "[]", '{"message":{}}'])
 def test_normalizer_rejects_invalid_telegram_shapes(body):
     with pytest.raises(WebhookPayloadError):

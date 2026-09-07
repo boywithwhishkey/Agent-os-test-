@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import time
@@ -85,6 +86,54 @@ def verify_zoom_signature(
     message = f"v0:{timestamp}:{body_text}".encode()
     digest = hmac.new(secret_token.encode("utf-8"), message, hashlib.sha256).hexdigest()
     return hmac.compare_digest(signature_header, f"v0={digest}")
+
+
+def verify_shopify_signature(
+    body: bytes, signature_header: str | None, app_secret: str | None
+) -> bool:
+    """Validate Shopify's base64 HMAC over the untouched request body."""
+    if not body or not signature_header or not app_secret:
+        return False
+    expected = base64.b64encode(
+        hmac.new(app_secret.encode("utf-8"), body, hashlib.sha256).digest()
+    ).decode("ascii")
+    return hmac.compare_digest(expected, signature_header)
+
+
+def verify_stripe_signature(
+    body: bytes,
+    signature_header: str | None,
+    endpoint_secret: str | None,
+    *,
+    max_skew_seconds: int = 300,
+    now: float | None = None,
+) -> bool:
+    """Validate Stripe's signed ``t=...,v1=...`` header and timestamp window."""
+    if not body or not signature_header or not endpoint_secret:
+        return False
+    timestamp: str | None = None
+    signatures: list[str] = []
+    for item in signature_header.split(","):
+        key, separator, value = item.strip().partition("=")
+        if separator != "=" or not value:
+            return False
+        if key == "t":
+            if timestamp is not None or not value.isdigit() or len(value) > 12:
+                return False
+            timestamp = value
+        elif key == "v1":
+            if len(value) != 64:
+                return False
+            signatures.append(value)
+    if timestamp is None or not signatures:
+        return False
+    timestamp_value = int(timestamp)
+    clock = time.time() if now is None else now
+    if abs(clock - timestamp_value) > max_skew_seconds:
+        return False
+    signed_payload = f"{timestamp}.".encode("ascii") + body
+    expected = hmac.new(endpoint_secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(expected, candidate) for candidate in signatures)
 
 
 def delivery_id(provider: str, body: bytes) -> str:
