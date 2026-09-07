@@ -167,6 +167,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Todoist",
         "requires": ["TODOIST_API_TOKEN"],
     },
+    IntegrationProvider.ASANA: {
+        "name": "Asana",
+        "requires": ["ASANA_ACCESS_TOKEN", "ASANA_WORKSPACE_GID"],
+    },
 }
 
 
@@ -321,6 +325,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.todoist import TodoistAdapter
 
         return TodoistAdapter()
+    if normalized == "asana":
+        from app.integrations.asana import AsanaAdapter
+
+        return AsanaAdapter()
 
     raise RuntimeError(f"Unsupported integration provider: {provider}")
 
@@ -428,4 +436,6 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.supabase_url and settings.supabase_anon_key and settings.supabase_read_table)
     if provider == IntegrationProvider.TODOIST:
         return bool(settings.todoist_api_token)
+    if provider == IntegrationProvider.ASANA:
+        return bool(settings.asana_access_token and settings.asana_workspace_gid)
     return False

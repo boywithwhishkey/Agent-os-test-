@@ -173,6 +173,8 @@ class Settings(BaseSettings):
         default=None, validation_alias="SUPABASE_READ_TABLE"
     )
     todoist_api_token: str | None = Field(default=None, validation_alias="TODOIST_API_TOKEN")
+    asana_access_token: str | None = Field(default=None, validation_alias="ASANA_ACCESS_TOKEN")
+    asana_workspace_gid: str | None = Field(default=None, validation_alias="ASANA_WORKSPACE_GID")
     oauth_storage_backend: str = Field(
         default="memory", validation_alias="AGENT_OS_OAUTH_STORAGE_BACKEND"
     )

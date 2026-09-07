@@ -535,6 +535,21 @@ CATALOG: list[CatalogSpec] = [
         implemented=True,
         requires=["TODOIST_API_TOKEN"],
     ),
+    CatalogSpec(
+        id="asana",
+        name="Asana",
+        description="List and approval-create tasks in one configured Asana workspace.",
+        category=ConnectorCategory.PRODUCTIVITY,
+        connector_type=ConnectorType.API,
+        icon="ClipboardList",
+        auth_type=ConnectorAuthType.BEARER,
+        capabilities=["List tasks", "Create task"],
+        canonical_capabilities=["productivity.task.list", "productivity.task.create"],
+        popular=True,
+        documentation_url="https://developers.asana.com/reference/tasks",
+        implemented=True,
+        requires=["ASANA_ACCESS_TOKEN", "ASANA_WORKSPACE_GID"],
+    ),
     # --- Other useful ---
     CatalogSpec(
         id="dropbox",
