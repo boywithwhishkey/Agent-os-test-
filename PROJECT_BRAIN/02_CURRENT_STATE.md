@@ -5,6 +5,17 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — PROVIDER-SPECIFIC META WEBHOOKS
+
+- **IMPLEMENTED_TESTED:** verified Meta callbacks now support dedicated
+  `/api/v1/webhooks/whatsapp` and `/api/v1/webhooks/instagram` GET/POST routes,
+  while `/api/v1/webhooks/meta` remains compatible. Queue jobs, tenant routes,
+  workflow routes, and normalized events preserve `whatsapp` or `instagram`
+  instead of collapsing both into `meta`.
+- The routes share Meta's raw-body HMAC and verification-token checks;
+  focused webhook/event/tenancy checks: **29 passed, 1 warning**. Full backend
+  gate after this change: **632 passed, 13 skipped, 1 warning**.
+
 ## SESSION 2026-09-07 — GOVERNED BROKER RESILIENCE
 
 - **IMPLEMENTED_TESTED:** canonical capability execution now applies the same

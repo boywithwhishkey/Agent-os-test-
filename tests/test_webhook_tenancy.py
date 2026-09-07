@@ -67,6 +67,13 @@ def test_payload_identifiers_extract_only_provider_account_ids():
     assert payload_identifiers(
         "shopify", {}, {"shop_domain": "store.myshopify.com"}
     ) == ["store.myshopify.com"]
+    assert payload_identifiers(
+        "whatsapp",
+        {
+            "object": "whatsapp_business_account",
+            "entry": [{"id": "waba-2", "changes": [{"value": {"phone_number_id": "phone-2"}}]}],
+        },
+    ) == ["whatsapp_business_account", "waba-2", "phone-2"]
 
 
 @pytest.mark.asyncio

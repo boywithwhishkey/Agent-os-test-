@@ -95,6 +95,8 @@ creating one-off integrations.
   tenant to a workflow with a `tenant:provider` key, which takes precedence
   over the provider fallback. Do not use a tenant header or payload field as
   an authority source.
+  Meta, WhatsApp, and Instagram callbacks retain provider-specific routes and
+  normalized event identities; `/meta` remains a backward-compatible alias.
 - API-token connectors may use `AGENT_OS_CONNECTOR_CREDENTIALS_JSON`, keyed by
   stable tenant id and provider env-name. A non-default tenant without a
   scoped credential is reported as not configured rather than inheriting the

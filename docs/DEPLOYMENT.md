@@ -64,6 +64,9 @@ commit values.** Staging values must differ from production.
 | `GITHUB_OAUTH_CLIENT_ID` / `_SECRET` | OAuth credential | **Separate app registration**, not production's with another callback. |
 | `SLACK_SIGNING_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/slack`; keep this separate per environment. |
 | `SLACK_WEBHOOK_MAX_SKEW_SECONDS` | non-secret config | Default `300`; limits stale Slack callbacks. |
+| `META_APP_SECRET` | **webhook secret** | Required for signed `/api/v1/webhooks/whatsapp` and `/api/v1/webhooks/instagram` callbacks; `/meta` remains a compatibility route. |
+| `META_WEBHOOK_VERIFY_TOKEN` | **webhook secret** | Required for the Meta GET verification handshake on provider-specific routes. |
+| `TELEGRAM_WEBHOOK_SECRET_TOKEN` | **webhook secret** | Required for `/api/v1/webhooks/telegram`. |
 | `SHOPIFY_WEBHOOK_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/shopify`; verifies the raw-body `X-Shopify-Hmac-SHA256` signature. |
 | `STRIPE_WEBHOOK_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/stripe`; use the endpoint-specific `whsec_...` secret. |
 | `STRIPE_WEBHOOK_MAX_SKEW_SECONDS` | non-secret config | Default `300`; rejects stale Stripe signed deliveries. |

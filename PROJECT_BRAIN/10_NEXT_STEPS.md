@@ -82,6 +82,9 @@ borrowing another tenant's destination.
 Canonical broker execution now also applies configured timeout, retry,
 rate-limit, and circuit-breaker controls after approval and before provider
 calls, keyed by tenant + connector + capability.
+Meta callbacks now expose dedicated WhatsApp and Instagram webhook routes while
+retaining `/meta`; provider-specific tenant/workflow routing and event
+envelopes are preserved.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
 Render now has fixed service listing and governed deploy-trigger operations;

@@ -33,6 +33,20 @@ def test_meta_whatsapp_message_and_status_are_normalized():
     assert status.payload["status"]["status"] == "delivered"
 
 
+def test_provider_specific_meta_events_preserve_whatsapp_and_instagram_identity():
+    body = '{"object":"whatsapp_business_account","entry":[{"changes":[{"value":{"messages":[{"id":"wamid.2"}]}}]}]}'
+    whatsapp = normalize_webhook("whatsapp", body, "whatsapp:delivery")
+    instagram = normalize_webhook(
+        "instagram",
+        '{"object":"instagram","entry":[{"messaging":[{"message":{"mid":"ig-mid-1"}}]}]}',
+        "instagram:delivery",
+    )
+    assert whatsapp.provider == "whatsapp"
+    assert whatsapp.event_id == "wamid.2"
+    assert instagram.provider == "instagram"
+    assert instagram.event_id == "ig-mid-1"
+
+
 def test_zoom_meeting_event_is_normalized_to_provider_event_type():
     event = normalize_webhook(
         "zoom",

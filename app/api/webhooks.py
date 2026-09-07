@@ -87,7 +87,23 @@ async def _accept_delivery(
 
 @router.get("/meta", include_in_schema=False)
 async def meta_webhook_verification(request: Request) -> PlainTextResponse:
-    """Meta/WhatsApp/Instagram webhook verification handshake."""
+    """Legacy Meta/WhatsApp/Instagram webhook verification handshake."""
+    return _meta_verification_response(request)
+
+
+@router.get("/whatsapp", include_in_schema=False)
+async def whatsapp_webhook_verification(request: Request) -> PlainTextResponse:
+    """WhatsApp-specific Meta webhook verification handshake."""
+    return _meta_verification_response(request)
+
+
+@router.get("/instagram", include_in_schema=False)
+async def instagram_webhook_verification(request: Request) -> PlainTextResponse:
+    """Instagram-specific Meta webhook verification handshake."""
+    return _meta_verification_response(request)
+
+
+def _meta_verification_response(request: Request) -> PlainTextResponse:
     if not settings.meta_webhook_verify_token:
         raise HTTPException(status_code=503, detail="META_WEBHOOK_VERIFY_TOKEN is not configured")
     query = request.query_params
@@ -103,12 +119,30 @@ async def meta_webhook_verification(request: Request) -> PlainTextResponse:
 
 @router.post("/meta")
 async def meta_webhook(request: Request) -> dict[str, str | bool]:
+    return await _accept_meta_webhook(request, provider="meta")
+
+
+@router.post("/whatsapp")
+async def whatsapp_webhook(request: Request) -> dict[str, str | bool]:
+    """Verify and queue a WhatsApp Cloud callback under its own provider id."""
+    return await _accept_meta_webhook(request, provider="whatsapp")
+
+
+@router.post("/instagram")
+async def instagram_webhook(request: Request) -> dict[str, str | bool]:
+    """Verify and queue an Instagram Graph callback under its own provider id."""
+    return await _accept_meta_webhook(request, provider="instagram")
+
+
+async def _accept_meta_webhook(
+    request: Request, *, provider: str
+) -> dict[str, str | bool]:
     body = await request.body()
     if not settings.meta_app_secret:
         raise HTTPException(status_code=503, detail="META_APP_SECRET is not configured")
     if not verify_meta_signature(body, request.headers.get("x-hub-signature-256"), settings.meta_app_secret):
         raise HTTPException(status_code=403, detail="Invalid Meta webhook signature")
-    return await _accept_delivery("meta", body)
+    return await _accept_delivery(provider, body)
 
 
 @router.post("/telegram")

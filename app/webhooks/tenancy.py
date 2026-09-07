@@ -109,7 +109,7 @@ def payload_identifiers(
         # provider proxy includes it, is safe to use; otherwise deployments
         # should configure the provider fallback route.
         add(document.get("bot_id"))
-    elif normalized_provider == "meta":
+    elif normalized_provider in {"meta", "whatsapp", "instagram"}:
         add(document.get("object"))
         entries = document.get("entry")
         if isinstance(entries, list):

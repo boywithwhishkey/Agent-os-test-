@@ -25,6 +25,21 @@ def test_meta_verification_requires_secret_and_returns_challenge(monkeypatch):
     assert response.text == "123"
 
 
+def test_provider_specific_meta_verification_routes_share_the_secret(monkeypatch):
+    monkeypatch.setattr(settings, "meta_webhook_verify_token", "verify-me")
+    with TestClient(app) as client:
+        whatsapp = client.get(
+            "/api/v1/webhooks/whatsapp",
+            params={"hub.mode": "subscribe", "hub.verify_token": "verify-me", "hub.challenge": "w"},
+        )
+        instagram = client.get(
+            "/api/v1/webhooks/instagram",
+            params={"hub.mode": "subscribe", "hub.verify_token": "verify-me", "hub.challenge": "i"},
+        )
+    assert whatsapp.status_code == 200 and whatsapp.text == "w"
+    assert instagram.status_code == 200 and instagram.text == "i"
+
+
 def test_meta_webhook_accepts_only_valid_hmac(monkeypatch):
     monkeypatch.setattr(settings, "meta_app_secret", "app-secret")
     monkeypatch.setattr(webhook_routes, "_delivery_queue", InMemoryJobQueue())
@@ -56,6 +71,34 @@ def test_valid_webhook_is_queued_and_duplicate_is_suppressed(monkeypatch):
 
     assert first.json()["duplicate"] is False
     assert second.json()["duplicate"] is True
+
+
+def test_provider_specific_meta_webhook_queues_provider_and_tenant(monkeypatch):
+    monkeypatch.setattr(settings, "meta_app_secret", "app-secret")
+    monkeypatch.setattr(
+        settings,
+        "webhook_tenant_map",
+        '{"whatsapp:phone-1":"merchant-a"}',
+    )
+    queue = InMemoryJobQueue()
+    monkeypatch.setattr(webhook_routes, "_delivery_queue", queue)
+    body = (
+        b'{"object":"whatsapp_business_account","entry":[{"id":"waba-1",'
+        b'"changes":[{"value":{"metadata":{"phone_number_id":"phone-1"},'
+        b'"messages":[{"id":"wamid.3"}]}}]}]}'
+    )
+    signature = hmac.new(b"app-secret", body, hashlib.sha256).hexdigest()
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/webhooks/whatsapp",
+            content=body,
+            headers={"X-Hub-Signature-256": f"sha256={signature}"},
+        )
+    assert response.status_code == 200
+    job = __import__("asyncio").run(queue.dequeue("webhooks"))
+    assert job is not None
+    assert job.payload["provider"] == "whatsapp"
+    assert job.payload["tenant_id"] == "merchant-a"
 
 
 def test_telegram_webhook_requires_secret_header(monkeypatch):

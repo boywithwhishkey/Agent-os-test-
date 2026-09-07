@@ -40,8 +40,8 @@ def normalize_webhook(
     normalized_provider = provider.strip().lower()
     if normalized_provider == "telegram":
         return _normalize_telegram(document, delivery_id)
-    if normalized_provider == "meta":
-        return _normalize_meta(document, delivery_id)
+    if normalized_provider in {"meta", "whatsapp", "instagram"}:
+        return _normalize_meta(document, delivery_id, provider=normalized_provider)
     if normalized_provider == "slack":
         return _normalize_slack(document, delivery_id)
     if normalized_provider == "zoom":
@@ -79,13 +79,15 @@ def _normalize_telegram(document: dict[str, Any], delivery_id: str) -> WebhookEv
     )
 
 
-def _normalize_meta(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
+def _normalize_meta(
+    document: dict[str, Any], delivery_id: str, *, provider: str = "meta"
+) -> WebhookEvent:
     object_name = document.get("object")
     entries = document.get("entry")
     first_entry = entries[0] if isinstance(entries, list) and entries else None
     if not isinstance(first_entry, dict):
         return WebhookEvent(
-            provider="meta",
+            provider=provider,
             event_type="event.received",
             event_id=delivery_id,
             payload={"object": object_name, "provider_payload": document, "delivery_id": delivery_id},
@@ -102,7 +104,7 @@ def _normalize_meta(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
                     message = messages[0]
                     event_id = message.get("id") if isinstance(message.get("id"), str) else delivery_id
                     return WebhookEvent(
-                        provider="meta",
+                        provider=provider,
                         event_type="message.received",
                         event_id=event_id,
                         payload={"object": object_name, "change": first_change, "message": message},
@@ -112,13 +114,13 @@ def _normalize_meta(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
                     status = statuses[0]
                     event_id = status.get("id") if isinstance(status.get("id"), str) else delivery_id
                     return WebhookEvent(
-                        provider="meta",
+                        provider=provider,
                         event_type="message.status",
                         event_id=event_id,
                         payload={"object": object_name, "change": first_change, "status": status},
                     )
             return WebhookEvent(
-                provider="meta",
+                provider=provider,
                 event_type="change.received",
                 event_id=delivery_id,
                 payload={"object": object_name, "change": first_change},
@@ -129,13 +131,13 @@ def _normalize_meta(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
         message = messaging[0]
         event_id = message.get("message", {}).get("mid") if isinstance(message.get("message"), dict) else None
         return WebhookEvent(
-            provider="meta",
+            provider=provider,
             event_type="message.received" if isinstance(message.get("message"), dict) else "event.received",
             event_id=event_id if isinstance(event_id, str) else delivery_id,
             payload={"object": object_name, "entry": first_entry, "messaging": message},
         )
     return WebhookEvent(
-        provider="meta",
+        provider=provider,
         event_type="event.received",
         event_id=delivery_id,
         payload={"object": object_name, "entry": first_entry, "provider_payload": document},
