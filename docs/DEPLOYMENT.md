@@ -56,6 +56,8 @@ commit values.** Staging values must differ from production.
 | `AGENT_OS_FRONTEND_URL` | non-secret config | `https://staging.thynact.com`. |
 | `AGENT_OS_OAUTH_REDIRECT_BASE_URL` | non-secret config | `https://api-staging.thynact.com`. |
 | `GITHUB_OAUTH_CLIENT_ID` / `_SECRET` | OAuth credential | **Separate app registration**, not production's with another callback. |
+| `SLACK_SIGNING_SECRET` | **webhook secret** | Required for `/api/v1/webhooks/slack`; keep this separate per environment. |
+| `SLACK_WEBHOOK_MAX_SKEW_SECONDS` | non-secret config | Default `300`; limits stale Slack callbacks. |
 | `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `CLOUDFLARE_API_TOKEN`, `RENDER_API_KEY`, `N8N_BASE_URL`, `MAKE_WEBHOOK_URL` | optional provider credentials | Leave unset. Each then reports `CREDENTIAL_REQUIRED` honestly instead of borrowing production credentials. |
 
 There is **no** session/cookie secret and **no** credential-encryption key in

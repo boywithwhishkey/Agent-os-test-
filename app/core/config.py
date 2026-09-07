@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     slack_oauth_client_secret: str | None = Field(
         default=None, validation_alias="SLACK_OAUTH_CLIENT_SECRET"
     )
+    slack_signing_secret: str | None = Field(
+        default=None, validation_alias="SLACK_SIGNING_SECRET"
+    )
+    slack_webhook_max_skew_seconds: int = Field(
+        default=300, ge=30, le=3_600, validation_alias="SLACK_WEBHOOK_MAX_SKEW_SECONDS"
+    )
     notion_oauth_client_id: str | None = Field(default=None, validation_alias="NOTION_OAUTH_CLIENT_ID")
     notion_oauth_client_secret: str | None = Field(
         default=None, validation_alias="NOTION_OAUTH_CLIENT_SECRET"

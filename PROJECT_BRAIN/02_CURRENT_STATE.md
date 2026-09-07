@@ -1,9 +1,27 @@
-# CURRENT STATE — verified as of 2026-09-05, Slack messaging checkpoint
+# CURRENT STATE — verified as of 2026-09-07, Slack webhook checkpoint
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
+
+## SESSION 2026-09-07 — SLACK SIGNED EVENTS INGRESS
+
+- **IMPLEMENTED_TESTED:** Slack Events API callbacks now have a dedicated
+  `/api/v1/webhooks/slack` route. It validates Slack's versioned HMAC signature
+  and timestamp window, answers the URL-verification challenge, suppresses
+  duplicate deliveries through the existing queue claim, and normalizes event
+  callbacks into the canonical webhook envelope.
+- Added server-only `SLACK_SIGNING_SECRET` and bounded
+  `SLACK_WEBHOOK_MAX_SKEW_SECONDS` configuration. No signing secret is stored
+  in frontend state, logs, fixtures, or this repository.
+- Focused webhook/normalization checks: **15 passed**. Full local gate after
+  this change: **603 backend tests passed, 13 skipped, 1 warning; frontend
+  typecheck, lint, tests, and build passed**. Local Postgres/Redis checks were
+  skipped because those services were not running in this shell.
+- **CREDENTIAL_REQUIRED:** no Slack signing secret or live Slack event delivery
+  was available here, so this remains contract-tested rather than live-
+  validated.
 
 ## SESSION 2026-09-07 — HONEST OAUTH CONNECTION OUTCOMES
 

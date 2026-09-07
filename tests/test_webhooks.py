@@ -75,6 +75,50 @@ def test_telegram_webhook_requires_secret_header(monkeypatch):
     assert rejected.status_code == 403
 
 
+def _slack_headers(body: bytes, secret: str, timestamp: str | None = None) -> dict[str, str]:
+    timestamp = timestamp or str(int(time.time()))
+    digest = hmac.new(secret.encode(), f"v0:{timestamp}:".encode() + body, hashlib.sha256).hexdigest()
+    return {
+        "X-Slack-Request-Timestamp": timestamp,
+        "X-Slack-Signature": f"v0={digest}",
+    }
+
+
+def test_slack_webhook_answers_url_verification_challenge(monkeypatch):
+    secret = "slack-signing-secret"
+    monkeypatch.setattr(settings, "slack_signing_secret", secret)
+    body = json.dumps({"type": "url_verification", "challenge": "challenge-1"}).encode()
+
+    with TestClient(app) as client:
+        response = client.post("/api/v1/webhooks/slack", content=body, headers=_slack_headers(body, secret))
+
+    assert response.status_code == 200
+    assert response.json() == {"challenge": "challenge-1"}
+
+
+def test_slack_webhook_queues_verified_event_and_rejects_replay(monkeypatch):
+    secret = "slack-signing-secret"
+    monkeypatch.setattr(settings, "slack_signing_secret", secret)
+    queue = InMemoryJobQueue()
+    monkeypatch.setattr(webhook_routes, "_delivery_queue", queue)
+    body = b'{"type":"event_callback","event_id":"Ev-1","event":{"type":"message","text":"hi"}}'
+    headers = _slack_headers(body, secret)
+
+    with TestClient(app) as client:
+        accepted = client.post("/api/v1/webhooks/slack", content=body, headers=headers)
+        duplicate = client.post("/api/v1/webhooks/slack", content=body, headers=headers)
+        rejected = client.post(
+            "/api/v1/webhooks/slack",
+            content=body,
+            headers={**headers, "X-Slack-Signature": "v0=" + "0" * 64},
+        )
+
+    assert accepted.status_code == 200
+    assert accepted.json()["provider"] == "slack"
+    assert duplicate.json()["duplicate"] is True
+    assert rejected.status_code == 403
+
+
 def _zoom_headers(body: bytes, secret: str) -> dict[str, str]:
     timestamp = str(int(time.time()))
     message = f"v0:{timestamp}:{body.decode()}".encode()

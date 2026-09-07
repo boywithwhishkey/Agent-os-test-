@@ -44,6 +44,17 @@ def test_zoom_meeting_event_is_normalized_to_provider_event_type():
     assert event.payload["delivery_id"] == "zoom:delivery"
 
 
+def test_slack_event_callback_is_normalized_to_inner_event():
+    event = normalize_webhook(
+        "slack",
+        '{"type":"event_callback","event_id":"Ev-1","team_id":"T1","event":{"type":"message","text":"hi"}}',
+        "slack:delivery",
+    )
+    assert event.event_type == "message"
+    assert event.event_id == "Ev-1"
+    assert event.payload["event"]["text"] == "hi"
+
+
 @pytest.mark.parametrize("body", ["not-json", "[]", '{"message":{}}'])
 def test_normalizer_rejects_invalid_telegram_shapes(body):
     with pytest.raises(WebhookPayloadError):

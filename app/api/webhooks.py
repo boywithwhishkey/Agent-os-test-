@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.integrations.webhooks import (
     delivery_id,
     verify_meta_signature,
+    verify_slack_signature,
     verify_telegram_secret,
     verify_zoom_signature,
 )
@@ -85,6 +86,35 @@ async def telegram_webhook(request: Request) -> dict[str, str | bool]:
     ):
         raise HTTPException(status_code=403, detail="Invalid Telegram webhook secret")
     return await _accept_delivery("telegram", body)
+
+
+@router.post("/slack")
+async def slack_webhook(request: Request) -> dict[str, str | bool]:
+    """Verify and queue Slack Events API callbacks."""
+    body = await request.body()
+    secret = settings.slack_signing_secret
+    if not secret:
+        raise HTTPException(status_code=503, detail="SLACK_SIGNING_SECRET is not configured")
+    if not verify_slack_signature(
+        body,
+        request.headers.get("x-slack-request-timestamp"),
+        request.headers.get("x-slack-signature"),
+        secret,
+        max_skew_seconds=settings.slack_webhook_max_skew_seconds,
+    ):
+        raise HTTPException(status_code=403, detail="Invalid Slack webhook signature")
+    try:
+        document = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=400, detail="Slack webhook payload must be valid JSON") from exc
+    if not isinstance(document, dict):
+        raise HTTPException(status_code=400, detail="Slack webhook payload must be a JSON object")
+    if document.get("type") == "url_verification":
+        challenge = document.get("challenge")
+        if not isinstance(challenge, str) or not 1 <= len(challenge) <= 512:
+            raise HTTPException(status_code=400, detail="Slack webhook challenge is invalid")
+        return {"challenge": challenge}
+    return await _accept_delivery("slack", body)
 
 
 @router.post("/zoom")

@@ -23,6 +23,38 @@ def verify_telegram_secret(received: str | None, expected: str | None) -> bool:
     return hmac.compare_digest(received, expected)
 
 
+def verify_slack_signature(
+    body: bytes,
+    timestamp: str | None,
+    signature_header: str | None,
+    signing_secret: str | None,
+    *,
+    max_skew_seconds: int = 300,
+    now: float | None = None,
+) -> bool:
+    """Validate Slack's v0 signature and reject stale/replayed requests."""
+    if not body or not timestamp or not signature_header or not signing_secret:
+        return False
+    if not timestamp.isdigit() or len(timestamp) > 12:
+        return False
+    if not signature_header.startswith("v0=") or len(signature_header) != 67:
+        return False
+    try:
+        timestamp_value = int(timestamp)
+    except ValueError:
+        return False
+    clock = time.time() if now is None else now
+    if abs(clock - timestamp_value) > max_skew_seconds:
+        return False
+    try:
+        body_text = body.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    message = f"v0:{timestamp}:{body_text}".encode()
+    digest = hmac.new(signing_secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(signature_header, f"v0={digest}")
+
+
 def verify_zoom_signature(
     body: bytes,
     timestamp: str | None,

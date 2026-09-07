@@ -37,6 +37,8 @@ def normalize_webhook(provider: str, body: str, delivery_id: str) -> WebhookEven
         return _normalize_telegram(document, delivery_id)
     if normalized_provider == "meta":
         return _normalize_meta(document, delivery_id)
+    if normalized_provider == "slack":
+        return _normalize_slack(document, delivery_id)
     if normalized_provider == "zoom":
         return _normalize_zoom(document, delivery_id)
     return WebhookEvent(
@@ -145,4 +147,36 @@ def _normalize_zoom(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
         event_type=event_name.strip(),
         event_id=event_id,
         payload={"provider_payload": document, "delivery_id": delivery_id},
+    )
+
+
+def _normalize_slack(document: dict[str, Any], delivery_id: str) -> WebhookEvent:
+    event_type = document.get("type")
+    inner = document.get("event")
+    if event_type == "url_verification":
+        raise WebhookPayloadError("Slack URL verification must not be queued")
+    if not isinstance(inner, dict):
+        return WebhookEvent(
+            provider="slack",
+            event_type="event.received",
+            event_id=delivery_id,
+            payload={"provider_payload": document, "delivery_id": delivery_id},
+        )
+    inner_type = inner.get("type")
+    normalized_type = inner_type.strip() if isinstance(inner_type, str) and inner_type.strip() else "event.received"
+    event_id = document.get("event_id")
+    if not isinstance(event_id, str) or not event_id.strip():
+        event_id = inner.get("event_ts")
+    if not isinstance(event_id, str) or not event_id.strip():
+        event_id = delivery_id
+    return WebhookEvent(
+        provider="slack",
+        event_type=normalized_type,
+        event_id=event_id,
+        payload={
+            "team_id": document.get("team_id"),
+            "event": inner,
+            "authorizations": document.get("authorizations"),
+            "delivery_id": delivery_id,
+        },
     )
