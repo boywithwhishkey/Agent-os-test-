@@ -5,6 +5,16 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — SHOPIFY CONNECTION HEALTH
+
+- **IMPLEMENTED_TESTED:** Shopify's adapter connection check now lives on the
+  adapter itself and calls the fixed `identity.account.read` GraphQL query.
+  Previously the method was accidentally nested under a helper, so the base
+  adapter's no-op check was inherited and the Integrations health action could
+  not validate a Shopify store.
+- Added a regression test covering the real request path with a mocked Shopify
+  response. Full backend gate: **620 passed, 13 skipped, 1 warning**.
+
 ## SESSION 2026-09-07 — TENANT-SCOPED WEBHOOK DELIVERY
 
 - **IMPLEMENTED_TESTED:** verified webhook ingress now resolves a delivery to
@@ -20,7 +30,7 @@ contradicting note elsewhere.
   take precedence over the legacy provider route. Legacy single-operator
   deployments continue to use `AGENT_OS_OAUTH_TENANT_ID` when the map is empty.
 - Focused webhook/tenancy/consumer checks: **18 passed**. Full backend gate:
-  **619 passed, 13 skipped, 1 warning**; frontend **109 passed**, typecheck,
+  **620 passed, 13 skipped, 1 warning**; frontend **109 passed**, typecheck,
   lint (9 pre-existing warnings), and production build passed.
 - **NOT LIVE-VALIDATED:** the routing contract still needs two real staging
   tenants, provider account identifiers, and signed deliveries against the
