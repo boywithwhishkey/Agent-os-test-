@@ -5,6 +5,22 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — GOVERNED BROKER RESILIENCE
+
+- **IMPLEMENTED_TESTED:** canonical capability execution now applies the same
+  resilience contract as the integration runtime: configurable timeout,
+  bounded retries with backoff, sliding-window rate limiting, and a circuit
+  breaker. Controls run only after capability resolution, connector selection,
+  and approval, so blocked actions consume no provider attempt.
+- Rate-limit and circuit keys include the active server-selected tenant,
+  connector, and capability; one tenant cannot exhaust or open another
+  tenant's control state. Refusals and provider timeouts remain audited.
+- Automatic retries are limited to READ capabilities; side-effecting writes
+  are attempted once unless their adapter supplies an explicit idempotency
+  contract.
+- Full backend gate: **629 passed, 13 skipped, 1 warning**. No live provider
+  calls or production changes were made.
+
 ## SESSION 2026-09-07 — TENANT-SCOPED OAUTH ROUTING IDENTIFIERS
 
 - **IMPLEMENTED_TESTED:** Jira `JIRA_CLOUD_ID` and Salesforce

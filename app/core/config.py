@@ -272,6 +272,9 @@ class Settings(BaseSettings):
     integration_rate_window: float = Field(
         default=60.0, gt=0, validation_alias="AGENT_OS_INTEGRATION_RATE_WINDOW"
     )
+    integration_timeout_seconds: float = Field(
+        default=30.0, gt=0, le=300, validation_alias="AGENT_OS_INTEGRATION_TIMEOUT_SECONDS"
+    )
     retry_backoff_base: float = Field(
         default=0.25, ge=0, validation_alias="AGENT_OS_RETRY_BACKOFF_BASE"
     )

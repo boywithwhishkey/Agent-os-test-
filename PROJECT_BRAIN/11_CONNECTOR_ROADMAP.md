@@ -110,7 +110,10 @@ creating one-off integrations.
   provider URL or operation name from an agent.
 - Read, write, and high-risk operations use the shared capability risk model;
   high-risk operations require human approval and produce an audit row.
-- Timeouts, rate limits, provider errors, retries, and redaction are tested.
+- Timeouts, rate limits, provider errors, retries, and redaction are tested;
+  canonical broker execution now enforces timeout/retry/rate/circuit controls
+  with tenant-isolated keys before calling an adapter; automatic retries are
+  restricted to READ capabilities so writes are not blindly replayed.
 - Mocked contract tests pass; provider sandbox tests pass where available;
   live validation is recorded only after a real credential-backed call.
 - The connector is pushed in its own verified commit and the worktree is

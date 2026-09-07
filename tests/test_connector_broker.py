@@ -8,12 +8,17 @@ something consequential.
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
+from app.core.tenant import current_tenant_id
 from app.integrations.broker import BrokerOutcome, ConnectorBroker, providers_for
 from app.integrations.catalog import list_catalog
 from app.integrations.models import ConnectorKind
 from app.integrations.oauth.store import OAuthConnectionStore
+from app.runtime.circuit_breaker import CircuitBreaker
+from app.runtime.rate_limit import SlidingWindowRateLimiter
 from app.tools.approvals import InMemoryApprovalStore
 from app.tools.models import ToolRisk
 from app.tools.policy import ToolPolicy
@@ -29,12 +34,13 @@ class RecordingAudit:
         self.rows.append(kwargs)
 
 
-def _broker(perform=None, approvals=None) -> tuple[ConnectorBroker, RecordingAudit]:
+def _broker(perform=None, approvals=None, **controls) -> tuple[ConnectorBroker, RecordingAudit]:
     audit = RecordingAudit()
     broker = ConnectorBroker(
         policy=ToolPolicy(approvals or InMemoryApprovalStore()),
         audit=audit,
         perform=perform,
+        **controls,
     )
     return broker, audit
 
@@ -136,6 +142,117 @@ async def test_a_provider_exception_becomes_an_audited_failure_not_a_traceback(m
     assert result.outcome is BrokerOutcome.PROVIDER_ERROR
     assert "provider exploded" in result.error
     assert audit.rows[-1]["success"] is False
+
+
+async def test_broker_rate_limit_is_enforced_and_audited(monkeypatch) -> None:
+    calls = 0
+
+    async def perform(*_args):
+        nonlocal calls
+        calls += 1
+        return {"ok": True}
+
+    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    broker, audit = _broker(
+        perform,
+        rate_limiter=SlidingWindowRateLimiter(limit=1, window_seconds=60),
+    )
+
+    first = await broker.execute("ai.model.list")
+    second = await broker.execute("ai.model.list")
+
+    assert first.outcome is BrokerOutcome.OK
+    assert second.outcome is BrokerOutcome.RATE_LIMITED
+    assert calls == 1
+    assert audit.rows[-1]["success"] is False
+
+
+async def test_broker_runtime_controls_are_tenant_isolated(monkeypatch) -> None:
+    async def perform(*_args):
+        return {"ok": True}
+
+    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    broker, _ = _broker(
+        perform,
+        rate_limiter=SlidingWindowRateLimiter(limit=1, window_seconds=60),
+    )
+
+    tenant_a = current_tenant_id.set("tenant-a")
+    try:
+        first_a = await broker.execute("ai.model.list")
+    finally:
+        current_tenant_id.reset(tenant_a)
+    tenant_b = current_tenant_id.set("tenant-b")
+    try:
+        first_b = await broker.execute("ai.model.list")
+    finally:
+        current_tenant_id.reset(tenant_b)
+    tenant_a_again = current_tenant_id.set("tenant-a")
+    try:
+        second_a = await broker.execute("ai.model.list")
+    finally:
+        current_tenant_id.reset(tenant_a_again)
+
+    assert first_a.outcome is BrokerOutcome.OK
+    assert first_b.outcome is BrokerOutcome.OK
+    assert second_a.outcome is BrokerOutcome.RATE_LIMITED
+
+
+async def test_broker_circuit_breaker_is_scoped_and_stops_repeated_failures(monkeypatch) -> None:
+    calls = 0
+
+    async def perform(*_args):
+        nonlocal calls
+        calls += 1
+        raise RuntimeError("provider unavailable")
+
+    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    broker, audit = _broker(
+        perform,
+        circuit_breaker=CircuitBreaker(failure_threshold=1, recovery_seconds=60),
+    )
+
+    first = await broker.execute("ai.model.list")
+    second = await broker.execute("ai.model.list")
+
+    assert first.outcome is BrokerOutcome.PROVIDER_ERROR
+    assert second.outcome is BrokerOutcome.CIRCUIT_OPEN
+    assert calls == 1
+    assert audit.rows[-1]["success"] is False
+
+
+async def test_broker_retries_provider_failures_before_auditing_success(monkeypatch) -> None:
+    calls = 0
+
+    async def perform(*_args):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise RuntimeError("temporary provider failure")
+        return {"ok": True}
+
+    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    broker, _ = _broker(perform, max_retries=1, backoff_base_seconds=0)
+
+    result = await broker.execute("ai.model.list")
+
+    assert result.outcome is BrokerOutcome.OK
+    assert result.output == {"ok": True}
+    assert calls == 2
+
+
+async def test_broker_times_out_a_provider_call(monkeypatch) -> None:
+    async def perform(*_args):
+        await asyncio.sleep(0.05)
+        return {"ok": True}
+
+    monkeypatch.setattr("app.integrations.broker._configured", lambda cid: True)
+    broker, _ = _broker(perform, timeout_seconds=0.001)
+
+    result = await broker.execute("ai.model.list")
+
+    assert result.outcome is BrokerOutcome.PROVIDER_ERROR
+    assert "timed out" in (result.error or "")
 
 
 async def test_configured_oauth_app_without_account_is_explicitly_not_connected(monkeypatch) -> None:

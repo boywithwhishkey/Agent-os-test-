@@ -55,6 +55,7 @@ commit values.** Staging values must differ from production.
 | `AGENT_OS_REQUIRE_DURABLE_PERSISTENCE` | non-secret config | `true` — fail closed if any subsystem is still in-memory. |
 | `AGENT_OS_*_BACKEND` (6) | non-secret config | `postgres`; queue is `redis`. |
 | `AGENT_OS_CORS_ORIGINS` | non-secret config | `https://staging.thynact.com` only. |
+| `AGENT_OS_INTEGRATION_TIMEOUT_SECONDS` | non-secret config | Maximum duration for one canonical connector capability call; default `30`. |
 | `AGENT_OS_FRONTEND_URL` | non-secret config | `https://staging.thynact.com`. |
 | `AGENT_OS_OAUTH_REDIRECT_BASE_URL` | non-secret config | `https://api-staging.thynact.com`. |
 | `AGENT_OS_OAUTH_TENANT_ID` | non-secret config | Default tenant for anonymous/public reads and the legacy `AGENT_OS_API_KEY`; use stable opaque ids. |

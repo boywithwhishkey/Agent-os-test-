@@ -43,6 +43,8 @@ from app.integrations.oauth.service import (
 from app.integrations.operations import default_perform
 from app.integrations.status_store import IntegrationStatusStore
 from app.integrations.url_guard import UnsafeURLError, validate_outbound_url
+from app.runtime.circuit_breaker import CircuitBreaker
+from app.runtime.rate_limit import SlidingWindowRateLimiter
 from app.tools.factory import build_approval_store, build_tool_audit_log
 from app.tools.models import ApprovalGrant
 from app.tools.policy import ToolPolicy
@@ -61,6 +63,15 @@ capability_broker = ConnectorBroker(
     policy=ToolPolicy(capability_approvals),
     audit=capability_audit_log,
     perform=default_perform,
+    rate_limiter=SlidingWindowRateLimiter(
+        settings.integration_rate_limit, settings.integration_rate_window
+    ),
+    circuit_breaker=CircuitBreaker(
+        settings.circuit_failures, settings.circuit_recovery_seconds
+    ),
+    timeout_seconds=settings.integration_timeout_seconds,
+    max_retries=settings.max_retries,
+    backoff_base_seconds=settings.retry_backoff_base,
 )
 
 

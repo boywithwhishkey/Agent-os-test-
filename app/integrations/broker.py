@@ -35,10 +35,12 @@ exactly the kind of thing someone needs to find later.
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from enum import StrEnum
 
 from app.core.config import settings
+from app.core.tenant import get_current_tenant
 from app.integrations.base import CapabilityNotWired
 from app.integrations.capabilities import Capability, UnknownCapability, resolve
 from app.integrations.catalog import list_catalog
@@ -50,6 +52,8 @@ from app.integrations.factory import (
 from app.integrations.models import ConnectorKind
 from app.integrations.oauth.config import get_oauth_provider
 from app.integrations.oauth.registry import oauth_connection_store
+from app.runtime.circuit_breaker import CircuitBreaker
+from app.runtime.rate_limit import SlidingWindowRateLimiter
 from app.tools.audit import ToolAuditLog
 from app.tools.models import ToolRisk
 from app.tools.policy import ToolPolicy
@@ -61,6 +65,8 @@ class BrokerOutcome(StrEnum):
     NO_PROVIDER = "no_provider"
     NOT_CONNECTED = "not_connected"
     APPROVAL_REQUIRED = "approval_required"
+    RATE_LIMITED = "rate_limited"
+    CIRCUIT_OPEN = "circuit_open"
     PROVIDER_ERROR = "provider_error"
 
 
@@ -164,10 +170,20 @@ class ConnectorBroker:
         policy: ToolPolicy,
         audit: ToolAuditLog,
         perform=None,
+        rate_limiter: SlidingWindowRateLimiter | None = None,
+        circuit_breaker: CircuitBreaker | None = None,
+        timeout_seconds: float = 30.0,
+        max_retries: int = 0,
+        backoff_base_seconds: float = 0.25,
     ) -> None:
         self.policy = policy
         self.audit = audit
         self._perform = perform
+        self._rate_limiter = rate_limiter
+        self._circuit_breaker = circuit_breaker
+        self._timeout_seconds = timeout_seconds
+        self._max_retries = max_retries
+        self._backoff_base_seconds = backoff_base_seconds
 
     async def execute(
         self,
@@ -284,40 +300,85 @@ class ConnectorBroker:
             await self._record(result, correlation_id)
             return result
 
-        try:
-            output = await self._perform(connector, capability, arguments)
-        except CapabilityNotWired as exc:
-            # Nothing was attempted and nothing broke, so this is "not built
-            # yet" and not a provider failure. Ordered before the broad handler
-            # below, which would otherwise swallow it into PROVIDER_ERROR and
-            # make an unwired capability look like an outage.
+        control_key = (
+            f"{get_current_tenant(settings.oauth_tenant_id)}:{connector}:{capability.id}"
+        )
+        if self._rate_limiter is not None and not self._rate_limiter.allow(control_key):
             result = BrokerResult(
-                outcome=BrokerOutcome.NO_PROVIDER,
+                outcome=BrokerOutcome.RATE_LIMITED,
                 capability=capability.id,
                 connector=connector,
                 risk=capability.risk,
-                error=str(exc),
+                error="Connector rate limit exceeded",
             )
-        # Deliberately broad, for the same reason ToolExecutor is: an
-        # unexpected provider failure must become an audited failure, never an
-        # unaudited traceback escaping to the caller.
-        except Exception as exc:  # noqa: BLE001
+            await self._record(result, correlation_id)
+            return result
+        if self._circuit_breaker is not None and not self._circuit_breaker.allow(control_key):
             result = BrokerResult(
-                outcome=BrokerOutcome.PROVIDER_ERROR,
+                outcome=BrokerOutcome.CIRCUIT_OPEN,
                 capability=capability.id,
                 connector=connector,
                 risk=capability.risk,
-                error=f"{type(exc).__name__}: {exc}",
+                error="Connector circuit breaker is open",
             )
-        else:
-            result = BrokerResult(
-                outcome=BrokerOutcome.OK,
-                capability=capability.id,
-                connector=connector,
-                risk=capability.risk,
-                output=output,
-            )
+            await self._record(result, correlation_id)
+            return result
 
+        # Reads are safe to retry. Side-effecting capabilities do not get an
+        # automatic second attempt unless an adapter exposes its own explicit
+        # idempotency contract; blindly replaying a write could duplicate a
+        # message, order, post, or payment.
+        retry_budget = self._max_retries if capability.risk is ToolRisk.READ else 0
+        result: BrokerResult | None = None
+        for attempt in range(retry_budget + 1):
+            try:
+                output = await asyncio.wait_for(
+                    self._perform(connector, capability, arguments),
+                    timeout=self._timeout_seconds,
+                )
+            except CapabilityNotWired as exc:
+                result = BrokerResult(
+                    outcome=BrokerOutcome.NO_PROVIDER,
+                    capability=capability.id,
+                    connector=connector,
+                    risk=capability.risk,
+                    error=str(exc),
+                )
+                break
+            except TimeoutError:
+                result = BrokerResult(
+                    outcome=BrokerOutcome.PROVIDER_ERROR,
+                    capability=capability.id,
+                    connector=connector,
+                    risk=capability.risk,
+                    error=f"Connector operation timed out after {self._timeout_seconds:g}s",
+                )
+            except Exception as exc:  # noqa: BLE001
+                result = BrokerResult(
+                    outcome=BrokerOutcome.PROVIDER_ERROR,
+                    capability=capability.id,
+                    connector=connector,
+                    risk=capability.risk,
+                    error=f"{type(exc).__name__}: {exc}",
+                )
+            else:
+                if self._circuit_breaker is not None:
+                    self._circuit_breaker.success(control_key)
+                result = BrokerResult(
+                    outcome=BrokerOutcome.OK,
+                    capability=capability.id,
+                    connector=connector,
+                    risk=capability.risk,
+                    output=output,
+                )
+                break
+
+            if attempt < retry_budget:
+                await asyncio.sleep(self._backoff_base_seconds * (2**attempt))
+            elif self._circuit_breaker is not None:
+                self._circuit_breaker.failure(control_key)
+
+        assert result is not None
         await self._record(result, correlation_id)
         return result
 

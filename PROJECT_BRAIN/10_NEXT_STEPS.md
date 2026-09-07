@@ -79,6 +79,9 @@ and Supabase adapters in addition to the commerce/social/productivity set.
 Jira cloud IDs and Salesforce instance URLs are now tenant-scoped with their
 OAuth connections; a tenant without either identifier fails closed instead of
 borrowing another tenant's destination.
+Canonical broker execution now also applies configured timeout, retry,
+rate-limit, and circuit-breaker controls after approval and before provider
+calls, keyed by tenant + connector + capability.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
 Render now has fixed service listing and governed deploy-trigger operations;
