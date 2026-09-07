@@ -29,7 +29,9 @@ class TodoistAdapter(IntegrationAdapter):
         api_token: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.api_token = api_token or settings.todoist_api_token or ""
+        self.api_token = api_token or settings.connector_credential(
+            "TODOIST_API_TOKEN", settings.todoist_api_token
+        ) or ""
         self._client = client
         if not self.api_token.strip():
             raise RuntimeError("TODOIST_API_TOKEN is required")
@@ -161,4 +163,3 @@ class TodoistAdapter(IntegrationAdapter):
             return True, (time.perf_counter() - started) * 1000, None
         except RuntimeError as exc:
             return False, (time.perf_counter() - started) * 1000, str(exc)
-

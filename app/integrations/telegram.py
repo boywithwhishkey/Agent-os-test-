@@ -20,8 +20,12 @@ class TelegramBotAdapter(IntegrationAdapter):
         default_chat_id: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.bot_token = bot_token or settings.telegram_bot_token or ""
-        self.default_chat_id = default_chat_id or settings.telegram_default_chat_id
+        self.bot_token = bot_token or settings.connector_credential(
+            "TELEGRAM_BOT_TOKEN", settings.telegram_bot_token
+        ) or ""
+        self.default_chat_id = default_chat_id or settings.connector_credential(
+            "TELEGRAM_DEFAULT_CHAT_ID", settings.telegram_default_chat_id
+        )
         self._client = client
         if not self.bot_token.strip():
             raise RuntimeError("TELEGRAM_BOT_TOKEN is required")

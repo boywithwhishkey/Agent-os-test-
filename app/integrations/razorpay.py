@@ -24,8 +24,12 @@ class RazorpayAdapter(IntegrationAdapter):
         key_secret: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.key_id = key_id or settings.razorpay_key_id or ""
-        self.key_secret = key_secret or settings.razorpay_key_secret or ""
+        self.key_id = key_id or settings.connector_credential(
+            "RAZORPAY_KEY_ID", settings.razorpay_key_id
+        ) or ""
+        self.key_secret = key_secret or settings.connector_credential(
+            "RAZORPAY_KEY_SECRET", settings.razorpay_key_secret
+        ) or ""
         self._client = client
         if not self.key_id.strip():
             raise RuntimeError("RAZORPAY_KEY_ID is required")
@@ -120,4 +124,3 @@ class RazorpayAdapter(IntegrationAdapter):
             return True, (time.perf_counter() - started) * 1000, None
         except RuntimeError as exc:
             return False, (time.perf_counter() - started) * 1000, str(exc)
-

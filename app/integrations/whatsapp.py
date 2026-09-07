@@ -24,8 +24,12 @@ class WhatsAppCloudAdapter(IntegrationAdapter):
         client: httpx.AsyncClient | None = None,
         connection_store: OAuthConnectionStore | None = None,
     ) -> None:
-        token = access_token or settings.meta_access_token or ""
-        phone_id = phone_number_id or settings.whatsapp_phone_number_id or ""
+        token = access_token or settings.connector_credential(
+            "META_ACCESS_TOKEN", settings.meta_access_token
+        ) or ""
+        phone_id = phone_number_id or settings.connector_credential(
+            "WHATSAPP_PHONE_NUMBER_ID", settings.whatsapp_phone_number_id
+        ) or ""
         self._connection_store = connection_store
         if not token.strip() and not self._has_oauth_connection():
             raise RuntimeError("META_ACCESS_TOKEN or a connected WhatsApp OAuth account is required")

@@ -24,8 +24,12 @@ class AsanaAdapter(IntegrationAdapter):
         workspace_gid: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.access_token = access_token or settings.asana_access_token or ""
-        self.workspace_gid = workspace_gid or settings.asana_workspace_gid or ""
+        self.access_token = access_token or settings.connector_credential(
+            "ASANA_ACCESS_TOKEN", settings.asana_access_token
+        ) or ""
+        self.workspace_gid = workspace_gid or settings.connector_credential(
+            "ASANA_WORKSPACE_GID", settings.asana_workspace_gid
+        ) or ""
         self._client = client
         if not self.access_token.strip():
             raise RuntimeError("ASANA_ACCESS_TOKEN is required")
@@ -148,4 +152,3 @@ class AsanaAdapter(IntegrationAdapter):
             return True, (time.perf_counter() - started) * 1000, None
         except RuntimeError as exc:
             return False, (time.perf_counter() - started) * 1000, str(exc)
-

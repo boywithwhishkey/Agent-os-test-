@@ -23,9 +23,17 @@ class WooCommerceAdapter(IntegrationAdapter):
         consumer_secret: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.store_url = self._normalize_url(store_url or settings.woocommerce_store_url or "")
-        self.consumer_key = consumer_key or settings.woocommerce_consumer_key or ""
-        self.consumer_secret = consumer_secret or settings.woocommerce_consumer_secret or ""
+        self.store_url = self._normalize_url(
+            store_url
+            or settings.connector_credential("WOOCOMMERCE_STORE_URL", settings.woocommerce_store_url)
+            or ""
+        )
+        self.consumer_key = consumer_key or settings.connector_credential(
+            "WOOCOMMERCE_CONSUMER_KEY", settings.woocommerce_consumer_key
+        ) or ""
+        self.consumer_secret = consumer_secret or settings.connector_credential(
+            "WOOCOMMERCE_CONSUMER_SECRET", settings.woocommerce_consumer_secret
+        ) or ""
         self._client = client
         if not self.store_url:
             raise RuntimeError("WOOCOMMERCE_STORE_URL is required")

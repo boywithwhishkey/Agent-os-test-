@@ -47,6 +47,42 @@ def test_oauth_connections_are_isolated_between_tenants() -> None:
         assert store.get("github").access_token == "token-b"
 
 
+def test_api_connector_credentials_are_scoped_and_never_fall_back_cross_tenant(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "oauth_tenant_id", "operator")
+    monkeypatch.setattr(
+        settings,
+        "connector_credentials_json",
+        json.dumps({"tenant-a": {"STRIPE_SECRET_KEY": "sk_tenant_a"}}),
+    )
+    with tenant("tenant-a"):
+        assert settings.connector_credential("STRIPE_SECRET_KEY", "sk_global") == "sk_tenant_a"
+    with tenant("tenant-b"):
+        assert settings.connector_credential("STRIPE_SECRET_KEY", "sk_global") is None
+    with tenant("operator"):
+        assert settings.connector_credential("STRIPE_SECRET_KEY", "sk_global") == "sk_global"
+
+
+def test_scoped_stripe_adapter_uses_the_active_tenant_credential(monkeypatch) -> None:
+    from app.integrations.stripe import StripeAdapter
+
+    monkeypatch.setattr(settings, "oauth_tenant_id", "operator")
+    monkeypatch.setattr(
+        settings,
+        "connector_credentials_json",
+        json.dumps({"tenant-a": {"STRIPE_SECRET_KEY": "sk_tenant_a"}}),
+    )
+    with tenant("tenant-a"):
+        adapter = StripeAdapter()
+        assert adapter.secret_key == "sk_tenant_a"
+    with tenant("tenant-b"):
+        try:
+            StripeAdapter()
+        except RuntimeError as exc:
+            assert "STRIPE_SECRET_KEY" in str(exc)
+        else:  # pragma: no cover - defensive assertion
+            raise AssertionError("tenant-b reused tenant-a's Stripe credential")
+
+
 def test_oauth_state_claim_carries_the_owning_tenant() -> None:
     store = OAuthStateStore()
     with tenant("tenant-a"):

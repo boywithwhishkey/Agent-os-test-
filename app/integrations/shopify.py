@@ -23,8 +23,12 @@ class ShopifyAdminAdapter(IntegrationAdapter):
         api_version: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.access_token = access_token or settings.shopify_admin_access_token or ""
-        raw_domain = shop_domain or settings.shopify_shop_domain or ""
+        self.access_token = access_token or settings.connector_credential(
+            "SHOPIFY_ADMIN_ACCESS_TOKEN", settings.shopify_admin_access_token
+        ) or ""
+        raw_domain = shop_domain or settings.connector_credential(
+            "SHOPIFY_SHOP_DOMAIN", settings.shopify_shop_domain
+        ) or ""
         self.shop_domain = self._normalize_domain(raw_domain)
         self.api_version = api_version or settings.shopify_api_version
         self._client = client

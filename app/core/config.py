@@ -3,6 +3,8 @@ import json
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.tenant import get_current_tenant
+
 
 class Settings(BaseSettings):
     app_name: str = "THYNACT"
@@ -13,6 +15,9 @@ class Settings(BaseSettings):
     api_key: str | None = Field(default=None, validation_alias="AGENT_OS_API_KEY")
     api_keys_json: str | None = Field(
         default=None, validation_alias="AGENT_OS_API_KEYS_JSON"
+    )
+    connector_credentials_json: str | None = Field(
+        default=None, validation_alias="AGENT_OS_CONNECTOR_CREDENTIALS_JSON"
     )
     cors_origins: str = Field(
         default=(
@@ -355,6 +360,38 @@ class Settings(BaseSettings):
                 )
         return value
 
+    @field_validator("connector_credentials_json")
+    @classmethod
+    def _validate_connector_credentials_json(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return value
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                "AGENT_OS_CONNECTOR_CREDENTIALS_JSON must be a JSON object"
+            ) from exc
+        if not isinstance(parsed, dict) or not parsed:
+            raise ValueError(
+                "AGENT_OS_CONNECTOR_CREDENTIALS_JSON must map tenants to credential objects"
+            )
+        for tenant, credentials in parsed.items():
+            if not isinstance(tenant, str) or not tenant.strip():
+                raise ValueError("connector credential tenant ids must be non-empty strings")
+            if not isinstance(credentials, dict):
+                raise TypeError("connector credential entries must be JSON objects")
+            for name, secret in credentials.items():
+                if (
+                    not isinstance(name, str)
+                    or not name.strip()
+                    or not isinstance(secret, str)
+                    or not secret.strip()
+                ):
+                    raise ValueError(
+                        "connector credential names and values must be non-empty strings"
+                    )
+        return value
+
     @field_validator("webhook_workflow_map")
     @classmethod
     def _validate_webhook_workflow_map(cls, value: str) -> str:
@@ -529,6 +566,39 @@ class Settings(BaseSettings):
                 )
             mapping.setdefault(self.api_key, self.oauth_tenant_id)
         return mapping
+
+    @property
+    def connector_credentials(self) -> dict[str, dict[str, str]]:
+        """Return the validated server-held connector credential map.
+
+        Values are intentionally available only to backend adapter code; no
+        API route serializes this property. The raw environment variable is
+        preferred over a broad collection of provider-specific tenant maps so
+        rotation and secret-manager wiring stay consistent.
+        """
+        if not self.connector_credentials_json or not self.connector_credentials_json.strip():
+            return {}
+        parsed = json.loads(self.connector_credentials_json)
+        return {
+            str(tenant).strip(): {str(name).strip(): str(secret) for name, secret in credentials.items()}
+            for tenant, credentials in parsed.items()
+        }
+
+    def connector_credential(self, name: str, legacy_value: str | None = None) -> str | None:
+        """Resolve one credential for the request-scoped tenant.
+
+        A scoped value always wins. Legacy deployment-global values are
+        accepted only for the configured operator tenant; another tenant must
+        have its own entry or the connector is reported as not configured.
+        """
+        tenant = get_current_tenant(self.oauth_tenant_id)
+        scoped = self.connector_credentials.get(tenant, {})
+        value = scoped.get(name)
+        if value is not None:
+            return value
+        if tenant != self.oauth_tenant_id:
+            return None
+        return legacy_value
 
     model_config = SettingsConfigDict(
         env_file=".env",

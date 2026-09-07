@@ -412,39 +412,42 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
     if provider == IntegrationProvider.DISCORD:
         return bool(settings.discord_webhook_url)
     if provider == IntegrationProvider.TELEGRAM:
-        return bool(settings.telegram_bot_token)
+        return bool(_credential("TELEGRAM_BOT_TOKEN", settings.telegram_bot_token))
     if provider == IntegrationProvider.WHATSAPP:
         return bool(
-            settings.whatsapp_phone_number_id
+            _credential("WHATSAPP_PHONE_NUMBER_ID", settings.whatsapp_phone_number_id)
             and (
-                settings.meta_access_token
+                _credential("META_ACCESS_TOKEN", settings.meta_access_token)
                 or (settings.meta_oauth_client_id and settings.meta_oauth_client_secret)
             )
         )
     if provider == IntegrationProvider.INSTAGRAM:
         return bool(
-            settings.instagram_business_account_id
+            _credential("INSTAGRAM_BUSINESS_ACCOUNT_ID", settings.instagram_business_account_id)
             and (
-                settings.meta_access_token
+                _credential("META_ACCESS_TOKEN", settings.meta_access_token)
                 or (settings.meta_oauth_client_id and settings.meta_oauth_client_secret)
             )
         )
     if provider == IntegrationProvider.TEAMS:
         return bool(settings.teams_webhook_url)
     if provider == IntegrationProvider.SHOPIFY:
-        return bool(settings.shopify_admin_access_token and settings.shopify_shop_domain)
+        return bool(
+            _credential("SHOPIFY_ADMIN_ACCESS_TOKEN", settings.shopify_admin_access_token)
+            and _credential("SHOPIFY_SHOP_DOMAIN", settings.shopify_shop_domain)
+        )
     if provider == IntegrationProvider.STRIPE:
-        return bool(settings.stripe_secret_key)
+        return bool(_credential("STRIPE_SECRET_KEY", settings.stripe_secret_key))
     if provider == IntegrationProvider.SNAPCHAT:
         return bool(
-            settings.snapchat_access_token
+            _credential("SNAPCHAT_ACCESS_TOKEN", settings.snapchat_access_token)
             or (settings.snapchat_oauth_client_id and settings.snapchat_oauth_client_secret)
         )
     if provider == IntegrationProvider.WOOCOMMERCE:
         return bool(
-            settings.woocommerce_store_url
-            and settings.woocommerce_consumer_key
-            and settings.woocommerce_consumer_secret
+            _credential("WOOCOMMERCE_STORE_URL", settings.woocommerce_store_url)
+            and _credential("WOOCOMMERCE_CONSUMER_KEY", settings.woocommerce_consumer_key)
+            and _credential("WOOCOMMERCE_CONSUMER_SECRET", settings.woocommerce_consumer_secret)
         )
     if provider == IntegrationProvider.VERCEL:
         return bool(settings.vercel_api_token)
@@ -452,11 +455,11 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.linear_api_key)
     if provider == IntegrationProvider.AMAZON:
         return bool(
-            settings.amazon_lwa_client_id
-            and settings.amazon_lwa_client_secret
-            and settings.amazon_lwa_refresh_token
-            and settings.amazon_aws_access_key_id
-            and settings.amazon_aws_secret_access_key
+            _credential("AMAZON_LWA_CLIENT_ID", settings.amazon_lwa_client_id)
+            and _credential("AMAZON_LWA_CLIENT_SECRET", settings.amazon_lwa_client_secret)
+            and _credential("AMAZON_LWA_REFRESH_TOKEN", settings.amazon_lwa_refresh_token)
+            and _credential("AMAZON_AWS_ACCESS_KEY_ID", settings.amazon_aws_access_key_id)
+            and _credential("AMAZON_AWS_SECRET_ACCESS_KEY", settings.amazon_aws_secret_access_key)
         )
     if provider in {
         IntegrationProvider.GMAIL,
@@ -487,20 +490,31 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
     if provider == IntegrationProvider.SUPABASE:
         return bool(settings.supabase_url and settings.supabase_anon_key and settings.supabase_read_table)
     if provider == IntegrationProvider.TODOIST:
-        return bool(settings.todoist_api_token)
+        return bool(_credential("TODOIST_API_TOKEN", settings.todoist_api_token))
     if provider == IntegrationProvider.ASANA:
-        return bool(settings.asana_access_token and settings.asana_workspace_gid)
+        return bool(
+            _credential("ASANA_ACCESS_TOKEN", settings.asana_access_token)
+            and _credential("ASANA_WORKSPACE_GID", settings.asana_workspace_gid)
+        )
     if provider == IntegrationProvider.TRELLO:
         return bool(
-            settings.trello_api_key
-            and settings.trello_token
-            and settings.trello_board_id
-            and settings.trello_list_id
+            _credential("TRELLO_API_KEY", settings.trello_api_key)
+            and _credential("TRELLO_TOKEN", settings.trello_token)
+            and _credential("TRELLO_BOARD_ID", settings.trello_board_id)
+            and _credential("TRELLO_LIST_ID", settings.trello_list_id)
         )
     if provider == IntegrationProvider.ZOOM:
         return bool(settings.zoom_oauth_client_id and settings.zoom_oauth_client_secret)
     if provider == IntegrationProvider.RAZORPAY:
-        return bool(settings.razorpay_key_id and settings.razorpay_key_secret)
+        return bool(
+            _credential("RAZORPAY_KEY_ID", settings.razorpay_key_id)
+            and _credential("RAZORPAY_KEY_SECRET", settings.razorpay_key_secret)
+        )
     if provider == IntegrationProvider.OUTLOOK:
         return bool(settings.microsoft_oauth_client_id and settings.microsoft_oauth_client_secret)
     return False
+
+
+def _credential(name: str, legacy_value: str | None) -> str | None:
+    """Resolve a server-held credential for the active tenant."""
+    return settings.connector_credential(name, legacy_value)

@@ -20,7 +20,9 @@ class StripeAdapter(IntegrationAdapter):
         secret_key: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.secret_key = secret_key or settings.stripe_secret_key or ""
+        self.secret_key = secret_key or settings.connector_credential(
+            "STRIPE_SECRET_KEY", settings.stripe_secret_key
+        ) or ""
         self._client = client
         if not self.secret_key.strip():
             raise RuntimeError("STRIPE_SECRET_KEY is required")

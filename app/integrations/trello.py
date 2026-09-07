@@ -27,10 +27,20 @@ class TrelloAdapter(IntegrationAdapter):
         list_id: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.api_key = api_key or settings.trello_api_key or ""
-        self.token = token or settings.trello_token or ""
-        self.board_id = self._validate_id(board_id or settings.trello_board_id, "TRELLO_BOARD_ID")
-        self.list_id = self._validate_id(list_id or settings.trello_list_id, "TRELLO_LIST_ID")
+        self.api_key = api_key or settings.connector_credential(
+            "TRELLO_API_KEY", settings.trello_api_key
+        ) or ""
+        self.token = token or settings.connector_credential(
+            "TRELLO_TOKEN", settings.trello_token
+        ) or ""
+        self.board_id = self._validate_id(
+            board_id or settings.connector_credential("TRELLO_BOARD_ID", settings.trello_board_id),
+            "TRELLO_BOARD_ID",
+        )
+        self.list_id = self._validate_id(
+            list_id or settings.connector_credential("TRELLO_LIST_ID", settings.trello_list_id),
+            "TRELLO_LIST_ID",
+        )
         self._client = client
         if not self.api_key.strip():
             raise RuntimeError("TRELLO_API_KEY is required")

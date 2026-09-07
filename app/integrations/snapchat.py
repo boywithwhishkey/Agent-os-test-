@@ -23,7 +23,9 @@ class SnapchatMarketingAdapter(IntegrationAdapter):
         connection_store: OAuthConnectionStore | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.access_token = access_token or settings.snapchat_access_token or ""
+        self.access_token = access_token or settings.connector_credential(
+            "SNAPCHAT_ACCESS_TOKEN", settings.snapchat_access_token
+        ) or ""
         self._connection_store = connection_store
         self._client = client
         if not self.access_token.strip() and not self._has_oauth_connection():

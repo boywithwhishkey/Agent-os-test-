@@ -25,8 +25,12 @@ class InstagramGraphAdapter(IntegrationAdapter):
         client: httpx.AsyncClient | None = None,
         connection_store: OAuthConnectionStore | None = None,
     ) -> None:
-        token = access_token or settings.meta_access_token or ""
-        account_id = business_account_id or settings.instagram_business_account_id or ""
+        token = access_token or settings.connector_credential(
+            "META_ACCESS_TOKEN", settings.meta_access_token
+        ) or ""
+        account_id = business_account_id or settings.connector_credential(
+            "INSTAGRAM_BUSINESS_ACCOUNT_ID", settings.instagram_business_account_id
+        ) or ""
         self._connection_store = connection_store
         if not token.strip() and not self._has_oauth_connection():
             raise RuntimeError("META_ACCESS_TOKEN or a connected Instagram OAuth account is required")

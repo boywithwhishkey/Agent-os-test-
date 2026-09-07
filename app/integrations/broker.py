@@ -139,9 +139,11 @@ def _oauth_connection_missing(connector_id: str) -> bool:
     if oauth_connection_store.get(connector_id).access_token:
         return False
     static_fallbacks = {
-        "snapchat": settings.snapchat_access_token,
-        "whatsapp": settings.meta_access_token,
-        "instagram": settings.meta_access_token,
+        "snapchat": settings.connector_credential(
+            "SNAPCHAT_ACCESS_TOKEN", settings.snapchat_access_token
+        ),
+        "whatsapp": settings.connector_credential("META_ACCESS_TOKEN", settings.meta_access_token),
+        "instagram": settings.connector_credential("META_ACCESS_TOKEN", settings.meta_access_token),
     }
     return not bool(static_fallbacks.get(connector_id))
 

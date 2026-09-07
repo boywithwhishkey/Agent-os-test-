@@ -35,13 +35,29 @@ class AmazonSPAPIAdapter(IntegrationAdapter):
         region: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
-        self.lwa_client_id = lwa_client_id or settings.amazon_lwa_client_id or ""
-        self.lwa_client_secret = lwa_client_secret or settings.amazon_lwa_client_secret or ""
-        self.lwa_refresh_token = lwa_refresh_token or settings.amazon_lwa_refresh_token or ""
-        self.aws_access_key_id = aws_access_key_id or settings.amazon_aws_access_key_id or ""
-        self.aws_secret_access_key = aws_secret_access_key or settings.amazon_aws_secret_access_key or ""
-        self.aws_session_token = aws_session_token or settings.amazon_aws_session_token
-        self.region_name = (region or settings.amazon_region).lower().strip()
+        self.lwa_client_id = lwa_client_id or settings.connector_credential(
+            "AMAZON_LWA_CLIENT_ID", settings.amazon_lwa_client_id
+        ) or ""
+        self.lwa_client_secret = lwa_client_secret or settings.connector_credential(
+            "AMAZON_LWA_CLIENT_SECRET", settings.amazon_lwa_client_secret
+        ) or ""
+        self.lwa_refresh_token = lwa_refresh_token or settings.connector_credential(
+            "AMAZON_LWA_REFRESH_TOKEN", settings.amazon_lwa_refresh_token
+        ) or ""
+        self.aws_access_key_id = aws_access_key_id or settings.connector_credential(
+            "AMAZON_AWS_ACCESS_KEY_ID", settings.amazon_aws_access_key_id
+        ) or ""
+        self.aws_secret_access_key = aws_secret_access_key or settings.connector_credential(
+            "AMAZON_AWS_SECRET_ACCESS_KEY", settings.amazon_aws_secret_access_key
+        ) or ""
+        self.aws_session_token = aws_session_token or settings.connector_credential(
+            "AMAZON_AWS_SESSION_TOKEN", settings.amazon_aws_session_token
+        )
+        self.region_name = (
+            region
+            or settings.connector_credential("AMAZON_REGION", settings.amazon_region)
+            or settings.amazon_region
+        ).lower().strip()
         self._client = client
         if self.region_name not in _REGION_ENDPOINTS:
             raise RuntimeError("AMAZON_REGION must be one of na, eu, or fe")
