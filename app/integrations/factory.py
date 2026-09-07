@@ -171,6 +171,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Asana",
         "requires": ["ASANA_ACCESS_TOKEN", "ASANA_WORKSPACE_GID"],
     },
+    IntegrationProvider.TRELLO: {
+        "name": "Trello",
+        "requires": ["TRELLO_API_KEY", "TRELLO_TOKEN", "TRELLO_BOARD_ID", "TRELLO_LIST_ID"],
+    },
     IntegrationProvider.RAZORPAY: {
         "name": "Razorpay",
         "requires": ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"],
@@ -337,6 +341,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.asana import AsanaAdapter
 
         return AsanaAdapter()
+    if normalized == "trello":
+        from app.integrations.trello import TrelloAdapter
+
+        return TrelloAdapter()
     if normalized == "razorpay":
         from app.integrations.razorpay import RazorpayAdapter
 
@@ -455,6 +463,13 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         return bool(settings.todoist_api_token)
     if provider == IntegrationProvider.ASANA:
         return bool(settings.asana_access_token and settings.asana_workspace_gid)
+    if provider == IntegrationProvider.TRELLO:
+        return bool(
+            settings.trello_api_key
+            and settings.trello_token
+            and settings.trello_board_id
+            and settings.trello_list_id
+        )
     if provider == IntegrationProvider.RAZORPAY:
         return bool(settings.razorpay_key_id and settings.razorpay_key_secret)
     if provider == IntegrationProvider.OUTLOOK:

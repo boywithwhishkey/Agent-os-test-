@@ -175,6 +175,10 @@ class Settings(BaseSettings):
     todoist_api_token: str | None = Field(default=None, validation_alias="TODOIST_API_TOKEN")
     asana_access_token: str | None = Field(default=None, validation_alias="ASANA_ACCESS_TOKEN")
     asana_workspace_gid: str | None = Field(default=None, validation_alias="ASANA_WORKSPACE_GID")
+    trello_api_key: str | None = Field(default=None, validation_alias="TRELLO_API_KEY")
+    trello_token: str | None = Field(default=None, validation_alias="TRELLO_TOKEN")
+    trello_board_id: str | None = Field(default=None, validation_alias="TRELLO_BOARD_ID")
+    trello_list_id: str | None = Field(default=None, validation_alias="TRELLO_LIST_ID")
     razorpay_key_id: str | None = Field(default=None, validation_alias="RAZORPAY_KEY_ID")
     razorpay_key_secret: str | None = Field(default=None, validation_alias="RAZORPAY_KEY_SECRET")
     oauth_storage_backend: str = Field(

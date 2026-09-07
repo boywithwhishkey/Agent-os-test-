@@ -251,6 +251,11 @@ def _outlook_live_status() -> dict:
     return _oauth_live_status("outlook")
 
 
+def _trello_live_status() -> dict:
+    provider = next(p for p in list_providers() if p.value == "trello")
+    return _status_store_backed_status("trello", configured=is_provider_configured(provider))
+
+
 def _zapier_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "zapier")
     return _status_store_backed_status("zapier", configured=is_provider_configured(provider))
@@ -324,6 +329,7 @@ _LIVE_STATUS_RESOLVERS = {
     "hubspot": _hubspot_live_status,
     "salesforce": _salesforce_live_status,
     "outlook": _outlook_live_status,
+    "trello": _trello_live_status,
     "zapier": _zapier_live_status,
     "supabase": _supabase_live_status,
 }
