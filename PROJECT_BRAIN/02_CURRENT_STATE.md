@@ -5,6 +5,15 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — GOOGLE TASKS CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Google Tasks now reuses the shared Google OAuth
+  connection and exposes account verification, bounded task-list reads, and
+  approval-governed task creation. Task-list identifiers, titles, notes, due
+  dates, pagination, and list filters are validated before provider requests.
+- The `https://www.googleapis.com/auth/tasks` scope is required for creation;
+  no Google credentials were available, so live validation remains pending.
+
 ## SESSION 2026-09-07 — REDDIT CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Reddit now has a shared OAuth connector with

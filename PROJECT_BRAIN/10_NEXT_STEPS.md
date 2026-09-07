@@ -69,6 +69,9 @@ credential-gated.
 Reddit now has shared OAuth identity and approval-governed text/link posting;
 its app registration, User-Agent, and live account authorization remain
 credential-gated.
+Google Tasks now reuses shared Google OAuth for bounded task reads and
+approval-governed task creation; the Tasks scope and live authorization remain
+credential-gated.
 Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel remains read-only; Linear now has

@@ -31,6 +31,12 @@ def test_google_sheets_uses_shared_google_oauth_configuration(monkeypatch) -> No
     assert is_provider_configured(IntegrationProvider.GOOGLE_SHEETS) is True
 
 
+def test_google_tasks_uses_shared_google_oauth_configuration(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "google_oauth_client_id", "client-id")
+    monkeypatch.setattr(settings, "google_oauth_client_secret", "client-secret")
+    assert is_provider_configured(IntegrationProvider.GOOGLE_TASKS) is True
+
+
 @pytest.mark.anyio
 @pytest.mark.parametrize(
     ("provider", "capability", "path", "response"),
@@ -55,6 +61,12 @@ def test_google_sheets_uses_shared_google_oauth_configuration(monkeypatch) -> No
         ),
         (
             IntegrationProvider.GOOGLE_SHEETS,
+            "identity.account.read",
+            "/oauth2/v3/userinfo",
+            {"email": "person@example.com", "sub": "user-1"},
+        ),
+        (
+            IntegrationProvider.GOOGLE_TASKS,
             "identity.account.read",
             "/oauth2/v3/userinfo",
             {"email": "person@example.com", "sub": "user-1"},
@@ -180,6 +192,72 @@ async def test_google_sheets_read_and_append_use_fixed_ranges_and_bearer_token()
             {"majorDimension": "ROWS", "values": [["a", 2, True]]},
         ),
     ]
+
+
+@pytest.mark.anyio
+async def test_google_tasks_list_and_create_use_fixed_endpoints_and_bearer_token() -> None:
+    seen: list[tuple[str, str, str, dict[str, object] | None]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content) if request.content else None
+        seen.append((request.method, request.url.path, request.url.query.decode(), payload))
+        if request.method == "GET":
+            return httpx.Response(200, json={"items": [{"id": "task_1", "title": "Inbox"}]})
+        return httpx.Response(200, json={"id": "task_2", "title": "Ship THYNACT"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GOOGLE_TASKS,
+            connection_store=_connected_store(IntegrationProvider.GOOGLE_TASKS),
+            client=client,
+        )
+        listed = await adapter.run_capability(
+            "productivity.task.list",
+            {"tasklist_id": "@default", "max_results": 10, "show_completed": True},
+        )
+        created = await adapter.run_capability(
+            "productivity.task.create",
+            {
+                "tasklist_id": "@default",
+                "title": "Ship THYNACT",
+                "notes": "Run the release checklist",
+                "due": "2026-09-10T12:00:00Z",
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert listed["items"][0]["id"] == "task_1"
+    assert created == {"id": "task_2", "title": "Ship THYNACT"}
+    assert seen[0][0:3] == (
+        "GET",
+        "/tasks/v1/lists/@default/tasks",
+        "maxResults=10&showCompleted=true",
+    )
+    assert seen[0][3] is None
+    assert seen[1][0:3] == ("POST", "/tasks/v1/lists/@default/tasks", "")
+    assert seen[1][3] == {
+        "title": "Ship THYNACT",
+        "notes": "Run the release checklist",
+        "due": "2026-09-10T12:00:00Z",
+    }
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"tasklist_id": "bad/id", "title": "x"}, "tasklist_id"),
+        ({"tasklist_id": "@default", "title": ""}, "title"),
+        ({"tasklist_id": "@default", "title": "x", "due": "tomorrow"}, "RFC3339"),
+    ],
+)
+def test_google_tasks_arguments_are_bounded(arguments: dict[str, object], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        if "title" in arguments:
+            GoogleOAuthAdapter._task_payload(arguments)
+        else:
+            GoogleOAuthAdapter._tasklist_id(arguments)
 
 
 @pytest.mark.parametrize(

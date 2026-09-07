@@ -28,6 +28,7 @@ _IDENTITY_ENDPOINTS = {
         "https://www.googleapis.com/drive/v3/about?fields=user"
     ),
     IntegrationProvider.GOOGLE_SHEETS: "https://www.googleapis.com/oauth2/v3/userinfo",
+    IntegrationProvider.GOOGLE_TASKS: "https://www.googleapis.com/oauth2/v3/userinfo",
 }
 
 
@@ -69,6 +70,7 @@ class GoogleOAuthAdapter(IntegrationAdapter):
             IntegrationProvider.GOOGLE_CALENDAR: "Google Calendar",
             IntegrationProvider.GOOGLE_DRIVE: "Google Drive",
             IntegrationProvider.GOOGLE_SHEETS: "Google Sheets",
+            IntegrationProvider.GOOGLE_TASKS: "Google Tasks",
         }[self.provider]
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
@@ -186,6 +188,7 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 "https://sheets.googleapis.com/v4/spreadsheets/"
                 f"{quote(spreadsheet_id, safe='')}/values/{quote(range_name, safe='')}"
             )
+
             if capability_id == "data.record.read":
                 return await self._get(endpoint, params={"majorDimension": "ROWS"})
             values = self._sheet_values(arguments)
@@ -199,6 +202,35 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 },
             )
 
+        if self.provider is IntegrationProvider.GOOGLE_TASKS and capability_id == "productivity.task.list":
+            tasklist_id = self._tasklist_id(arguments)
+            params = {"maxResults": str(self._max_results(arguments))}
+            for name, argument_name in {
+                "showCompleted": "show_completed",
+                "showHidden": "show_hidden",
+                "showDeleted": "show_deleted",
+                "showAssigned": "show_assigned",
+            }.items():
+                value = arguments.get(argument_name)
+                if isinstance(value, bool):
+                    params[name] = str(value).lower()
+            page_token = arguments.get("page_token")
+            if page_token is not None:
+                if not isinstance(page_token, str) or not 1 <= len(page_token) <= 1024:
+                    raise ValueError("productivity.task.list page_token must be a bounded string")
+                params["pageToken"] = page_token
+            return await self._get(
+                f"https://tasks.googleapis.com/tasks/v1/lists/{quote(tasklist_id, safe='')}/tasks",
+                params=params,
+            )
+
+        if self.provider is IntegrationProvider.GOOGLE_TASKS and capability_id == "productivity.task.create":
+            tasklist_id, payload = self._task_payload(arguments)
+            return await self._post(
+                f"https://tasks.googleapis.com/tasks/v1/lists/{quote(tasklist_id, safe='')}/tasks",
+                payload,
+            )
+
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
 
     @staticmethod
@@ -207,6 +239,42 @@ class GoogleOAuthAdapter(IntegrationAdapter):
         if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 100:
             raise ValueError("max_results must be an integer between 1 and 100")
         return value
+
+    @staticmethod
+    def _tasklist_id(arguments: dict[str, Any]) -> str:
+        value = arguments.get("tasklist_id", "@default")
+        if (
+            not isinstance(value, str)
+            or not 1 <= len(value.strip()) <= 255
+            or "/" in value
+            or "\\" in value
+            or any(ord(char) < 0x20 for char in value)
+        ):
+            raise ValueError("productivity.task.list requires a valid tasklist_id")
+        return value.strip()
+
+    @classmethod
+    def _task_payload(cls, arguments: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+        tasklist_id = cls._tasklist_id(arguments)
+        title = arguments.get("title")
+        if not isinstance(title, str) or not 1 <= len(title.strip()) <= 1_024:
+            raise ValueError("productivity.task.create requires a title of 1024 characters or fewer")
+        payload: dict[str, Any] = {"title": title.strip()}
+        notes = arguments.get("notes", arguments.get("description"))
+        if notes is not None:
+            if not isinstance(notes, str) or len(notes) > 8_192:
+                raise ValueError("task notes must be 8192 characters or fewer")
+            payload["notes"] = notes
+        due = arguments.get("due")
+        if due is not None:
+            if not isinstance(due, str) or not 1 <= len(due) <= 64:
+                raise ValueError("task due must be a bounded RFC3339 string")
+            try:
+                datetime.fromisoformat(due)
+            except ValueError as exc:
+                raise ValueError("task due must be a valid RFC3339 date-time") from exc
+            payload["due"] = due
+        return tasklist_id, payload
 
     @staticmethod
     def _sheet_range(arguments: dict[str, Any], operation: str) -> tuple[str, str]:

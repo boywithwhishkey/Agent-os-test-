@@ -41,6 +41,9 @@ without that loop remain metadata only.
 9. Reddit — shared OAuth account verification and approval-gated text/link
    submission are implemented; moderation, comments, media, and live app
    validation remain follow-on/credential-gated work.
+10. Google Tasks — shared Google OAuth account verification, bounded task-list
+    reads, and approval-gated task creation are implemented; Google consent
+    verification and live credentials remain pending.
 
 ### Commerce and payments
 
