@@ -153,7 +153,9 @@ unconfigured.
 Zoom now has shared OAuth identity, bounded scheduled-meeting reads with
 cursor support, and approval-gated scheduled-meeting creation through the
 canonical `meeting.session.*` capabilities; live Zoom credentials remain
-unconfigured.
+unconfigured. Its signed webhook endpoint, challenge response, replay window,
+queue deduplication, and canonical event normalization are implemented; the
+webhook secret remains unconfigured for live delivery.
 Razorpay now has fixed `commerce.payment.list` and `commerce.order.list`
 operations plus approval-gated `commerce.refund.create`; the key pair stays
 server-side and live payment credentials remain unconfigured.

@@ -61,6 +61,20 @@ contradicting note elsewhere.
   no live Zoom request was made. Configure `ZOOM_OAUTH_CLIENT_ID` and
   `ZOOM_OAUTH_CLIENT_SECRET` through the deployment secret manager before use.
 
+## SESSION 2026-09-07 — ZOOM SIGNED WEBHOOK INGRESS
+
+- **IMPLEMENTED_TESTED:** `/api/v1/webhooks/zoom` now verifies Zoom's signed
+  `v0` requests with bounded timestamp skew, answers the
+  `endpoint.url_validation` challenge, rejects invalid/replayed requests, and
+  hands verified events to the existing deduplicating webhook queue. Zoom
+  events normalize into the canonical provider/event envelope for workflows.
+- Focused webhook and normalizer checks: **12 passed**. Full local gate after
+  this change: **583 backend tests passed, 13 skipped, 1 warning; 109 frontend
+  tests passed; typecheck, lint, and production build passed**. GitHub Actions
+  CI passed on isolated `staging`.
+- **CREDENTIAL_REQUIRED:** `ZOOM_WEBHOOK_SECRET_TOKEN` is not configured, so
+  no live webhook delivery was exercised.
+
 ## SESSION 2026-09-05 — SLACK OAUTH MESSAGE CAPABILITIES
 
 - **IMPLEMENTED_TESTED:** Slack now uses the shared OAuth flow for identity,
@@ -2705,7 +2719,8 @@ build all clean.
   Outlook-focused adapter and catalog checks: **5 passed**.
   Trello-focused adapter and catalog checks: **7 passed**.
   Zoom-focused adapter and catalog checks: **6 passed**.
-  The full gate after the Zoom connector work is **580 backend tests passed,
+  Zoom webhook and event-normalizer checks: **12 passed**.
+  The full gate after the Zoom webhook work is **583 backend tests passed,
   13 skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
