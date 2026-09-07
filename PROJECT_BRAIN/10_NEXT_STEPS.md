@@ -90,6 +90,9 @@ against a governed path rather than an architectural one: implement
 already there. The authenticated runtime path is now
 `POST /api/v1/integrations/capabilities/execute`; approval grants are issued
 through its companion `/capabilities/approvals` endpoint and are single-use.
+Configured OAuth apps without a linked account now return an audited
+`not_connected` outcome before any adapter call; static-token fallbacks remain
+supported for Meta and Snapchat.
 `app/integrations/openai.py` is the worked example.
 
 

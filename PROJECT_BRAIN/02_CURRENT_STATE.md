@@ -5,6 +5,21 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — HONEST OAUTH CONNECTION OUTCOMES
+
+- **IMPLEMENTED_TESTED:** The canonical broker now detects when an OAuth app
+  is configured but its account has not been connected, returns an explicit
+  audited `not_connected` result, and never calls the provider adapter in that
+  state. Static server-token fallbacks for Snapchat, WhatsApp, and Instagram
+  remain recognized as connected credentials.
+- The result names the required next action (authorize the connector), keeps
+  correlation IDs in the audit row, and avoids turning an expected setup state
+  into a provider outage.
+- Focused broker checks: **17 passed**. Full local gate after this change:
+  **599 backend tests passed, 13 skipped, 1 warning; 109 frontend tests
+  passed; typecheck, lint, and production build passed**. GitHub CI is pending
+  for commit `b8df9fa`.
+
 ## SESSION 2026-09-07 — META OAUTH FOR WHATSAPP AND INSTAGRAM
 
 - **IMPLEMENTED_TESTED:** WhatsApp Cloud and Instagram now register shared Meta
