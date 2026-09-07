@@ -5,6 +5,28 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — SNAPCHAT MARKETING OAUTH CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Snapchat now has a registered OAuth 2.0 provider
+  using Snap's authorization-code endpoints and the
+  `snapchat-marketing-api` scope. The callback stores refresh-capable
+  credentials in the existing encrypted OAuth store when PostgreSQL mode is
+  enabled; the adapter refreshes on a 401 and uses the fixed
+  `/v1/me/organizations?with_ad_accounts=true` operation for both
+  `identity.account.read` and `ads.account.list`.
+- The existing server-configured `SNAPCHAT_ACCESS_TOKEN` remains a supported
+  migration/fallback path, while the catalog and live status now understand
+  OAuth configuration and connected-account state. No provider URL or
+  mutation is workflow-controlled.
+- Focused Snapchat/OAuth checks: **43 passed**. Full local gate after this
+  change: **593 backend tests passed, 13 skipped, 1 warning; 109 frontend
+  tests passed; typecheck, lint, and production build passed**. GitHub CI is
+  pending for commit `a50e238`.
+- **CREDENTIAL_REQUIRED:** no Snapchat OAuth app or access token was available
+  here, so no live Marketing API request was made. Snap's official OAuth
+  contract is documented at
+  `https://developers.snap.com/marketing-api/Ads-API/authentication`.
+
 ## SESSION 2026-09-07 — SLACK IDENTITY CAPABILITY COMPLETION
 
 - **IMPLEMENTED_TESTED:** Slack's catalog-declared `identity.account.read`

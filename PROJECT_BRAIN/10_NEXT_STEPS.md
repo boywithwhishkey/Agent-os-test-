@@ -63,6 +63,8 @@ Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel remains read-only; Linear now has
 governed issue create/update mutations as well as read capabilities.
+Snapchat now also has the shared OAuth authorization and refresh path; it
+remains credential- and allowlist-gated for live validation.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
 Render now has fixed service listing and governed deploy-trigger operations;
