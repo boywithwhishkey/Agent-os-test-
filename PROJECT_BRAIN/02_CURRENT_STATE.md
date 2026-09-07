@@ -2635,7 +2635,7 @@ build all clean.
 | Persistence | PARTIAL — production is memory-only | Code supports Postgres/Redis backends (`app/persistence/`, `app/queue/redis_queue.py`) but production has none configured (see NEEDS CREDENTIALS) |
 | Responsive UI | Dashboard + mobile sidebar drawer VERIFIED at 320/360/390/430/640/768/1024px, both themes, HEAD `aad329e` (real rendering + programmatic overflow check, not just code review) | Codebase has solid responsive primitives (`overflow-x-hidden`, `min-w-0`, mobile sidebar drawer, responsive grids). Verified this session: no horizontal overflow at any of the 7 breakpoints, Dashboard cards 1-up below 640px / 2-up 640-1023px / 4-up 1024px+, mobile drawer opens and is fully legible. NOT yet re-verified this way: every other page (Tasks/Workflows/Memory/etc. were audited at the source level in a prior session, and Tools/Settings were spot-checked at desktop width only this session — not at all 7 breakpoints), iPad/tablet-specific AmbientBackground blur cost, AccountPopover touch sizing |
 
-## LATEST VERIFIED SNAPSHOT — 2026-09-05
+## LATEST VERIFIED SNAPSHOT — 2026-09-07
 
 - Linear's cataloged `tracker.issue.create` and `tracker.issue.update`
   capabilities are implemented in `app/integrations/linear.py`. Inputs are
@@ -2643,7 +2643,8 @@ build all clean.
   interpolating workflow data; unsuccessful mutation payloads fail closed.
 - Focused connector, capability, and broker checks for the AI/catalog update:
   **61 passed** (Linear's earlier focused set was 34).
-  The full gate after the automation capability work is **549 backend tests passed, 13
+  Todoist-focused adapter, broker, and catalog checks: **42 passed**.
+  The full gate after the Todoist connector work is **553 backend tests passed, 13
   skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
@@ -2672,6 +2673,8 @@ build all clean.
 - n8n, Make, and Zapier now expose bounded `automation.workflow.trigger`
   capability routes through the broker; destinations remain fixed in server
   configuration and are never accepted from workflow input.
-- Verified local functional commits are `a8b3908`, `3104b1c`, and `931bc56`.
-  GitHub publish is pending explicit destination confirmation; Ride&Glide and
-  production remain untouched.
+- Todoist now has a server-token adapter for bounded task listing and
+  approval-gated task creation, with fixed API v1 routes and idempotency keys.
+- Verified local functional commits are `a8b3908`, `3104b1c`, `931bc56`, and
+  `7f4ffdb`. GitHub publish is pending explicit destination confirmation;
+  Ride&Glide and production remain untouched.

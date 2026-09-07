@@ -290,8 +290,8 @@ In rough priority order:
   never allowed to block correctness work.
 
 ## 3. Standing verification commands
-- Backend: `uv run pytest tests/ -q` (549 passing, 13 skipped, verified
-  2026-09-05).
+- Backend: `uv run pytest tests/ -q` (553 passing, 13 skipped, verified
+  2026-09-07).
 - Frontend from `frontend/`: `pnpm typecheck && pnpm lint && pnpm test &&
   pnpm build` (109 passing, typecheck/build clean, 9 pre-existing lint
   warnings).
