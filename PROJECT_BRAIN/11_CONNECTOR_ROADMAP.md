@@ -52,7 +52,7 @@ without that loop remain metadata only.
 
 ### Daily productivity
 
-Google Gmail/Calendar/Drive, Microsoft Outlook/Calendar/OneDrive, Notion,
+Google Gmail/Calendar/Drive/Sheets, Microsoft Outlook/Calendar/OneDrive, Notion,
 GitHub/GitLab, Linear (issue list/create/update implemented), Jira, Dropbox, Todoist, Trello, Asana, Zoom, and
 calendar/meeting providers are added through the same OAuth/API families.
 
@@ -123,7 +123,7 @@ creating one-off integrations.
 
 ## Current baseline
 
-THYNACT now has 35 catalog entries. All thirty-five have adapters and tests; PostgreSQL
+THYNACT now has 42 catalog entries. All forty-two have adapters and tests; PostgreSQL
 and Redis are the only live-validated providers. The remaining implemented
 providers are credential/auth gated. There are no catalog-only entries left;
 the next work is capability depth, multi-user tenant isolation, provider-specific
@@ -134,9 +134,9 @@ provider refresh/webhook delivery is still credential-gated.
 Verified webhook jobs now also carry a server-resolved tenant id through the
 queue/worker path; multi-tenant callback smoke tests and live account routing
 remain pending isolated staging credentials.
-Google Gmail/Calendar/Drive now share one OAuth client configuration and have
-read-only identity/list adapters plus bounded Drive file-content reads; write
-capabilities remain separately gated.
+Google Gmail/Calendar/Drive/Sheets now share one OAuth client configuration and
+have bounded identity/list/range adapters plus Drive file-content reads; Sheets
+row appends and other write capabilities remain separately gated.
 Jira now has the same read-only OAuth foundation with a server-configured cloud
 id; issue mutations remain a separate approval-gated capability.
 Dropbox and OneDrive now have scoped OAuth identity/file-list/file-content

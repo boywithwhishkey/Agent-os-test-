@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 
 import httpx
 import pytest
 
+from app.core.config import settings
+from app.integrations.factory import is_provider_configured
 from app.integrations.google import GoogleOAuthAdapter
 from app.integrations.models import IntegrationProvider
 from app.integrations.oauth.store import OAuthConnectionStore
@@ -20,6 +23,12 @@ def _connected_store(provider: IntegrationProvider) -> OAuthConnectionStore:
         scope="read-only",
     )
     return store
+
+
+def test_google_sheets_uses_shared_google_oauth_configuration(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "google_oauth_client_id", "client-id")
+    monkeypatch.setattr(settings, "google_oauth_client_secret", "client-secret")
+    assert is_provider_configured(IntegrationProvider.GOOGLE_SHEETS) is True
 
 
 @pytest.mark.anyio
@@ -43,6 +52,12 @@ def _connected_store(provider: IntegrationProvider) -> OAuthConnectionStore:
             "identity.account.read",
             "/drive/v3/about",
             {"user": {"emailAddress": "person@example.com"}},
+        ),
+        (
+            IntegrationProvider.GOOGLE_SHEETS,
+            "identity.account.read",
+            "/oauth2/v3/userinfo",
+            {"email": "person@example.com", "sub": "user-1"},
         ),
     ],
 )
@@ -115,6 +130,80 @@ async def test_google_read_capabilities_use_provider_endpoints_and_limits() -> N
             "pageSize=9&fields=files%28id%2Cname%2CmimeType%2CmodifiedTime%29",
         ),
     ]
+
+
+@pytest.mark.anyio
+async def test_google_sheets_read_and_append_use_fixed_ranges_and_bearer_token() -> None:
+    seen: list[tuple[str, str, str, dict[str, object] | None]] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content) if request.content else None
+        seen.append((request.method, request.url.path, request.url.query.decode(), payload))
+        if request.method == "GET":
+            return httpx.Response(200, json={"range": "Sheet1!A1:B2", "values": [["a", "b"]]})
+        return httpx.Response(200, json={"updates": {"updatedRows": 1}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        adapter = GoogleOAuthAdapter(
+            provider=IntegrationProvider.GOOGLE_SHEETS,
+            connection_store=_connected_store(IntegrationProvider.GOOGLE_SHEETS),
+            client=client,
+        )
+        read = await adapter.run_capability(
+            "data.record.read", {"spreadsheet_id": "sheet_1", "range": "Sheet1!A1:B2"}
+        )
+        appended = await adapter.run_capability(
+            "data.record.write",
+            {
+                "spreadsheet_id": "sheet_1",
+                "range": "Sheet1!A:C",
+                "values": [["a", 2, True]],
+            },
+        )
+    finally:
+        await client.aclose()
+
+    assert read["values"] == [["a", "b"]]
+    assert appended == {"updates": {"updatedRows": 1}}
+    assert seen == [
+        (
+            "GET",
+            "/v4/spreadsheets/sheet_1/values/Sheet1!A1:B2",
+            "majorDimension=ROWS",
+            None,
+        ),
+        (
+            "POST",
+            "/v4/spreadsheets/sheet_1/values/Sheet1!A:C:append",
+            "valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&includeValuesInResponse=false",
+            {"majorDimension": "ROWS", "values": [["a", 2, True]]},
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("arguments", "message"),
+    [
+        ({"spreadsheet_id": "bad/id", "range": "A1"}, "spreadsheet_id"),
+        ({"spreadsheet_id": "sheet_1", "range": ""}, "A1 range"),
+        ({"spreadsheet_id": "sheet_1", "range": "A1", "values": []}, "1-500 rows"),
+        (
+            {"spreadsheet_id": "sheet_1", "range": "A1", "values": [[{"bad": "cell"}]]},
+            "JSON scalar",
+        ),
+        (
+            {"spreadsheet_id": "sheet_1", "range": "A1", "values": [[math.inf]]},
+            "finite numbers",
+        ),
+    ],
+)
+def test_google_sheets_arguments_are_bounded(arguments: dict[str, object], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        if "values" in arguments:
+            GoogleOAuthAdapter._sheet_values(arguments)
+        else:
+            GoogleOAuthAdapter._sheet_range(arguments, "data.record.read")
 
 
 @pytest.mark.anyio

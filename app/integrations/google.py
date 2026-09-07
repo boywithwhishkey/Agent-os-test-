@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 import re
 import time
 from datetime import datetime
@@ -26,6 +27,7 @@ _IDENTITY_ENDPOINTS = {
     IntegrationProvider.GOOGLE_DRIVE: (
         "https://www.googleapis.com/drive/v3/about?fields=user"
     ),
+    IntegrationProvider.GOOGLE_SHEETS: "https://www.googleapis.com/oauth2/v3/userinfo",
 }
 
 
@@ -66,6 +68,7 @@ class GoogleOAuthAdapter(IntegrationAdapter):
             IntegrationProvider.GMAIL: "Gmail",
             IntegrationProvider.GOOGLE_CALENDAR: "Google Calendar",
             IntegrationProvider.GOOGLE_DRIVE: "Google Drive",
+            IntegrationProvider.GOOGLE_SHEETS: "Google Sheets",
         }[self.provider]
 
     async def run_capability(self, capability_id: str, arguments: dict[str, Any]) -> object:
@@ -174,6 +177,28 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 mime_type=mime_type,
             )
 
+        if self.provider is IntegrationProvider.GOOGLE_SHEETS and capability_id in {
+            "data.record.read",
+            "data.record.write",
+        }:
+            spreadsheet_id, range_name = self._sheet_range(arguments, capability_id)
+            endpoint = (
+                "https://sheets.googleapis.com/v4/spreadsheets/"
+                f"{quote(spreadsheet_id, safe='')}/values/{quote(range_name, safe='')}"
+            )
+            if capability_id == "data.record.read":
+                return await self._get(endpoint, params={"majorDimension": "ROWS"})
+            values = self._sheet_values(arguments)
+            return await self._post(
+                f"{endpoint}:append",
+                {"majorDimension": "ROWS", "values": values},
+                params={
+                    "valueInputOption": "USER_ENTERED",
+                    "insertDataOption": "INSERT_ROWS",
+                    "includeValuesInResponse": "false",
+                },
+            )
+
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
 
     @staticmethod
@@ -182,6 +207,56 @@ class GoogleOAuthAdapter(IntegrationAdapter):
         if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 100:
             raise ValueError("max_results must be an integer between 1 and 100")
         return value
+
+    @staticmethod
+    def _sheet_range(arguments: dict[str, Any], operation: str) -> tuple[str, str]:
+        spreadsheet_id = arguments.get("spreadsheet_id")
+        if (
+            not isinstance(spreadsheet_id, str)
+            or not 1 <= len(spreadsheet_id.strip()) <= 256
+            or "/" in spreadsheet_id
+            or "\\" in spreadsheet_id
+            or any(ord(char) < 0x20 for char in spreadsheet_id)
+        ):
+            raise ValueError(f"{operation} requires a valid spreadsheet_id")
+        range_name = arguments.get("range")
+        if (
+            not isinstance(range_name, str)
+            or not 1 <= len(range_name.strip()) <= 512
+            or any(ord(char) < 0x20 for char in range_name)
+        ):
+            raise ValueError(f"{operation} requires a valid A1 range")
+        return spreadsheet_id.strip(), range_name.strip()
+
+    @staticmethod
+    def _sheet_values(arguments: dict[str, Any]) -> list[list[Any]]:
+        values = arguments.get("values")
+        if not isinstance(values, list) or not 1 <= len(values) <= 500:
+            raise ValueError("data.record.write requires 1-500 rows")
+        if any(
+            not isinstance(row, list) or not 1 <= len(row) <= 100
+            for row in values
+        ):
+            raise ValueError("data.record.write values must contain 1-100 columns per row")
+        allowed = (str, int, float, bool)
+        if any(
+            any(value is not None and not isinstance(value, allowed) for value in row)
+            for row in values
+        ):
+            raise ValueError("data.record.write values must contain JSON scalar cells")
+        if any(
+            isinstance(value, float) and not math.isfinite(value)
+            for row in values
+            for value in row
+        ):
+            raise ValueError("data.record.write values must contain finite numbers")
+        try:
+            encoded_size = len(json.dumps(values, ensure_ascii=False).encode("utf-8"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("data.record.write values must be JSON serializable") from exc
+        if encoded_size > 1_000_000:
+            raise ValueError("data.record.write values must be 1000000 bytes or fewer")
+        return values
 
     def _limit_params(self, arguments: dict[str, Any]) -> dict[str, str]:
         params = {"maxResults": str(self._max_results(arguments))}
@@ -460,7 +535,13 @@ class GoogleOAuthAdapter(IntegrationAdapter):
             if own_client:
                 await client.aclose()
 
-    async def _post(self, url: str, payload: dict[str, Any]) -> dict[str, Any]:
+    async def _post(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        *,
+        params: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         record = self._connection_store.get(self.provider.value)
         if not record.access_token:
             raise RuntimeError(
@@ -476,6 +557,7 @@ class GoogleOAuthAdapter(IntegrationAdapter):
                 client=client,
                 send=lambda token: client.post(
                     url,
+                    params=params,
                     headers={
                         "Authorization": f"Bearer {token}",
                         "Content-Type": "application/json",

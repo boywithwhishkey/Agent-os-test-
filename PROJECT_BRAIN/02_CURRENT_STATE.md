@@ -5,6 +5,20 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — GOOGLE SHEETS CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Google Sheets now has a first-class OAuth connector
+  using the shared tenant-scoped token/refresh path. It exposes canonical
+  `identity.account.read`, bounded `data.record.read` range reads, and bounded
+  `data.record.write` row appends through the broker's approval/audit contract.
+- Spreadsheet ids, A1 ranges, row/column counts, scalar cell types, and payload
+  size are validated before any provider request; URLs and provider methods are
+  fixed server-side. The frontend catalog has a dedicated Sheets icon and
+  honest configured/connected status.
+- Focused Google/catalog checks: **49 passed, 1 warning** (including the
+  Sheets read/append contract and shared OAuth configuration). No Google
+  credential was available, so live validation remains pending.
+
 ## SESSION 2026-09-07 — PROVIDER-SPECIFIC META WEBHOOKS
 
 - **IMPLEMENTED_TESTED:** verified Meta callbacks now support dedicated

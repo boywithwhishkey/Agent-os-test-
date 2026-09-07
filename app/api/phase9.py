@@ -269,6 +269,10 @@ def _google_drive_live_status() -> dict:
     return _oauth_live_status("google_drive")
 
 
+def _google_sheets_live_status() -> dict:
+    return _oauth_live_status("google_sheets")
+
+
 def _jira_live_status() -> dict:
     return _oauth_live_status("jira")
 
@@ -384,6 +388,7 @@ _LIVE_STATUS_RESOLVERS = {
     "gmail": _gmail_live_status,
     "google_calendar": _google_calendar_live_status,
     "google_drive": _google_drive_live_status,
+    "google_sheets": _google_sheets_live_status,
     "jira": _jira_live_status,
     "dropbox": _dropbox_live_status,
     "onedrive": _onedrive_live_status,

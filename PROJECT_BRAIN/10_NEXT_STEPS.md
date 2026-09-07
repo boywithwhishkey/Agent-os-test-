@@ -59,6 +59,8 @@ CLOSED; do not re-litigate them.
 ## CONNECTOR PLATFORM — WHAT TO DO NEXT (updated 2026-09-07)
 
 The active expansion goal is tracked in `PROJECT_BRAIN/11_CONNECTOR_ROADMAP.md`.
+Google Sheets now has a shared OAuth adapter with bounded range reads and
+approval-governed row appends; it remains credential-gated for live validation.
 Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel remains read-only; Linear now has
@@ -95,7 +97,7 @@ read permissions is required for live validation.
 Vercel now has an approval-gated deploy-hook trigger; configure a staging-safe
 `VERCEL_DEPLOY_HOOK_URL` for live use.
 Phase 1 continues with Meta inbound/webhook capabilities; Stripe now has a
-read-only foundation, Google Gmail/Calendar/Drive and Jira now have shared
+read-only foundation, Google Gmail/Calendar/Drive/Sheets and Jira now have shared
 OAuth read-only adapters, followed by Amazon SP-API sandbox/order capabilities.
 Every entry
 must pass the adapter/capability/approval/audit/test/live-validation contract;

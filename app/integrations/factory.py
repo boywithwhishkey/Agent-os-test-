@@ -127,6 +127,10 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
         "name": "Google Drive",
         "requires": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     },
+    IntegrationProvider.GOOGLE_SHEETS: {
+        "name": "Google Sheets",
+        "requires": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+    },
     IntegrationProvider.JIRA: {
         "name": "Jira",
         "requires": [
@@ -300,7 +304,7 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
         from app.integrations.amazon import AmazonSPAPIAdapter
 
         return AmazonSPAPIAdapter()
-    if normalized in {"gmail", "google_calendar", "google_drive"}:
+    if normalized in {"gmail", "google_calendar", "google_drive", "google_sheets"}:
         from app.integrations.google import GoogleOAuthAdapter
         from app.integrations.oauth.registry import oauth_connection_store
 
@@ -465,6 +469,7 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
         IntegrationProvider.GMAIL,
         IntegrationProvider.GOOGLE_CALENDAR,
         IntegrationProvider.GOOGLE_DRIVE,
+        IntegrationProvider.GOOGLE_SHEETS,
     }:
         return bool(settings.google_oauth_client_id and settings.google_oauth_client_secret)
     if provider == IntegrationProvider.JIRA:

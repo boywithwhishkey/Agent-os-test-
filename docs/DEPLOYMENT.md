@@ -159,8 +159,9 @@ the database environment stamp still refuses a cross-environment `DATABASE_URL`.
 
 ## 4. OAuth callback architecture
 
-Four providers are implemented (`app/integrations/oauth/config.py`):
-GitHub, Slack, Notion, GitLab. Callback route:
+OAuth providers are implemented in `app/integrations/oauth/config.py`, including
+GitHub, Slack, Notion, GitLab, Google Gmail/Calendar/Drive/Sheets, Jira,
+Dropbox, Microsoft, Zoom, Meta, HubSpot, and Salesforce. Callback route:
 
 ```
 {AGENT_OS_OAUTH_REDIRECT_BASE_URL}/api/v1/integrations/oauth/{provider}/callback
