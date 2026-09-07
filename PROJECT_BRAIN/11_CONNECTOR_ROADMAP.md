@@ -138,6 +138,9 @@ read is not claimed because webhook providers do not expose a shared read API.
 Todoist now has bounded `productivity.task.list` and approval-gated
 `productivity.task.create` routes with a server-side API token and request
 idempotency; live credentials remain unconfigured.
+Asana now has the same canonical task routes through a fixed configured
+workspace and Bearer token; workflow input cannot change workspace scope and
+live credentials remain unconfigured.
 Salesforce now has an OAuth identity/contact-list foundation with a
 server-configured instance URL; CRM mutations remain separately gated.
 Supabase now has a server-configured table read foundation, and Zapier has a

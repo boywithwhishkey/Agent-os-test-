@@ -2644,7 +2644,8 @@ build all clean.
 - Focused connector, capability, and broker checks for the AI/catalog update:
   **61 passed** (Linear's earlier focused set was 34).
   Todoist-focused adapter, broker, and catalog checks: **42 passed**.
-  The full gate after the Todoist connector work is **553 backend tests passed, 13
+  Asana-focused adapter, broker, and catalog checks: **46 passed**.
+  The full gate after the Asana connector work is **557 backend tests passed, 13
   skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
@@ -2675,6 +2676,8 @@ build all clean.
   configuration and are never accepted from workflow input.
 - Todoist now has a server-token adapter for bounded task listing and
   approval-gated task creation, with fixed API v1 routes and idempotency keys.
-- Verified local functional commits are `a8b3908`, `3104b1c`, `931bc56`, and
-  `7f4ffdb`. GitHub publish is pending explicit destination confirmation;
-  Ride&Glide and production remain untouched.
+- Asana now has a fixed-workspace Bearer adapter for bounded task listing and
+  approval-gated task creation; workflow input cannot select another workspace.
+- Verified local functional commits are `a8b3908`, `3104b1c`, `931bc56`,
+  `7f4ffdb`, and `451b1c8`. These are pushed to the isolated branch and
+  `staging`; Ride&Glide and production remain untouched.
