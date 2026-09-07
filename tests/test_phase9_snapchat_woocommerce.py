@@ -3,6 +3,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
+from app.integrations.oauth.store import OAuthConnectionStore
 from app.integrations.snapchat import SnapchatMarketingAdapter
 from app.integrations.woocommerce import WooCommerceAdapter
 
@@ -52,6 +53,33 @@ async def test_snapchat_lists_ad_accounts_without_enabling_mutations() -> None:
         "provider": "snapchat",
         "ad_accounts": [{"id": "ad-1", "name": "Demo"}],
     }
+
+
+@pytest.mark.anyio
+async def test_snapchat_uses_connected_oauth_token_for_marketing_api() -> None:
+    store = OAuthConnectionStore()
+    store.record_success(
+        "snapchat",
+        access_token="snap-oauth-token",
+        refresh_token="snap-refresh-token",
+        token_type="bearer",
+        scope="snapchat-marketing-api",
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1/me/organizations"
+        assert request.headers["Authorization"] == "Bearer snap-oauth-token"
+        return httpx.Response(200, json={"request_status": "SUCCESS", "organizations": []})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        result = await SnapchatMarketingAdapter(connection_store=store, client=client).run_capability(
+            "identity.account.read", {}
+        )
+    finally:
+        await client.aclose()
+
+    assert result["request_status"] == "SUCCESS"
 
 
 @pytest.mark.anyio

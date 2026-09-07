@@ -138,6 +138,15 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_secret_env="ZOOM_OAUTH_CLIENT_SECRET",
         token_auth="basic",
     ),
+    "snapchat": OAuthProviderConfig(
+        id="snapchat",
+        name="Snapchat",
+        authorize_url="https://accounts.snapchat.com/login/oauth2/authorize",
+        token_url="https://accounts.snapchat.com/login/oauth2/access_token",
+        scope="snapchat-marketing-api",
+        client_id_env="SNAPCHAT_OAUTH_CLIENT_ID",
+        client_secret_env="SNAPCHAT_OAUTH_CLIENT_SECRET",
+    ),
     "hubspot": OAuthProviderConfig(
         id="hubspot",
         name="HubSpot",

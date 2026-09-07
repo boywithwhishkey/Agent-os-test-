@@ -212,6 +212,12 @@ def _stripe_live_status() -> dict:
 
 def _snapchat_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "snapchat")
+    # OAuth is the preferred path; keep the legacy server token usable while
+    # reporting its status from the explicit connection test instead.
+    if get_oauth_provider("snapchat") is not None and (
+        settings.snapchat_oauth_client_id or settings.snapchat_oauth_client_secret
+    ):
+        return _oauth_live_status("snapchat")
     return _status_store_backed_status("snapchat", configured=is_provider_configured(provider))
 
 

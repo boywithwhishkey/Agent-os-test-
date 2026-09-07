@@ -125,6 +125,12 @@ def test_disconnect_requires_auth_and_clears_connection(monkeypatch):
     "provider_id,client_id_setting,client_secret_setting,authorize_prefix",
     [
         ("slack", "slack_oauth_client_id", "slack_oauth_client_secret", "https://slack.com/oauth/v2/authorize?"),
+        (
+            "snapchat",
+            "snapchat_oauth_client_id",
+            "snapchat_oauth_client_secret",
+            "https://accounts.snapchat.com/login/oauth2/authorize?",
+        ),
         ("notion", "notion_oauth_client_id", "notion_oauth_client_secret", "https://api.notion.com/v1/oauth/authorize?"),
         ("gitlab", "gitlab_oauth_client_id", "gitlab_oauth_client_secret", "https://gitlab.com/oauth/authorize?"),
     ],

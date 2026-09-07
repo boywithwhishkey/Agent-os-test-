@@ -87,7 +87,7 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
     },
     IntegrationProvider.SNAPCHAT: {
         "name": "Snapchat",
-        "requires": ["SNAPCHAT_ACCESS_TOKEN"],
+        "requires": ["SNAPCHAT_OAUTH_CLIENT_ID", "SNAPCHAT_OAUTH_CLIENT_SECRET"],
     },
     IntegrationProvider.WOOCOMMERCE: {
         "name": "WooCommerce",
@@ -278,9 +278,10 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
 
         return StripeAdapter()
     if normalized == "snapchat":
+        from app.integrations.oauth.registry import oauth_connection_store
         from app.integrations.snapchat import SnapchatMarketingAdapter
 
-        return SnapchatMarketingAdapter()
+        return SnapchatMarketingAdapter(connection_store=oauth_connection_store)
     if normalized == "woocommerce":
         from app.integrations.woocommerce import WooCommerceAdapter
 
@@ -421,7 +422,10 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
     if provider == IntegrationProvider.STRIPE:
         return bool(settings.stripe_secret_key)
     if provider == IntegrationProvider.SNAPCHAT:
-        return bool(settings.snapchat_access_token)
+        return bool(
+            settings.snapchat_access_token
+            or (settings.snapchat_oauth_client_id and settings.snapchat_oauth_client_secret)
+        )
     if provider == IntegrationProvider.WOOCOMMERCE:
         return bool(
             settings.woocommerce_store_url

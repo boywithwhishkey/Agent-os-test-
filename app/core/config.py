@@ -87,6 +87,12 @@ class Settings(BaseSettings):
     shopify_api_version: str = Field(default="2025-07", validation_alias="SHOPIFY_API_VERSION")
     stripe_secret_key: str | None = Field(default=None, validation_alias="STRIPE_SECRET_KEY")
     snapchat_access_token: str | None = Field(default=None, validation_alias="SNAPCHAT_ACCESS_TOKEN")
+    snapchat_oauth_client_id: str | None = Field(
+        default=None, validation_alias="SNAPCHAT_OAUTH_CLIENT_ID"
+    )
+    snapchat_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="SNAPCHAT_OAUTH_CLIENT_SECRET"
+    )
     woocommerce_store_url: str | None = Field(default=None, validation_alias="WOOCOMMERCE_STORE_URL")
     woocommerce_consumer_key: str | None = Field(
         default=None, validation_alias="WOOCOMMERCE_CONSUMER_KEY"

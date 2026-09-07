@@ -181,6 +181,7 @@ async def exchange_code(
             headers["Authorization"] = f"Basic {credentials}"
             payload["grant_type"] = "authorization_code"
         else:
+            payload["grant_type"] = "authorization_code"
             payload["client_id"] = client_id(config)
             payload["client_secret"] = secret
 

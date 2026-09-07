@@ -17,6 +17,7 @@ GITHUB = OAUTH_PROVIDERS["github"]
 SLACK = OAUTH_PROVIDERS["slack"]
 NOTION = OAUTH_PROVIDERS["notion"]
 GITLAB = OAUTH_PROVIDERS["gitlab"]
+SNAPCHAT = OAUTH_PROVIDERS["snapchat"]
 
 
 def test_build_authorize_url_includes_state_and_redirect(monkeypatch):
@@ -233,3 +234,32 @@ async def test_gitlab_exchange_code_success(monkeypatch):
         await service.exchange_code(GITLAB, code="the-code", connection_store=connection_store, client=client)
 
     assert connection_store.get("gitlab").connected is True
+
+
+@pytest.mark.asyncio
+async def test_snapchat_exchange_uses_standard_authorization_code_form(monkeypatch):
+    monkeypatch.setattr(settings, "snapchat_oauth_client_id", "client-123")
+    monkeypatch.setattr(settings, "snapchat_oauth_client_secret", "secret-456")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url == "https://accounts.snapchat.com/login/oauth2/access_token"
+        body = request.content.decode()
+        assert "grant_type=authorization_code" in body
+        assert "code=the-code" in body
+        assert "client_id=client-123" in body
+        return httpx.Response(
+            200,
+            json={
+                "access_token": "snap-access",
+                "refresh_token": "snap-refresh",
+                "token_type": "bearer",
+                "expires_in": 3600,
+            },
+        )
+
+    connection_store = OAuthConnectionStore()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await service.exchange_code(SNAPCHAT, code="the-code", connection_store=connection_store, client=client)
+
+    assert connection_store.get("snapchat").access_token == "snap-access"
+    assert connection_store.get("snapchat").refresh_token == "snap-refresh"

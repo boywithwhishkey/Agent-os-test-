@@ -8,6 +8,9 @@ import httpx
 from app.core.config import settings
 from app.integrations.base import CapabilityNotWired, IntegrationAdapter, unsupported_execute_result
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
+from app.integrations.oauth.config import OAUTH_PROVIDERS
+from app.integrations.oauth.service import OAuthExchangeError, request_with_oauth_refresh
+from app.integrations.oauth.store import OAuthConnectionStore
 
 
 class SnapchatMarketingAdapter(IntegrationAdapter):
@@ -17,12 +20,19 @@ class SnapchatMarketingAdapter(IntegrationAdapter):
         self,
         *,
         access_token: str | None = None,
+        connection_store: OAuthConnectionStore | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self.access_token = access_token or settings.snapchat_access_token or ""
+        self._connection_store = connection_store
         self._client = client
-        if not self.access_token.strip():
-            raise RuntimeError("SNAPCHAT_ACCESS_TOKEN is required")
+        if not self.access_token.strip() and not self._has_oauth_connection():
+            raise RuntimeError(
+                "SNAPCHAT_ACCESS_TOKEN or a connected Snapchat OAuth account is required"
+            )
+
+    def _has_oauth_connection(self) -> bool:
+        return bool(self._connection_store and self._connection_store.get("snapchat").access_token)
 
     async def execute(self, request: IntegrationRequest) -> IntegrationResult:
         return unsupported_execute_result(
@@ -55,12 +65,25 @@ class SnapchatMarketingAdapter(IntegrationAdapter):
         own_client = self._client is None
         client = self._client or httpx.AsyncClient()
         try:
-            response = await client.get(
-                "https://adsapi.snapchat.com/v1/me/organizations",
-                params={"with_ad_accounts": "true"},
-                headers={"Authorization": f"Bearer {self.access_token}"},
-                timeout=10.0,
-            )
+            async def send(token: str) -> httpx.Response:
+                return await client.get(
+                    "https://adsapi.snapchat.com/v1/me/organizations",
+                    params={"with_ad_accounts": "true"},
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=10.0,
+                )
+
+            if self.access_token.strip():
+                response = await send(self.access_token)
+            elif self._connection_store is not None:
+                response = await request_with_oauth_refresh(
+                    OAUTH_PROVIDERS["snapchat"],
+                    connection_store=self._connection_store,
+                    client=client,
+                    send=send,
+                )
+            else:  # pragma: no cover - constructor prevents this state
+                raise OAuthExchangeError("Not authorized yet — connect a Snapchat account")
             try:
                 body = response.json()
             except ValueError as exc:
