@@ -159,6 +159,38 @@ async def test_configured_oauth_app_without_account_is_explicitly_not_connected(
     assert audit.rows[-1]["success"] is False
 
 
+async def test_connected_provider_wins_over_configured_oauth_app_without_account(monkeypatch) -> None:
+    """A disconnected OAuth app must not shadow a ready sibling connector."""
+
+    async def perform(connector, capability, arguments):
+        assert capability.id == "chat.message.send"
+        return {"connector": connector, "ok": True}
+
+    configured = {"slack", "telegram"}
+    monkeypatch.setattr(
+        "app.integrations.broker._configured",
+        lambda connector_id: connector_id in configured,
+    )
+    monkeypatch.setattr(
+        "app.integrations.broker._oauth_connection_missing",
+        lambda connector_id: connector_id == "slack",
+    )
+    approvals = InMemoryApprovalStore()
+    grant = await approvals.issue("chat.message.send", "operator", "test")
+    broker, audit = _broker(perform, approvals)
+
+    result = await broker.execute(
+        "chat.message.send",
+        arguments={"text": "hello"},
+        approval_id=grant.approval_id,
+    )
+
+    assert result.outcome is BrokerOutcome.OK
+    assert result.connector == "telegram"
+    assert result.output == {"connector": "telegram", "ok": True}
+    assert audit.rows[-1]["success"] is True
+
+
 async def test_a_capability_with_no_wired_operation_is_honest_about_it(monkeypatch) -> None:
     # Every OAuth adapter today only verifies the connection. Routing must say
     # that, not pretend the call happened.

@@ -87,8 +87,11 @@ class BrokerResult:
 def providers_for(capability_id: str) -> list[str]:
     """Connector ids that declare this capability and have an adapter.
 
-    Ordered: connectors that are configured come first, so the broker picks
-    something that can actually work rather than the first alphabetically.
+    Ordered: connectors that are configured *and connected* come first, then
+    configured-but-disconnected connectors, then unconfigured connectors. A
+    capability often has several providers (for example chat send), and a
+    configured OAuth app without a linked account must not shadow a different
+    connector that is ready to execute the same canonical capability.
     System infrastructure is excluded — PostgreSQL and Redis are the running
     system, not a provider an agent routes user work to.
     """
@@ -99,7 +102,14 @@ def providers_for(capability_id: str) -> list[str]:
         and spec.kind is not ConnectorKind.SYSTEM_INFRASTRUCTURE
         and capability_id in spec.canonical_capabilities
     ]
-    return sorted(candidates, key=lambda cid: (not _configured(cid), cid))
+    return sorted(
+        candidates,
+        key=lambda cid: (
+            not _configured(cid),
+            _oauth_connection_missing(cid) if _configured(cid) else True,
+            cid,
+        ),
+    )
 
 
 def _configured(connector_id: str) -> bool:
@@ -194,8 +204,16 @@ class ConnectorBroker:
             await self._record(result, correlation_id)
             return result
 
-        connector = providers[0]
-        if not _configured(connector):
+        configured = [cid for cid in providers if _configured(cid)]
+        connected = [
+            cid for cid in configured if not _oauth_connection_missing(cid)
+        ]
+
+        # Prefer a connector that can execute now. This matters when, for
+        # example, Slack's OAuth app is configured but not authorized while a
+        # Telegram bot is already connected for the same chat capability.
+        connector = (connected or configured or providers)[0]
+        if not configured:
             missing = _requirements(connector)
             result = BrokerResult(
                 outcome=BrokerOutcome.NOT_CONNECTED,
@@ -211,7 +229,7 @@ class ConnectorBroker:
             await self._record(result, correlation_id)
             return result
 
-        if _oauth_connection_missing(connector):
+        if connector not in connected:
             result = BrokerResult(
                 outcome=BrokerOutcome.NOT_CONNECTED,
                 capability=capability_id,
