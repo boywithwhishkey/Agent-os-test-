@@ -99,6 +99,9 @@ creating one-off integrations.
   stable tenant id and provider env-name. A non-default tenant without a
   scoped credential is reported as not configured rather than inheriting the
   operator's token. Values remain server-side and are never serialized.
+  This selector is wired through AI, automation, chat webhook, cloud,
+  deployment, data, social, commerce, and productivity adapters; infrastructure
+  database/queue settings remain deployment-scoped by design.
 - Adapter accepts canonical capability arguments only and never an arbitrary
   provider URL or operation name from an agent.
 - Read, write, and high-risk operations use the shared capability risk model;

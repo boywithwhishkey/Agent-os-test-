@@ -74,6 +74,8 @@ keys before enabling multi-tenant callbacks; live staging smoke tests remain.
 API-token connectors now accept the server-held
 `AGENT_OS_CONNECTOR_CREDENTIALS_JSON` tenant map; populate it before enabling
 non-default tenants, then validate rotation and restart behavior in staging.
+The selector now covers AI, automation, chat webhook, cloud/deployment, Linear,
+and Supabase adapters in addition to the commerce/social/productivity set.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
 Render now has fixed service listing and governed deploy-trigger operations;

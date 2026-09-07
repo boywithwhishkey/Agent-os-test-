@@ -5,6 +5,24 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — TENANT-SCOPED API CONNECTOR COVERAGE
+
+- **IMPLEMENTED_TESTED:** the server-held tenant credential selector now also
+  covers AI providers (Gemini/OpenAI/Anthropic), automation webhooks (n8n,
+  Make, Zapier), chat webhooks (Discord/Teams), cloud/deployment providers
+  (Cloudflare, Render, Vercel), Linear, and Supabase. Their adapter factories
+  and configuration checks resolve the active tenant before claiming a
+  connector is configured.
+- A non-default tenant without a scoped value fails closed as unconfigured;
+  only the configured operator tenant may use legacy global settings. This
+  closes the remaining API-token connector fallback path without changing
+  OAuth app-level credentials or infrastructure backends.
+- Focused expanded-provider checks: **52 passed**. Full backend gate:
+  **623 passed, 13 skipped, 1 warning**; frontend **109 passed**, typecheck,
+  lint (9 pre-existing warnings), and production build passed.
+- **NOT LIVE-VALIDATED:** tenant credential rotation and real two-tenant
+  staging calls remain pending deployment secrets and provider accounts.
+
 ## SESSION 2026-09-07 — TENANT-SCOPED API CONNECTOR CREDENTIALS
 
 - **IMPLEMENTED_TESTED:** server-held `AGENT_OS_CONNECTOR_CREDENTIALS_JSON`
