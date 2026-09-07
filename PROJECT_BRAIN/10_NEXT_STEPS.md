@@ -106,8 +106,10 @@ The capability layer, risk classification and SSRF guard are in
    on the current store.
 4. **Finish the remaining OAuth provider depth** (GitHub, GitLab, Slack,
    Notion, and the Google/Microsoft providers) by mapping their declared
-   capabilities to real operations. Linear issue writes are now the reference
-   for a governed GraphQL mutation; Vercel deploy mutations remain disabled.
+   capabilities to real operations. Outlook mail drafts/send and the full
+   calendar event lifecycle are now wired; Linear issue writes remain the
+   reference for a governed GraphQL mutation; Vercel deploy mutations remain
+   disabled.
 5. **Then** deepen the complete provider set systematically: tenant isolation,
    provider-specific event expansion,
    provider sandbox runs, and real credential-backed live validation. Gmail,
@@ -290,7 +292,7 @@ In rough priority order:
   never allowed to block correctness work.
 
 ## 3. Standing verification commands
-- Backend: `uv run pytest tests/ -q` (561 passing, 13 skipped, verified
+- Backend: `uv run pytest tests/ -q` (566 passing, 13 skipped, verified
   2026-09-07).
 - Frontend from `frontend/`: `pnpm typecheck && pnpm lint && pnpm test &&
   pnpm build` (109 passing, typecheck/build clean, 9 pre-existing lint

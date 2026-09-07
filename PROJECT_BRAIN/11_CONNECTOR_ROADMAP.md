@@ -141,6 +141,11 @@ idempotency; live credentials remain unconfigured.
 Asana now has the same canonical task routes through a fixed configured
 workspace and Bearer token; workflow input cannot change workspace scope and
 live credentials remain unconfigured.
+Outlook now has the shared Microsoft OAuth configuration plus bounded Graph
+mail listing/read, draft creation, approval-gated send, and calendar
+list/create/update/delete routes. Existing connections must re-authorize for
+the expanded `Mail.ReadWrite` scope; no Microsoft OAuth credentials were
+available for live validation.
 Razorpay now has fixed `commerce.payment.list` and `commerce.order.list`
 operations plus approval-gated `commerce.refund.create`; the key pair stays
 server-side and live payment credentials remain unconfigured.

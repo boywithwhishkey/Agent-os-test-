@@ -5,6 +5,26 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — OUTLOOK GRAPH MAIL AND CALENDAR LIFECYCLE
+
+- **IMPLEMENTED_TESTED:** Microsoft Outlook now uses the shared OAuth flow and
+  fixed Microsoft Graph v1.0 routes for account identity, bounded mail listing
+  and reads, draft creation, approval-gated send, bounded event listing,
+  creation, update, and approval-gated deletion. Drafts use the least
+  privilege `Mail.ReadWrite` scope; calendar mutations use
+  `Calendars.ReadWrite`.
+- Inputs are identifier-, recipient-, size-, and ISO-8601-validated; provider
+  paths and operations are never workflow-controlled. The canonical catalog
+  now declares the complete implemented mail/calendar lifecycle and the shared
+  broker supplies risk/approval/audit enforcement.
+- Focused Outlook adapter tests: **5 passed**. Full local gate after this
+  change: **566 backend tests passed, 13 skipped, 1 warning; 109 frontend tests
+  passed; typecheck, lint, and production build passed**. GitHub Actions CI
+  also passed on the isolated `staging` branch.
+- **CREDENTIAL_REQUIRED:** no Microsoft OAuth client or user token was
+  available here; no live Graph request was made. Existing Outlook connections
+  must re-authorize to receive the expanded `Mail.ReadWrite` scope.
+
 ## SESSION 2026-09-05 — SLACK OAUTH MESSAGE CAPABILITIES
 
 - **IMPLEMENTED_TESTED:** Slack now uses the shared OAuth flow for identity,
@@ -2646,8 +2666,9 @@ build all clean.
   Todoist-focused adapter, broker, and catalog checks: **42 passed**.
   Asana-focused adapter, broker, and catalog checks: **46 passed**.
   Razorpay-focused adapter, broker, and catalog checks: **42 passed**.
-  The full gate after the Razorpay connector work is **561 backend tests passed, 13
-  skipped, 1 warning; 109 frontend tests passed; typecheck and production
+  Outlook-focused adapter and catalog checks: **5 passed**.
+  The full gate after the Outlook lifecycle work is **566 backend tests passed,
+  13 skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
   so no live Linear request or live credential validation was performed.
