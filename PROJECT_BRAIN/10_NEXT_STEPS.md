@@ -82,7 +82,10 @@ the goal is not to inflate the catalog with unconnected cards.
 The broker exists now, so wiring a provider operation is a small change
 against a governed path rather than an architectural one: implement
 `run_capability` on the adapter, and the risk, approval, routing and audit are
-already there. `app/integrations/openai.py` is the worked example.
+already there. The authenticated runtime path is now
+`POST /api/v1/integrations/capabilities/execute`; approval grants are issued
+through its companion `/capabilities/approvals` endpoint and are single-use.
+`app/integrations/openai.py` is the worked example.
 
 
 

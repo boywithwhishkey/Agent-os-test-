@@ -5,6 +5,27 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — GOVERNED CAPABILITY API RUNTIME PATH
+
+- **IMPLEMENTED_TESTED:** The canonical connector broker is now reachable at
+  authenticated `POST /api/v1/integrations/capabilities/execute`. Requests
+  contain only a canonical capability and bounded arguments; provider choice
+  stays inside the broker. The route runs the configured adapter dispatch,
+  shared `ToolPolicy` approval gate, correlation propagation, status update,
+  and audit record, returning explicit `ok`, `not_connected`,
+  `approval_required`, `no_provider`, or provider-error outcomes.
+- Added authenticated single-use approval issuance at
+  `POST /api/v1/integrations/capabilities/approvals`. Unknown capability ids
+  are rejected before an approval is created, and the execution payload
+  rejects provider overrides so agents cannot bypass canonical routing.
+- Focused capability API checks: **5 passed**. Full local gate after this
+  change: **589 backend tests passed, 13 skipped, 1 warning; 109 frontend
+  tests passed; typecheck, lint, and production build passed**. CI has not
+  been run for this commit yet.
+- **CREDENTIAL_REQUIRED:** no provider credentials were added; live connector
+  validation remains unchanged. PostgreSQL/Redis durable execution remains
+  deployment-configured, while local verification skips them when unavailable.
+
 ## SESSION 2026-09-07 — OUTLOOK GRAPH MAIL AND CALENDAR LIFECYCLE
 
 - **IMPLEMENTED_TESTED:** Microsoft Outlook now uses the shared OAuth flow and

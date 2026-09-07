@@ -115,6 +115,9 @@ separately gated.
 Linear now has fixed GraphQL identity/issue-list operations plus governed
 `tracker.issue.create` and `tracker.issue.update` mutations. Those writes remain
 credential-gated and require the shared broker approval/audit path at runtime.
+The broker is now exposed through authenticated canonical capability execution
+and single-use approval endpoints; callers cannot select a provider, and every
+refusal or provider result is correlated and audited.
 Google Drive, Dropbox, and OneDrive now have bounded `files.file.read`
 operations; Dropbox connections must re-authorize for the expanded content-read
 scope.
