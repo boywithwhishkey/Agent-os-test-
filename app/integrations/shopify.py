@@ -89,6 +89,14 @@ class ShopifyAdminAdapter(IntegrationAdapter):
             return created
         raise CapabilityNotWired(f"{type(self).__name__} has no operation for {capability_id}")
 
+    async def test_connection(self) -> tuple[bool, float | None, str | None]:
+        started = time.perf_counter()
+        try:
+            await self.run_capability("identity.account.read", {})
+            return True, (time.perf_counter() - started) * 1000, None
+        except RuntimeError as exc:
+            return False, (time.perf_counter() - started) * 1000, str(exc)
+
     @staticmethod
     def _product_payload(arguments: dict[str, Any]) -> dict[str, Any]:
         title = arguments.get("title")
@@ -162,11 +170,3 @@ class ShopifyAdminAdapter(IntegrationAdapter):
 
 def _snake_case(value: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", value).lower()
-
-    async def test_connection(self) -> tuple[bool, float | None, str | None]:
-        started = time.perf_counter()
-        try:
-            await self.run_capability("identity.account.read", {})
-            return True, (time.perf_counter() - started) * 1000, None
-        except RuntimeError as exc:
-            return False, (time.perf_counter() - started) * 1000, str(exc)

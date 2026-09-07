@@ -105,6 +105,25 @@ async def test_shopify_product_create_uses_mutation_variables() -> None:
     }
 
 
+@pytest.mark.anyio
+async def test_shopify_connection_check_uses_identity_query() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert "shop" in request.content.decode()
+        return httpx.Response(200, json={"data": {"shop": {"id": "s1"}}})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        connected, latency_ms, error = await ShopifyAdminAdapter(
+            access_token=TOKEN, shop_domain=DOMAIN, client=client
+        ).test_connection()
+    finally:
+        await client.aclose()
+
+    assert connected is True
+    assert isinstance(latency_ms, float)
+    assert error is None
+
+
 @pytest.mark.parametrize(
     ("arguments", "message"),
     [
