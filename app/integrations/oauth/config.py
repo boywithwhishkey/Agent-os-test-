@@ -179,6 +179,15 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="MICROSOFT_OAUTH_CLIENT_ID",
         client_secret_env="MICROSOFT_OAUTH_CLIENT_SECRET",
     ),
+    "microsoft_todo": OAuthProviderConfig(
+        id="microsoft_todo",
+        name="Microsoft To Do",
+        authorize_url="https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        token_url="https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        scope="openid profile email User.Read Tasks.ReadWrite offline_access",
+        client_id_env="MICROSOFT_OAUTH_CLIENT_ID",
+        client_secret_env="MICROSOFT_OAUTH_CLIENT_SECRET",
+    ),
     "zoom": OAuthProviderConfig(
         id="zoom",
         name="Zoom",

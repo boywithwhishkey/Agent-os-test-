@@ -20,6 +20,7 @@ GITLAB = OAUTH_PROVIDERS["gitlab"]
 SNAPCHAT = OAUTH_PROVIDERS["snapchat"]
 PINTEREST = OAUTH_PROVIDERS["pinterest"]
 REDDIT = OAUTH_PROVIDERS["reddit"]
+MICROSOFT_TODO = OAUTH_PROVIDERS["microsoft_todo"]
 
 
 def test_build_authorize_url_includes_state_and_redirect(monkeypatch):
@@ -52,6 +53,12 @@ def test_reddit_oauth_metadata_uses_basic_exchange_and_permanent_access():
     assert REDDIT.extra_authorize_params["duration"] == "permanent"
     assert "submit" in REDDIT.scope
     assert REDDIT.extra_token_headers["User-Agent"].startswith("THYNACT/")
+
+
+def test_microsoft_todo_oauth_metadata_is_separate_from_outlook():
+    assert MICROSOFT_TODO.client_id_env == "MICROSOFT_OAUTH_CLIENT_ID"
+    assert "Tasks.ReadWrite" in MICROSOFT_TODO.scope
+    assert "offline_access" in MICROSOFT_TODO.scope
 
 
 def test_state_store_is_single_use():

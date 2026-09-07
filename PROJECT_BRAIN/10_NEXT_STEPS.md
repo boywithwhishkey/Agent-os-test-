@@ -72,6 +72,9 @@ credential-gated.
 Google Tasks now reuses shared Google OAuth for bounded task reads and
 approval-governed task creation; the Tasks scope and live authorization remain
 credential-gated.
+Microsoft To Do now has a separate delegated Tasks.ReadWrite OAuth connector
+for bounded reads and approval-governed creation; live Graph authorization
+remains credential-gated.
 Telegram, WhatsApp Cloud, Instagram, and Teams now have tested text foundations
 but remain credential-gated. Shopify, Snapchat, and WooCommerce now have
 tested read-only foundations. Vercel remains read-only; Linear now has

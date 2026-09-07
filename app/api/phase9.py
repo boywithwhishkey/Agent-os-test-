@@ -301,6 +301,10 @@ def _outlook_live_status() -> dict:
     return _oauth_live_status("outlook")
 
 
+def _microsoft_todo_live_status() -> dict:
+    return _oauth_live_status("microsoft_todo")
+
+
 def _linkedin_live_status() -> dict:
     return _oauth_live_status("linkedin")
 
@@ -412,6 +416,7 @@ _LIVE_STATUS_RESOLVERS = {
     "hubspot": _hubspot_live_status,
     "salesforce": _salesforce_live_status,
     "outlook": _outlook_live_status,
+    "microsoft_todo": _microsoft_todo_live_status,
     "linkedin": _linkedin_live_status,
     "pinterest": _pinterest_live_status,
     "reddit": _reddit_live_status,

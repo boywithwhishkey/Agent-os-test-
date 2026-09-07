@@ -5,6 +5,15 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — MICROSOFT TO DO CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Microsoft To Do now has a separate Microsoft OAuth
+  connector with account verification, bounded task-list reads, and
+  approval-governed task creation through Graph v1.0. It requests the
+  delegated `Tasks.ReadWrite` scope independently from Outlook.
+- No Microsoft app credentials were available, so live Graph validation remains
+  pending.
+
 ## SESSION 2026-09-07 — GOOGLE TASKS CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Google Tasks now reuses the shared Google OAuth

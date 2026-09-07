@@ -44,6 +44,9 @@ without that loop remain metadata only.
 10. Google Tasks — shared Google OAuth account verification, bounded task-list
     reads, and approval-gated task creation are implemented; Google consent
     verification and live credentials remain pending.
+11. Microsoft To Do — separate Microsoft OAuth account verification, bounded
+    task reads, and approval-gated task creation are implemented; live Graph
+    authorization remains pending.
 
 ### Commerce and payments
 

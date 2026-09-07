@@ -53,6 +53,7 @@ class IntegrationProvider(StrEnum):
     ZOOM = "zoom"
     RAZORPAY = "razorpay"
     OUTLOOK = "outlook"
+    MICROSOFT_TODO = "microsoft_todo"
 
 
 class IntegrationRequest(BaseModel):
