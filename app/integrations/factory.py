@@ -67,11 +67,11 @@ _PROVIDER_META: dict[IntegrationProvider, dict[str, object]] = {
     },
     IntegrationProvider.WHATSAPP: {
         "name": "WhatsApp Cloud",
-        "requires": ["META_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID"],
+        "requires": ["META_OAUTH_CLIENT_ID", "META_OAUTH_CLIENT_SECRET", "WHATSAPP_PHONE_NUMBER_ID"],
     },
     IntegrationProvider.INSTAGRAM: {
         "name": "Instagram",
-        "requires": ["META_ACCESS_TOKEN", "INSTAGRAM_BUSINESS_ACCOUNT_ID"],
+        "requires": ["META_OAUTH_CLIENT_ID", "META_OAUTH_CLIENT_SECRET", "INSTAGRAM_BUSINESS_ACCOUNT_ID"],
     },
     IntegrationProvider.TEAMS: {
         "name": "Microsoft Teams",
@@ -258,13 +258,15 @@ def build_integration_adapter(provider: str) -> IntegrationAdapter:
 
         return TelegramBotAdapter()
     if normalized == "whatsapp":
+        from app.integrations.oauth.registry import oauth_connection_store
         from app.integrations.whatsapp import WhatsAppCloudAdapter
 
-        return WhatsAppCloudAdapter()
+        return WhatsAppCloudAdapter(connection_store=oauth_connection_store)
     if normalized == "instagram":
         from app.integrations.instagram import InstagramGraphAdapter
+        from app.integrations.oauth.registry import oauth_connection_store
 
-        return InstagramGraphAdapter()
+        return InstagramGraphAdapter(connection_store=oauth_connection_store)
     if normalized == "teams":
         from app.integrations.teams import TeamsWebhookAdapter
 
@@ -412,9 +414,21 @@ def is_provider_configured(provider: IntegrationProvider) -> bool:
     if provider == IntegrationProvider.TELEGRAM:
         return bool(settings.telegram_bot_token)
     if provider == IntegrationProvider.WHATSAPP:
-        return bool(settings.meta_access_token and settings.whatsapp_phone_number_id)
+        return bool(
+            settings.whatsapp_phone_number_id
+            and (
+                settings.meta_access_token
+                or (settings.meta_oauth_client_id and settings.meta_oauth_client_secret)
+            )
+        )
     if provider == IntegrationProvider.INSTAGRAM:
-        return bool(settings.meta_access_token and settings.instagram_business_account_id)
+        return bool(
+            settings.instagram_business_account_id
+            and (
+                settings.meta_access_token
+                or (settings.meta_oauth_client_id and settings.meta_oauth_client_secret)
+            )
+        )
     if provider == IntegrationProvider.TEAMS:
         return bool(settings.teams_webhook_url)
     if provider == IntegrationProvider.SHOPIFY:

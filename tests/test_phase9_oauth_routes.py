@@ -131,6 +131,18 @@ def test_disconnect_requires_auth_and_clears_connection(monkeypatch):
             "snapchat_oauth_client_secret",
             "https://accounts.snapchat.com/login/oauth2/authorize?",
         ),
+        (
+            "whatsapp",
+            "meta_oauth_client_id",
+            "meta_oauth_client_secret",
+            "https://www.facebook.com/v23.0/dialog/oauth?",
+        ),
+        (
+            "instagram",
+            "meta_oauth_client_id",
+            "meta_oauth_client_secret",
+            "https://www.facebook.com/v23.0/dialog/oauth?",
+        ),
         ("notion", "notion_oauth_client_id", "notion_oauth_client_secret", "https://api.notion.com/v1/oauth/authorize?"),
         ("gitlab", "gitlab_oauth_client_id", "gitlab_oauth_client_secret", "https://gitlab.com/oauth/authorize?"),
     ],
@@ -142,6 +154,10 @@ def test_generic_oauth_routes_work_for_every_registered_provider(
     proves it for Slack/Notion/GitLab, not just the GitHub example above."""
     monkeypatch.setattr(settings, client_id_setting, "client-123")
     monkeypatch.setattr(settings, client_secret_setting, "secret-456")
+    if provider_id == "whatsapp":
+        monkeypatch.setattr(settings, "whatsapp_phone_number_id", "phone-1")
+    elif provider_id == "instagram":
+        monkeypatch.setattr(settings, "instagram_business_account_id", "ig-1")
 
     authorize = client.get(f"/api/v1/integrations/oauth/{provider_id}/authorize", headers=AUTH)
     assert authorize.status_code == 200

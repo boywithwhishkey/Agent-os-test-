@@ -6,6 +6,7 @@ import httpx
 import pytest
 
 from app.integrations.instagram import InstagramGraphAdapter
+from app.integrations.oauth.store import OAuthConnectionStore
 from app.integrations.whatsapp import WhatsAppCloudAdapter
 
 TOKEN = "meta-secret-token"
@@ -92,6 +93,58 @@ async def test_whatsapp_template_send_uses_explicit_bounded_fields() -> None:
 
 
 @pytest.mark.anyio
+async def test_whatsapp_uses_connected_oauth_token_when_static_token_is_absent() -> None:
+    store = OAuthConnectionStore()
+    store.record_success("whatsapp", access_token="oauth-meta-token", token_type="bearer", scope="whatsapp_business_messaging")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["Authorization"] == "Bearer oauth-meta-token"
+        return httpx.Response(200, json={"id": "phone-1", "verified_name": "Demo"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await WhatsAppCloudAdapter(
+            phone_number_id="phone-1", connection_store=store, client=client
+        ).run_capability("identity.account.read", {})
+
+    assert result["id"] == "phone-1"
+
+
+@pytest.mark.anyio
+async def test_meta_graph_refreshes_expired_oauth_token_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("app.integrations.oauth.service.settings.meta_oauth_client_id", "meta-client")
+    monkeypatch.setattr("app.integrations.oauth.service.settings.meta_oauth_client_secret", "meta-secret")
+    store = OAuthConnectionStore()
+    store.record_success(
+        "whatsapp",
+        access_token="expired-meta-token",
+        refresh_token="refresh-meta-token",
+        token_type="bearer",
+        scope="whatsapp_business_messaging",
+    )
+    calls: list[str] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path)
+        if request.url.path.endswith("/phone-1") and len([p for p in calls if p.endswith("/phone-1")]) == 1:
+            return httpx.Response(401, json={"error": {"message": "expired"}})
+        if request.url.path.endswith("/oauth/access_token"):
+            assert b"grant_type=refresh_token" in request.content
+            assert b"refresh_token=refresh-meta-token" in request.content
+            return httpx.Response(200, json={"access_token": "fresh-meta-token", "expires_in": 3600})
+        assert request.headers["Authorization"] == "Bearer fresh-meta-token"
+        return httpx.Response(200, json={"id": "phone-1", "verified_name": "Demo"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await WhatsAppCloudAdapter(
+            phone_number_id="phone-1", connection_store=store, client=client
+        ).run_capability("identity.account.read", {})
+
+    assert result["id"] == "phone-1"
+    assert store.get("whatsapp").access_token == "fresh-meta-token"
+    assert calls == ["/v23.0/phone-1", "/v23.0/oauth/access_token", "/v23.0/phone-1"]
+
+
+@pytest.mark.anyio
 async def test_whatsapp_template_send_rejects_unsafe_template_name() -> None:
     adapter = WhatsAppCloudAdapter(access_token=TOKEN, phone_number_id="phone-1")
 
@@ -160,6 +213,23 @@ async def test_instagram_image_publish_uses_fixed_two_step_graph_flow() -> None:
         ),
         ("POST", "/v23.0/ig-1/media_publish", {"creation_id": "container-1"}),
     ]
+
+
+@pytest.mark.anyio
+async def test_instagram_uses_connected_oauth_token_when_static_token_is_absent() -> None:
+    store = OAuthConnectionStore()
+    store.record_success("instagram", access_token="oauth-meta-token", token_type="bearer", scope="instagram_basic")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["Authorization"] == "Bearer oauth-meta-token"
+        return httpx.Response(200, json={"id": "ig-1", "username": "demo"})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await InstagramGraphAdapter(
+            business_account_id="ig-1", connection_store=store, client=client
+        ).run_capability("identity.account.read", {})
+
+    assert result["username"] == "demo"
 
 
 @pytest.mark.anyio

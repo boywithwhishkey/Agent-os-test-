@@ -72,6 +72,12 @@ class Settings(BaseSettings):
         default="", validation_alias="AGENT_OS_WEBHOOK_WORKFLOW_MAP"
     )
     meta_access_token: str | None = Field(default=None, validation_alias="META_ACCESS_TOKEN")
+    meta_oauth_client_id: str | None = Field(
+        default=None, validation_alias="META_OAUTH_CLIENT_ID"
+    )
+    meta_oauth_client_secret: str | None = Field(
+        default=None, validation_alias="META_OAUTH_CLIENT_SECRET"
+    )
     meta_graph_api_version: str = Field(default="v23.0", validation_alias="META_GRAPH_API_VERSION")
     whatsapp_phone_number_id: str | None = Field(
         default=None, validation_alias="WHATSAPP_PHONE_NUMBER_ID"

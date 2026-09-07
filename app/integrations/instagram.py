@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.integrations.base import CapabilityNotWired, IntegrationAdapter, unsupported_execute_result
 from app.integrations.meta import MetaGraphClient
 from app.integrations.models import IntegrationProvider, IntegrationRequest, IntegrationResult
+from app.integrations.oauth.store import OAuthConnectionStore
 
 
 class InstagramGraphAdapter(IntegrationAdapter):
@@ -22,11 +23,13 @@ class InstagramGraphAdapter(IntegrationAdapter):
         business_account_id: str | None = None,
         api_version: str | None = None,
         client: httpx.AsyncClient | None = None,
+        connection_store: OAuthConnectionStore | None = None,
     ) -> None:
         token = access_token or settings.meta_access_token or ""
         account_id = business_account_id or settings.instagram_business_account_id or ""
-        if not token.strip():
-            raise RuntimeError("META_ACCESS_TOKEN is required")
+        self._connection_store = connection_store
+        if not token.strip() and not self._has_oauth_connection():
+            raise RuntimeError("META_ACCESS_TOKEN or a connected Instagram OAuth account is required")
         if not account_id.strip():
             raise RuntimeError("INSTAGRAM_BUSINESS_ACCOUNT_ID is required")
         self.business_account_id = account_id
@@ -34,7 +37,12 @@ class InstagramGraphAdapter(IntegrationAdapter):
             access_token=token,
             api_version=api_version or settings.meta_graph_api_version,
             client=client,
+            oauth_provider="instagram" if not token.strip() and connection_store else None,
+            connection_store=connection_store,
         )
+
+    def _has_oauth_connection(self) -> bool:
+        return bool(self._connection_store and self._connection_store.get("instagram").access_token)
 
     async def execute(self, request: IntegrationRequest) -> IntegrationResult:
         return unsupported_execute_result(

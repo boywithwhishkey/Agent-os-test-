@@ -187,11 +187,15 @@ def _telegram_live_status() -> dict:
 
 def _whatsapp_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "whatsapp")
+    if settings.meta_oauth_client_id or settings.meta_oauth_client_secret:
+        return _oauth_live_status("whatsapp")
     return _status_store_backed_status("whatsapp", configured=is_provider_configured(provider))
 
 
 def _instagram_live_status() -> dict:
     provider = next(p for p in list_providers() if p.value == "instagram")
+    if settings.meta_oauth_client_id or settings.meta_oauth_client_secret:
+        return _oauth_live_status("instagram")
     return _status_store_backed_status("instagram", configured=is_provider_configured(provider))
 
 

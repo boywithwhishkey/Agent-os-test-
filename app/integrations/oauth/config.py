@@ -147,6 +147,27 @@ OAUTH_PROVIDERS: dict[str, OAuthProviderConfig] = {
         client_id_env="SNAPCHAT_OAUTH_CLIENT_ID",
         client_secret_env="SNAPCHAT_OAUTH_CLIENT_SECRET",
     ),
+    "whatsapp": OAuthProviderConfig(
+        id="whatsapp",
+        name="WhatsApp Cloud",
+        authorize_url="https://www.facebook.com/v23.0/dialog/oauth",
+        token_url="https://graph.facebook.com/v23.0/oauth/access_token",
+        scope="whatsapp_business_management whatsapp_business_messaging",
+        client_id_env="META_OAUTH_CLIENT_ID",
+        client_secret_env="META_OAUTH_CLIENT_SECRET",
+    ),
+    "instagram": OAuthProviderConfig(
+        id="instagram",
+        name="Instagram",
+        authorize_url="https://www.facebook.com/v23.0/dialog/oauth",
+        token_url="https://graph.facebook.com/v23.0/oauth/access_token",
+        scope=(
+            "pages_show_list instagram_basic instagram_content_publish "
+            "pages_read_engagement instagram_manage_comments"
+        ),
+        client_id_env="META_OAUTH_CLIENT_ID",
+        client_secret_env="META_OAUTH_CLIENT_SECRET",
+    ),
     "hubspot": OAuthProviderConfig(
         id="hubspot",
         name="HubSpot",
