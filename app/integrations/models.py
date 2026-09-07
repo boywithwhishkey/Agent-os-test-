@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IntegrationProvider(StrEnum):
@@ -64,6 +64,29 @@ class IntegrationResult(BaseModel):
     status_code: int | None = None
     data: Any = None
     error: str | None = None
+    correlation_id: str | None = None
+
+
+class CapabilityExecutePayload(BaseModel):
+    """A provider-agnostic request for one canonical capability."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    capability: str = Field(min_length=1, max_length=200)
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    approval_id: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+class CapabilityExecutionResult(BaseModel):
+    """The broker's explicit, audited outcome exposed on the API."""
+
+    outcome: str
+    capability: str
+    connector: str | None = None
+    risk: str | None = None
+    output: Any = None
+    error: str | None = None
+    missing_configuration: list[str] = Field(default_factory=list)
     correlation_id: str | None = None
 
 

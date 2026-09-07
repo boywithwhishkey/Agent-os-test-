@@ -1,13 +1,14 @@
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from app.core.auth import require_api_key
 from app.core.config import settings
 from app.core.correlation import get_or_create_correlation_id
-from app.integrations.capabilities import requires_approval, resolve_all
+from app.integrations.broker import ConnectorBroker
+from app.integrations.capabilities import UnknownCapability, requires_approval, resolve, resolve_all
 from app.integrations.catalog import CatalogSpec, list_catalog
 from app.integrations.factory import (
     build_integration_adapter,
@@ -21,6 +22,8 @@ from app.integrations.mcp.models import MCPServerCreate, MCPServerPublic
 from app.integrations.mcp.store import MCPServerStore
 from app.integrations.models import (
     CapabilityDetail,
+    CapabilityExecutePayload,
+    CapabilityExecutionResult,
     ConnectorEntry,
     ConnectorStatusValue,
     IntegrationRequest,
@@ -36,8 +39,12 @@ from app.integrations.oauth.service import (
     build_authorize_url,
     exchange_code,
 )
+from app.integrations.operations import default_perform
 from app.integrations.status_store import IntegrationStatusStore
 from app.integrations.url_guard import UnsafeURLError, validate_outbound_url
+from app.tools.factory import build_approval_store, build_tool_audit_log
+from app.tools.models import ApprovalGrant
+from app.tools.policy import ToolPolicy
 
 public_router = APIRouter(prefix="/api/v1/integrations", tags=["integrations"])
 router = APIRouter(
@@ -47,11 +54,24 @@ router = APIRouter(
 )
 status_store = IntegrationStatusStore()
 mcp_store = MCPServerStore()
+capability_approvals = build_approval_store()
+capability_audit_log = build_tool_audit_log()
+capability_broker = ConnectorBroker(
+    policy=ToolPolicy(capability_approvals),
+    audit=capability_audit_log,
+    perform=default_perform,
+)
 
 
 class IntegrationExecutePayload(BaseModel):
     provider: str = Field(default="n8n")
     request: IntegrationRequest
+
+
+class CapabilityApprovalRequest(BaseModel):
+    capability: str = Field(min_length=1, max_length=200)
+    approved_by: str = Field(min_length=1, max_length=200)
+    reason: str | None = Field(default=None, max_length=1000)
 
 
 # ---------------------------------------------------------------------------
@@ -505,6 +525,53 @@ async def execute_integration(payload: IntegrationExecutePayload) -> Integration
     result = await adapter.execute(request)
     status_store.record_execution(payload.provider.lower().strip(), success=result.success)
     return result
+
+
+@router.post("/capabilities/approvals", response_model=ApprovalGrant)
+async def create_capability_approval(payload: CapabilityApprovalRequest) -> ApprovalGrant:
+    """Issue a single-use approval for a canonical capability.
+
+    Approval issuance is operator-authenticated; execution still consumes the
+    grant through the same ToolPolicy used by the tool runtime. The capability
+    is resolved before issuing so a typo can never create an approval for an
+    action that the broker does not understand.
+    """
+    try:
+        resolve(payload.capability)
+    except UnknownCapability as exc:
+        raise HTTPException(status_code=404, detail=f"Unknown capability: {payload.capability}") from exc
+    return await capability_approvals.issue(payload.capability, payload.approved_by, payload.reason)
+
+
+@router.post("/capabilities/execute", response_model=CapabilityExecutionResult)
+async def execute_capability(
+    payload: CapabilityExecutePayload, request: Request
+) -> CapabilityExecutionResult:
+    """Execute one canonical capability through broker policy and audit.
+
+    The caller supplies a capability id only; provider selection remains a
+    broker concern. Every refusal and provider result is returned explicitly
+    and has already been recorded in the configured audit backend.
+    """
+    correlation_id = getattr(request.state, "correlation_id", None)
+    result = await capability_broker.execute(
+        payload.capability,
+        payload.arguments,
+        approval_id=payload.approval_id,
+        correlation_id=correlation_id,
+    )
+    if result.connector:
+        status_store.record_execution(result.connector, success=result.success)
+    return CapabilityExecutionResult(
+        outcome=result.outcome.value,
+        capability=result.capability,
+        connector=result.connector,
+        risk=result.risk.value if result.risk else None,
+        output=result.output,
+        error=result.error,
+        missing_configuration=result.missing_configuration,
+        correlation_id=correlation_id,
+    )
 
 
 # ---------------------------------------------------------------------------
