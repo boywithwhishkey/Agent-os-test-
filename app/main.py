@@ -129,7 +129,14 @@ async def http_exception_handler(
 
     `exc.headers` is forwarded so 401s keep their WWW-Authenticate challenge.
     """
-    content = exc.detail if isinstance(exc.detail, dict) else {"detail": exc.detail}
+    if isinstance(exc.detail, dict):
+        content = exc.detail
+    else:
+        # Starlette spells its router-level 404 as "Not Found", while the
+        # built-frontend fallback uses the API's historical "Not found".
+        # Keep the public wire shape deterministic in both deployment modes.
+        detail = "Not found" if exc.detail == "Not Found" else exc.detail
+        content = {"detail": detail}
     return JSONResponse(status_code=exc.status_code, content=content, headers=exc.headers)
 
 
