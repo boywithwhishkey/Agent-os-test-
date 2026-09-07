@@ -81,10 +81,11 @@ creating one-off integrations.
 
 - Provider credentials are server-side only; no secrets in frontend storage,
   logs, errors, fixtures, Project Brain, or git.
-- OAuth state is single-use and expires; access/refresh tokens are encrypted
-  at rest when the PostgreSQL OAuth store is enabled. The current tenant key
-  is deployment-scoped; a full multi-user identity/tenant layer is still
-  required before serving multiple operators from one deployment.
+- OAuth state is single-use and expires; state digests and access/refresh tokens
+  are tenant-scoped in PostgreSQL when durable OAuth storage is enabled. The
+  current tenant key is deployment-scoped; a full multi-user identity/tenant
+  layer is still required before serving multiple operators from one
+  deployment.
 - Adapter accepts canonical capability arguments only and never an arbitrary
   provider URL or operation name from an agent.
 - Read, write, and high-risk operations use the shared capability risk model;

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timedelta
 from uuid import uuid4
 
@@ -18,6 +19,15 @@ class OAuthStateStore:
 
     def __init__(self) -> None:
         self._states: dict[str, OAuthStateRecord] = {}
+        self._database: Database | None = None
+        self._tenant_id = "operator"
+
+    def configure(self, *, database: Database, tenant_id: str) -> None:
+        tenant = tenant_id.strip()
+        if not tenant:
+            raise ValueError("OAuth state tenant id must be non-empty")
+        self._database = database
+        self._tenant_id = tenant
 
     def create(self, provider: str) -> str:
         self._expire_old()
@@ -33,6 +43,48 @@ class OAuthStateStore:
         if record is None:
             return None
         return record.provider
+
+    async def create_async(self, provider: str) -> str:
+        """Create state in PostgreSQL when durable OAuth storage is enabled."""
+        if self._database is None:
+            return self.create(provider)
+        token = uuid4().hex
+        await self._database.execute(
+            "DELETE FROM oauth_states WHERE tenant_id = $1 AND created_at < NOW() - INTERVAL '10 minutes'",
+            self._tenant_id,
+        )
+        await self._database.execute(
+            """
+            INSERT INTO oauth_states (tenant_id, state_hash, provider, created_at)
+            VALUES ($1, $2, $3, $4)
+            """,
+            self._tenant_id,
+            self._hash(token),
+            provider,
+            utcnow(),
+        )
+        return token
+
+    async def consume_async(self, state: str) -> str | None:
+        """Atomically consume one durable state token, with TTL enforcement."""
+        if self._database is None:
+            return self.consume(state)
+        row = await self._database.fetchrow(
+            """
+            DELETE FROM oauth_states
+            WHERE tenant_id = $1
+              AND state_hash = $2
+              AND created_at >= NOW() - INTERVAL '10 minutes'
+            RETURNING provider
+            """,
+            self._tenant_id,
+            self._hash(state),
+        )
+        return row.get("provider") if row else None
+
+    @staticmethod
+    def _hash(state: str) -> str:
+        return hashlib.sha256(state.encode("utf-8")).hexdigest()
 
     def _expire_old(self) -> None:
         cutoff = utcnow() - STATE_TTL

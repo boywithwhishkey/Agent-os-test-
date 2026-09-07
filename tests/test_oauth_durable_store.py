@@ -4,7 +4,7 @@ import pytest
 from cryptography.fernet import Fernet
 
 from app.integrations.oauth.crypto import OAuthTokenCipher
-from app.integrations.oauth.store import OAuthConnectionStore
+from app.integrations.oauth.store import OAuthConnectionStore, OAuthStateStore
 
 
 class FakeDatabase:
@@ -19,6 +19,10 @@ class FakeDatabase:
     async def execute(self, query: str, *args):
         self.calls.append((query, args))
         return "OK"
+
+    async def fetchrow(self, query: str, *args):
+        self.calls.append((query, args))
+        return {"provider": "github"}
 
 
 def test_token_cipher_is_authenticated_and_never_plaintext() -> None:
@@ -78,3 +82,21 @@ async def test_durable_store_persists_ciphertext_and_disconnects_tenant_scope() 
 
     await store.persist_disconnect("slack")
     assert db.calls[1][1] == ("tenant-b", "slack")
+
+
+@pytest.mark.asyncio
+async def test_durable_state_is_hashed_tenant_scoped_and_single_use() -> None:
+    db = FakeDatabase()
+    store = OAuthStateStore()
+    store.configure(database=db, tenant_id="tenant-state")
+
+    state = await store.create_async("github")
+    assert state
+    assert state not in str(db.calls)
+    assert db.calls[0][1] == ("tenant-state",)
+    assert db.calls[1][1][0] == "tenant-state"
+    assert db.calls[1][1][1] != state
+
+    assert await store.consume_async(state) == "github"
+    assert db.calls[2][1][0] == "tenant-state"
+    assert db.calls[2][1][1] != state

@@ -136,12 +136,17 @@ def redirect_uri(config: OAuthProviderConfig) -> str:
     return f"{base}/api/v1/integrations/oauth/{config.id}/callback"
 
 
-def build_authorize_url(config: OAuthProviderConfig, state_store: OAuthStateStore) -> str:
+def build_authorize_url(
+    config: OAuthProviderConfig,
+    state_store: OAuthStateStore,
+    *,
+    state: str | None = None,
+) -> str:
     cid = client_id(config)
     if not cid:
         raise OAuthNotConfigured(f"{config.client_id_env} is required")
 
-    state = state_store.create(config.id)
+    state = state or state_store.create(config.id)
     params = {
         "client_id": cid,
         "redirect_uri": redirect_uri(config),

@@ -23,7 +23,7 @@ from app.core.config import settings
 from app.core.correlation import CORRELATION_HEADER, get_or_create_correlation_id
 from app.core.readiness import check_readiness
 from app.integrations.oauth.crypto import OAuthTokenCipher
-from app.integrations.oauth.registry import oauth_connection_store
+from app.integrations.oauth.registry import oauth_connection_store, oauth_state_store
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,7 @@ async def lifespan(app: FastAPI):
             tenant_id=settings.oauth_tenant_id,
             cipher=OAuthTokenCipher(settings.oauth_encryption_key or ""),
         )
+        oauth_state_store.configure(database=database, tenant_id=settings.oauth_tenant_id)
         await oauth_connection_store.initialize()
     yield
     await lifecycle.close_all()

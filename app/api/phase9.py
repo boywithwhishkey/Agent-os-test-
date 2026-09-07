@@ -599,7 +599,8 @@ async def oauth_authorize_route(provider: str) -> OAuthAuthorizeResponse:
     if config is None:
         raise HTTPException(status_code=404, detail=f"Unknown OAuth provider: {provider}")
     try:
-        url = build_authorize_url(config, oauth_state_store)
+        state = await oauth_state_store.create_async(config.id)
+        url = build_authorize_url(config, oauth_state_store, state=state)
     except OAuthNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return OAuthAuthorizeResponse(authorize_url=url)
@@ -618,7 +619,7 @@ async def oauth_callback_route(
         oauth_connection_store.record_failure(config.id, error=error)
         return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message={quote(error)}")
 
-    if not state or oauth_state_store.consume(state) != config.id:
+    if not state or await oauth_state_store.consume_async(state) != config.id:
         return RedirectResponse(f"{frontend_target}?oauth=error&provider={config.id}&message=invalid_or_expired_state")
 
     if not code:

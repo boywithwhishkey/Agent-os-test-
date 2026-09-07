@@ -1,9 +1,27 @@
-# CURRENT STATE — verified as of 2026-09-07, Slack webhook checkpoint
+# CURRENT STATE — verified as of 2026-09-07, durable OAuth checkpoint
 
 This file records only what has been directly verified against the
 repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
+
+## SESSION 2026-09-07 — DURABLE OAUTH STATE
+
+- **IMPLEMENTED_TESTED:** OAuth authorization state now has a PostgreSQL-backed
+  path when `AGENT_OS_OAUTH_STORAGE_BACKEND=postgres`. State values are stored
+  only as SHA-256 digests, scoped by `AGENT_OS_OAUTH_TENANT_ID`, expire after
+  ten minutes, and are atomically consumed by the callback. Development keeps
+  the existing in-memory fallback.
+- Added forward-only migration `010_oauth_states.sql`; OAuth token storage
+  remains encrypted by migrations 008/009. This removes the multi-instance and
+  restart gap in the consent round trip without exposing state tokens in the
+  database.
+- Focused OAuth state/service/route checks: **34 passed**. Full local gate
+  after this change: **606 backend tests passed, 13 skipped, 1 warning;
+  frontend typecheck, lint, tests, and build passed**. Local Postgres/Redis
+  checks were skipped because those services were not running in this shell.
+- **NOT LIVE-VALIDATED:** a real staging database still needs migration 010
+  applied and a restart/reconnect smoke test.
 
 ## SESSION 2026-09-07 — SNAPCHAT PUBLIC PROFILE READ
 

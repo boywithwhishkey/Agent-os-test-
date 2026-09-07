@@ -109,7 +109,7 @@ The capability layer, risk classification and SSRF guard are in
 2. **Credential vault.** The connector branch now has an encrypted,
    tenant-keyed PostgreSQL OAuth store, selected with
    `AGENT_OS_OAUTH_STORAGE_BACKEND=postgres`. Before production, configure a
-   Fernet `AGENT_OS_OAUTH_ENCRYPTION_KEY`, run migrations 008 and 009, and validate
+   Fernet `AGENT_OS_OAUTH_ENCRYPTION_KEY`, run migrations 008, 009, and 010, and validate
    restart/reconnect behavior against staging.
 3. **Tenant model.** Not a connector feature — the precondition for one. The
    current OAuth key is deployment-scoped, not multi-user isolation. See
