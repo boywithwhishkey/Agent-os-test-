@@ -5,6 +5,27 @@ repository (tests, source, live production checks) as of the commit above.
 If a later session changes any of this, update this file — don't append a
 contradicting note elsewhere.
 
+## SESSION 2026-09-07 — META OAUTH FOR WHATSAPP AND INSTAGRAM
+
+- **IMPLEMENTED_TESTED:** WhatsApp Cloud and Instagram now register shared Meta
+  OAuth authorization-code providers with least-scope declarations for their
+  respective operations. Their adapters accept a connected OAuth token from
+  the existing store, refresh once on a 401, and continue to support the
+  existing server-configured `META_ACCESS_TOKEN` fallback. Phone and Instagram
+  business-account identifiers remain server-side configuration; workflow
+  input still cannot choose a Graph path.
+- Catalog status and the generic OAuth authorize/callback/disconnect routes now
+  understand both providers. Existing signed Meta webhook verification and
+  canonical event normalization are unchanged.
+- Focused Meta/OAuth checks: **34 passed**. Full local gate after this change:
+  **598 backend tests passed, 13 skipped, 1 warning; 109 frontend tests
+  passed; typecheck, lint, and production build passed**. GitHub CI is pending
+  for commit `1271011`.
+- **CREDENTIAL_REQUIRED:** no Meta OAuth app, user token, system-user token,
+  WhatsApp phone id, or Instagram business-account credential was available
+  here; no live Graph API request was made. Provider permissions and app review
+  remain deployment/operator prerequisites.
+
 ## SESSION 2026-09-07 — SNAPCHAT MARKETING OAUTH CONNECTOR
 
 - **IMPLEMENTED_TESTED:** Snapchat now has a registered OAuth 2.0 provider

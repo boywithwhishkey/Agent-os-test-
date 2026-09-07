@@ -65,6 +65,9 @@ tested read-only foundations. Vercel remains read-only; Linear now has
 governed issue create/update mutations as well as read capabilities.
 Snapchat now also has the shared OAuth authorization and refresh path; it
 remains credential- and allowlist-gated for live validation.
+WhatsApp Cloud and Instagram now also have shared Meta OAuth authorization and
+refresh paths, while retaining server-token fallback; Meta app review and
+business-account credentials are still required for live validation.
 Google Drive, Dropbox, and OneDrive now also have bounded file-content reads;
 provider credentials remain required for live validation.
 Render now has fixed service listing and governed deploy-trigger operations;

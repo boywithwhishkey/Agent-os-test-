@@ -16,11 +16,13 @@ without that loop remain metadata only.
 1. Telegram Bot API — implemented/tested send-only foundation; bot token and
    live `getMe` validation remain.
 2. WhatsApp Cloud API — implemented/tested text and bounded template-message
-   foundations; Meta app/OAuth or system-user token, business phone, richer
-   media/templates and inbound webhook verification remain follow-ons.
+   foundations with Meta OAuth plus a system-user-token fallback; business
+   phone, richer media/templates, permissions and inbound webhook verification
+   remain capability-specific follow-ons.
 3. Instagram Graph API — implemented/tested text and image-publishing
-   foundations; Meta OAuth, business/creator account, comments and richer
-   media/messaging remain permission- and capability-specific follow-ons.
+   foundations with Meta OAuth plus a server-token fallback; business/creator
+   account, comments and richer media/messaging remain permission- and
+   capability-specific follow-ons.
 4. Snapchat Marketing/Public Profile APIs — implemented/tested read-only
    organization and ad-account discovery through OAuth 2.0 (with a legacy
    server-token fallback); ad/profile scopes and allowlist-dependent features
