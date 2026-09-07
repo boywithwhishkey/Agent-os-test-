@@ -25,6 +25,24 @@ contradicting note elsewhere.
   available here; no live Graph request was made. Existing Outlook connections
   must re-authorize to receive the expanded `Mail.ReadWrite` scope.
 
+## SESSION 2026-09-07 — TRELLO GOVERNED TASK CONNECTOR
+
+- **IMPLEMENTED_TESTED:** Trello now has a server-configured API-key/token
+  adapter scoped to one board and one list. It exposes account identity,
+  bounded open-card listing, and approval-gated card creation through the
+  canonical `productivity.task.*` capabilities. Workflow input cannot change
+  the board or destination list; credentials stay in server-side query auth and
+  are never included in errors.
+- Catalog, factory, live status, risk/approval/audit routing, and focused
+  adapter tests are wired. Focused Trello checks: **7 passed**. Full local gate
+  after this change: **574 backend tests passed, 13 skipped, 1 warning; 109
+  frontend tests passed; typecheck, lint, and production build passed**. GitHub
+  Actions CI passed on the isolated `staging` branch.
+- **CREDENTIAL_REQUIRED:** no Trello API key/token was available here, so no
+  live Trello request was made. Configure `TRELLO_API_KEY`, `TRELLO_TOKEN`,
+  `TRELLO_BOARD_ID`, and `TRELLO_LIST_ID` through the deployment secret
+  manager before use.
+
 ## SESSION 2026-09-05 — SLACK OAUTH MESSAGE CAPABILITIES
 
 - **IMPLEMENTED_TESTED:** Slack now uses the shared OAuth flow for identity,
@@ -2667,7 +2685,8 @@ build all clean.
   Asana-focused adapter, broker, and catalog checks: **46 passed**.
   Razorpay-focused adapter, broker, and catalog checks: **42 passed**.
   Outlook-focused adapter and catalog checks: **5 passed**.
-  The full gate after the Outlook lifecycle work is **566 backend tests passed,
+  Trello-focused adapter and catalog checks: **7 passed**.
+  The full gate after the Trello connector work is **574 backend tests passed,
   13 skipped, 1 warning; 109 frontend tests passed; typecheck and production
   build passed; lint 0 errors**.
 - Tests use mocked Linear responses only. `LINEAR_API_KEY` is not configured,
